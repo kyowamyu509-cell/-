@@ -708,20 +708,46 @@ function renderDashboard(){
   const hbcol=hbl.map(h=>{if(h==='不明')return'#e2e8f0';const n=parseInt(h);return n>=0?'#86efac':n>=-2?'#86efac':n>=-4?'#fcd34d':'#fca5a5';});
   dbCharts['haiben']=new Chart(document.getElementById('chartHaiben').getContext('2d'),{type:'bar',data:{labels:hbl.length?hbl.map(h=>h+'日'):['データなし'],datasets:[{data:hbl.length?hbl.map(h=>hbc[h]):[0],backgroundColor:hbl.length?hbcol:['#e2e8f0'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'#f1f5f9'}}}}});
 
-  // 申し送り一覧（1F青・2F緑・入替紫）
+  // 申し送り一覧（1F青・2F緑・入替紫）タップで詳細モーダル
   const memoItems=[];
   ALL.forEach(r=>{
     const isF1=F1_SET.has(r);
     if(S[r].memo&&S[r].memo.trim()){
       const hbText=S[r].haiben?`<span style="display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#0369a1">排便${S[r].haiben}日</span>`:'';
-      memoItems.push(`<div class="memo-item${isF1?'':' f2'}"><div class="memo-room">${r}号室　${isF1?'1F':'2F'}</div><div class="memo-name">${S[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${S[r].memo.replace(/\n/g,'<br>')}</div></div>`);
+      memoItems.push(`<div class="memo-item${isF1?'':' f2'}" style="cursor:pointer" onclick="openMemoDetail(${r},false)"><div class="memo-room">${r}号室　${isF1?'1F':'2F'} <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${S[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${S[r].memo.replace(/\n/g,'<br>')}</div></div>`);
     }
     if(subVisible[r]&&SUB[r].memo&&SUB[r].memo.trim()){
       const hbText=SUB[r].haiben?`<span style="display:inline-block;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#7c3aed">排便${SUB[r].haiben}日</span>`:'';
-      memoItems.push(`<div class="memo-item sub"><div class="memo-room">${r}号室　入替</div><div class="memo-name">${SUB[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${SUB[r].memo.replace(/\n/g,'<br>')}</div></div>`);
+      memoItems.push(`<div class="memo-item sub" style="cursor:pointer" onclick="openMemoDetail(${r},true)"><div class="memo-room">${r}号室　入替 <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${SUB[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${SUB[r].memo.replace(/\n/g,'<br>')}</div></div>`);
     }
   });
   document.getElementById('memoList').innerHTML=memoItems.length?memoItems.join(''):'<div class="no-data">申し送りはありません</div>';
+}
+
+// ── 申し送り詳細モーダル ─────────────────────────────
+function openMemoDetail(r,isSub){
+  const d=isSub?SUB[r]:S[r];
+  const isF1=F1_SET.has(r);
+  const flColor=isSub?'#7c3aed':isF1?'#2563eb':'#059669';
+  const flLabel=isSub?'入替':isF1?'1F':'2F';
+  const bdColor=isSub?'#c4b5fd':isF1?'#93c5fd':'#6ee7b7';
+  function bdg(val,col){
+    if(!val)return'<span style="font-size:12px;color:#94a3b8">未選択</span>';
+    return'<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+val+'</span>';
+  }
+  const ynRows=YN.map(f=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+f.l+'</span>'+bdg(d[f.k],'#2563eb')+'</div>').join('');
+  const bathRow=d.extra?'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+extraLabel+'</span>'+bdg(d.extra,'#7c3aed')+'</div>':''
+  const hbRow='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-size:12px;color:#64748b;font-weight:500">最終排便</span>'+(d.haiben?'<span style="font-size:13px;font-weight:500;color:#0369a1">'+d.haiben+'日</span>':'<span style="font-size:12px;color:#94a3b8">未選択</span>')+'</div>';
+  const memoBlock=d.memo?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:6px">申し送り内容</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;line-height:1.8;color:#1e293b;white-space:pre-wrap">'+d.memo+'</div></div>':''
+  document.getElementById('modalContent').innerHTML=
+    '<button class="modal-close" onclick="closeModal()">×</button>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'+
+    '<span style="font-size:22px;font-weight:700;color:#1e293b">'+r+'号室</span>'+
+    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+flColor+'22;color:'+flColor+';border:1px solid '+bdColor+'">'+flLabel+'</span>'+
+    '<span style="font-size:16px;font-weight:500;color:#1e293b;flex:1">'+( d.name||'（名前未入力）')+'</span></div>'+
+    '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;margin-bottom:6px">'+ynRows+bathRow+hbRow+'</div>'+
+    memoBlock;
+  document.getElementById('modalBg').style.display='flex';
 }
 
 document.getElementById('dateInput').value=currentDate;
