@@ -478,7 +478,12 @@ async function onSel(r,k,v,el){
 }
 async function onMemoChange(r,v){
   S[r].memo=v;S[r]._tag='today';
-  clearTimeout(S[r]._mt);S[r]._mt=setTimeout(async()=>{await saveDaily(r);flash(r,'✓ 保存');},700);
+  clearTimeout(S[r]._mt);
+  S[r]._mt=setTimeout(async()=>{await saveDaily(r);flash(r,'✓ 保存');},700);
+  // ダッシュボードが開いていれば申し送り一覧をリアルタイム更新
+  if(document.getElementById('mainPage2').classList.contains('active')){
+    refreshDashboardMemo();
+  }
 }
 function clearRoom(r){
   backups[r]={...S[r]};// バックアップ保存（メモリ）
@@ -516,7 +521,11 @@ async function onSubSel(r,k,v,el){
 }
 async function onSubMemoChange(r,v){
   SUB[r].memo=v;SUB[r]._tag='today';
-  clearTimeout(SUB[r]._mt);SUB[r]._mt=setTimeout(async()=>{await saveSubDaily(r);subFlash(r,'✓ 保存');},700);
+  clearTimeout(SUB[r]._mt);
+  SUB[r]._mt=setTimeout(async()=>{await saveSubDaily(r);subFlash(r,'✓ 保存');},700);
+  if(document.getElementById('mainPage2').classList.contains('active')){
+    refreshDashboardMemo();
+  }
 }
 function clearSubRoom(r){SUB[r]={...SUB[r],...emptyDaily(),_tag:SUB[r]._tag};refreshSubCard(r);subFlash(r,'クリア');}
 
@@ -661,7 +670,7 @@ function buildHaibenMemo(r,prefix,data){
       <option value="">未選択</option>${hbOpts}
     </select>
   </div>
-  <textarea id="${prefix}memo-${r}" class="fmemo" placeholder="申し送り内容を入力...">${data.memo||''}</textarea>
+  <textarea id="${prefix}memo-${r}" class="fmemo" placeholder="申し送り内容を入力..." oninput="on${prefix==='sub-'?'Sub':''}MemoChange(${r},this.value)">${data.memo||''}</textarea>
 </div>`;
 }
 
@@ -732,6 +741,25 @@ function renderAll(){
   });
 }
 
+// 申し送り一覧だけリアルタイム更新
+function refreshDashboardMemo(){
+  const memoEl=document.getElementById('memoList');
+  if(!memoEl)return;
+  const items=[];
+  ALL.forEach(r=>{
+    const isF1=F1_SET.has(r);
+    if(S[r].memo&&S[r].memo.trim()){
+      const hbTxt=S[r].haiben?`<span style="display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#0369a1">排便${S[r].haiben}日</span>`:'';
+      items.push(`<div class="memo-item${isF1?'':' f2'}" style="cursor:pointer" onclick="openMemoDetail(${r},false)"><div class="memo-room">${r}号室　${isF1?'1F':'2F'} <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${S[r].name||'（名前未入力）'}</div><div class="memo-text">${hbTxt}${S[r].memo.replace(/\n/g,'<br>')}</div></div>`);
+    }
+    if(subVisible[r]&&SUB[r].memo&&SUB[r].memo.trim()){
+      const hbTxt=SUB[r].haiben?`<span style="display:inline-block;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#7c3aed">排便${SUB[r].haiben}日</span>`:'';
+      items.push(`<div class="memo-item sub" style="cursor:pointer" onclick="openMemoDetail(${r},true)"><div class="memo-room">${r}号室　入替 <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${SUB[r].name||'（名前未入力）'}</div><div class="memo-text">${hbTxt}${SUB[r].memo.replace(/\n/g,'<br>')}</div></div>`);
+    }
+  });
+  memoEl.innerHTML=items.length?items.join(''): '<div class="no-data">申し送りはありません</div>';
+}
+
 let dbCharts={};
 function ddc(id){if(dbCharts[id]){dbCharts[id].destroy();delete dbCharts[id];}}
 function renderDashboard(){
@@ -775,20 +803,8 @@ function renderDashboard(){
   const hbcol=hbl.map(h=>{if(h==='不明')return'#e2e8f0';const n=parseInt(h);return n>=0?'#86efac':n>=-2?'#86efac':n>=-4?'#fcd34d':'#fca5a5';});
   dbCharts['haiben']=new Chart(document.getElementById('chartHaiben').getContext('2d'),{type:'bar',data:{labels:hbl.length?hbl.map(h=>h+'日'):['データなし'],datasets:[{data:hbl.length?hbl.map(h=>hbc[h]):[0],backgroundColor:hbl.length?hbcol:['#e2e8f0'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'#f1f5f9'}}}}});
 
-  // 申し送り一覧（1F青・2F緑・入替紫）タップで詳細モーダル
-  const memoItems=[];
-  ALL.forEach(r=>{
-    const isF1=F1_SET.has(r);
-    if(S[r].memo&&S[r].memo.trim()){
-      const hbText=S[r].haiben?`<span style="display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#0369a1">排便${S[r].haiben}日</span>`:'';
-      memoItems.push(`<div class="memo-item${isF1?'':' f2'}" style="cursor:pointer" onclick="openMemoDetail(${r},false)"><div class="memo-room">${r}号室　${isF1?'1F':'2F'} <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${S[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${S[r].memo.replace(/\n/g,'<br>')}</div></div>`);
-    }
-    if(subVisible[r]&&SUB[r].memo&&SUB[r].memo.trim()){
-      const hbText=SUB[r].haiben?`<span style="display:inline-block;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#7c3aed">排便${SUB[r].haiben}日</span>`:'';
-      memoItems.push(`<div class="memo-item sub" style="cursor:pointer" onclick="openMemoDetail(${r},true)"><div class="memo-room">${r}号室　入替 <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${SUB[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${SUB[r].memo.replace(/\n/g,'<br>')}</div></div>`);
-    }
-  });
-  document.getElementById('memoList').innerHTML=memoItems.length?memoItems.join(''):'<div class="no-data">申し送りはありません</div>';
+  // 申し送り一覧
+  refreshDashboardMemo();
 }
 
 // ── 申し送り詳細モーダル ─────────────────────────────
