@@ -96,6 +96,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .sub-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .sub-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:#fdf8ff}
 .sub-foot{padding:6px 12px;background:#fdf8ff;display:flex;justify-content:flex-end;border-radius:0 0 12px 12px}
+/* discharge & backup */
+.card.discharged{border-color:#fca5a5;background:#fff5f5}
+.card.discharged .card-head{background:#fff5f5}
+.discharge-btn{border:1px solid #e2e8f0;border-radius:8px;padding:5px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:"Noto Sans JP",sans-serif}
+.discharge-btn.on{border-color:#fca5a5;background:#fee2e2;color:#dc2626;font-weight:600}
+.restore-btn{border:1px solid #f59e0b;border-radius:8px;padding:5px 11px;font-size:11px;color:#b45309;background:#fffbeb;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500}
 
 /* Pages */
 .page{display:none}.page.active{display:block}
@@ -403,7 +409,7 @@ function listenResident(room,name){
 }
 
 async function loadAll(){
-  loadSubVisible();await loadExtraLabel();await loadLinks();
+  loadSubVisible();loadDischarged();await loadExtraLabel();await loadLinks();
   for(const r of ALL){
     let name=ls('rname_'+r)||'';const fb=await fbGet('rooms/'+r+'/name');if(fb)name=fb;
     const data=await readByName(name);S[r]={...S[r],...data,name};
@@ -416,9 +422,40 @@ async function loadAll(){
 async function onDateChange(d){
   currentDate=d;updateDateNote();Object.values(listeners).forEach(r=>r&&r.off&&r.off());
   for(const r of ALL){
-    const data=await readByName(S[r].name);S[r]={...S[r],...data};
-    const sdata=await readSubByName(SUB[r].name);SUB[r]={...SUB[r],...sdata};
+    // ① 退所チェックがある場合 → 名前含めクリア
+    if(discharged[r]){
+      S[r]={name:'',...emptyDaily(),_tag:''};
+      await saveRoomName(r,'');
+      discharged[r]=false;
+      // 入替者がいれば → メインに移行（後の②で処理）
+    }
+    // ② 入替者がいればメインに移行
+    if(SUB[r].name&&SUB[r].name.trim()){
+      const subName=SUB[r].name.trim();
+      // 入替者の引継データ（haiben デクリメント済み）
+      const subLatest=await readByName(subName);// readByNameはresidentsで読む
+      const carried={...subLatest};
+      if(carried._tag==='carried')carried.haiben=decrementHaiben(carried.haiben);
+      S[r]={...carried,name:subName};
+      await saveRoomName(r,subName);
+      await saveDaily(r);
+      // 入替をクリア
+      SUB[r]={name:'',...emptyDaily(),_tag:''};
+      await saveSubRoomName(r,'');
+    } else {
+      // ③ 通常引継 (haiben デクリメント)
+      const data=await readByName(S[r].name);
+      if(data._tag==='carried')data.haiben=decrementHaiben(data.haiben);
+      S[r]={...S[r],...data};
+    }
+    // ④ 入替側も通常引継 (移行されなかった場合)
+    if(SUB[r].name){
+      const sdata=await readSubByName(SUB[r].name);
+      if(sdata._tag==='carried')sdata.haiben=decrementHaiben(sdata.haiben);
+      SUB[r]={...SUB[r],...sdata};
+    }
   }
+  saveDischarged();
   renderAll();ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
 }
 function updateDateNote(){const d=new Date(currentDate+'T00:00:00');const w=['日','月','火','水','木','金','土'][d.getDay()];document.getElementById('dateNote').textContent=currentDate+'（'+w+'）の記録';}
@@ -443,7 +480,24 @@ async function onMemoChange(r,v){
   S[r].memo=v;S[r]._tag='today';
   clearTimeout(S[r]._mt);S[r]._mt=setTimeout(async()=>{await saveDaily(r);flash(r,'✓ 保存');},700);
 }
-function clearRoom(r){S[r]={...S[r],...emptyDaily(),_tag:S[r]._tag};refreshCard(r);flash(r,'クリア');}
+function clearRoom(r){
+  backups[r]={...S[r]};// バックアップ保存（メモリ）
+  lss('backup_'+r,backups[r]);
+  S[r]={...S[r],...emptyDaily(),_tag:S[r]._tag};
+  refreshCard(r);
+  flashRestore(r);
+}
+function restoreRoom(r){
+  const bk=backups[r]||ls('backup_'+r);
+  if(!bk){flash(r,'バックアップなし');return;}
+  S[r]={...bk};refreshCard(r);flash(r,'✓ 復元');
+}
+function flashRestore(r){
+  const el=document.getElementById('flash-'+r);if(!el)return;
+  el.innerHTML='クリア　<button class="restore-btn" style="font-size:10px;padding:2px 7px" onclick="restoreRoom('+r+')">元に戻す</button>';
+  el.className='flash show';
+  clearTimeout(el._ft);el._ft=setTimeout(()=>{el.className='flash';el.textContent='';},12000);
+}
 
 // 入れ替え handlers
 function onSubNameInput(r,v){SUB[r].name=v;const el=document.getElementById('sub-name-'+r);if(el)el.className='sub-name-input';setSubTag(r,'');}
@@ -465,6 +519,16 @@ async function onSubMemoChange(r,v){
   clearTimeout(SUB[r]._mt);SUB[r]._mt=setTimeout(async()=>{await saveSubDaily(r);subFlash(r,'✓ 保存');},700);
 }
 function clearSubRoom(r){SUB[r]={...SUB[r],...emptyDaily(),_tag:SUB[r]._tag};refreshSubCard(r);subFlash(r,'クリア');}
+
+// ★ 退所チェックトグル
+function toggleDischarge(r){
+  discharged[r]=!discharged[r];
+  saveDischarged();
+  const card=document.getElementById('card-'+r);
+  const btn=document.getElementById('discharge-btn-'+r);
+  if(card)card.className='card'+(discharged[r]?' discharged':'');
+  if(btn){btn.className='discharge-btn'+(discharged[r]?' on':'');btn.textContent=discharged[r]?'退所済':'退所';}
+}
 
 // ★ 入れ替えセクション 表示/非表示（display:noneで完全に切り替え）
 function toggleSub(r){
@@ -610,7 +674,7 @@ function buildCard(r){
   const stagCls='sub-tag'+(sd._tag==='today'?' today':sd._tag==='carried'?' carried':sd._tag==='new'?' new':'');
   const stagTxt=sd._tag==='today'?'今日':sd._tag==='carried'?'引継':sd._tag==='new'?'新規':'';
 
-  return`<div class="card" id="card-${r}">
+  return`<div class="card${discharged[r]?' discharged':''}" id="card-${r}">
 <div class="card-head">
   <div class="room-num">${r}</div>
   <input class="${niCls}" id="name-${r}" placeholder="お名前を入力" value="${d.name||''}" oninput="onNameInput(${r},this.value)" onblur="onNameBlur(${r})" onkeydown="if(event.key==='Enter')this.blur()">
@@ -626,7 +690,10 @@ function buildCard(r){
   ${buildHaibenMemo(r,'',d)}
 </div>
 <div class="card-foot">
-  <button class="sub-toggle-btn${vis?' active':''}" id="sub-toggle-${r}" onclick="toggleSub(${r})">${vis?'入替 非表示':'入替 表示'}</button>
+  <div style="display:flex;gap:6px">
+    <button class="sub-toggle-btn${vis?' active':''}" id="sub-toggle-${r}" onclick="toggleSub(${r})">${vis?'入替 非表示':'入替 表示'}</button>
+    <button class="discharge-btn${discharged[r]?' on':''}" id="discharge-btn-${r}" onclick="toggleDischarge(${r})">${discharged[r]?'退所済':'退所'}</button>
+  </div>
   <button class="clear-btn" onclick="clearRoom(${r})">クリア</button>
 </div>
 <div class="sub-section${vis?' visible':''}" id="sub-section-${r}">
