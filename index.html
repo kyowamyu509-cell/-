@@ -38,6 +38,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .chip-num{font-size:12px;font-weight:500;color:#1e293b}
 .chip-sub{font-size:10px;color:#64748b}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;padding:12px;max-width:1400px;margin:0 auto}
+
+/* ── Main card ── */
 .card{background:#fff;border-radius:12px;border:1px solid #e2e8f0}
 .card-head{padding:10px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
 .room-num{font-size:19px;font-weight:700;color:#1e293b;min-width:40px}
@@ -60,7 +62,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .fsel{width:100%;padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
 .fsel.v-ari{background-color:#eff6ff;border-color:#93c5fd;color:#2563eb}
 .fsel.v-hb{background-color:#fff;border-color:#cbd5e1}
-/* 最終排便をメモ内に組み込む */
+/* 最終排便＋申し送り統合 */
 .memo-section{display:flex;flex-direction:column;gap:4px;margin-top:3px}
 .memo-section-label{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em}
 .haiben-row{display:flex;align-items:center;gap:7px;background:#f8fafc;border:1px solid #e2e8f0;border-bottom:none;border-radius:8px 8px 0 0;padding:6px 9px}
@@ -69,15 +71,32 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .haiben-sel.v-hb{color:#2563eb;font-weight:500}
 .fmemo{width:100%;padding:8px 10px;border-radius:0 0 8px 8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:80px;line-height:1.7}
 .fmemo:focus{border-color:#cbd5e1;background:#fff}
-/* Extra row hide/show */
-.extra-row{display:flex;flex-direction:column;gap:3px}
-.extra-row.is-hidden{display:none}
 /* Card footer */
 .card-foot{padding:7px 12px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .clear-btn{border:1px solid #fca5a5;border-radius:8px;padding:5px 13px;font-size:11px;color:#dc2626;background:#fff5f5;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .clear-btn:active{background:#fee2e2}
-.extra-toggle-btn{border:1px solid #e2e8f0;border-radius:8px;padding:5px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
-.extra-toggle-btn.off{border-color:#e2e8f0;color:#94a3b8;border-style:dashed}
+.sub-toggle-btn{border:1px solid #c4b5fd;border-radius:8px;padding:5px 12px;font-size:11px;color:#7c3aed;background:#faf5ff;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
+.sub-toggle-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+
+/* ── 入れ替えセクション ── */
+.sub-section{border-top:2px dashed #c4b5fd;margin:0 0 0 0;display:none}
+.sub-section.visible{display:block}
+.sub-header{padding:9px 12px;background:#faf5ff;display:flex;align-items:center;gap:8px}
+.sub-badge{font-size:10px;font-weight:700;background:#7c3aed;color:#fff;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.sub-name-input{flex:1;border:1px solid #c4b5fd;border-radius:8px;padding:6px 9px;font-size:13px;color:#1e293b;background:#fff;outline:none;font-family:'Noto Sans JP',sans-serif;min-width:0}
+.sub-name-input:focus{border-color:#7c3aed}
+.sub-name-input.loaded{border-color:#86efac;background:#f0fdf4}
+.sub-name-input.carried{border-color:#fcd34d;background:#fffbeb}
+.sub-tag{font-size:9px;padding:2px 6px;border-radius:20px;font-weight:500;flex-shrink:0;text-align:center}
+.sub-tag.today{background:#eff6ff;color:#2563eb}
+.sub-tag.carried{background:#fffbeb;color:#b45309}
+.sub-tag.new{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
+.sub-flash{font-size:10px;color:#16a34a;min-width:32px;text-align:right;opacity:0;transition:opacity 0.3s;flex-shrink:0}
+.sub-flash.show{opacity:1}
+.sub-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sub-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:#fdf8ff}
+.sub-foot{padding:6px 12px;background:#fdf8ff;display:flex;justify-content:flex-end;border-radius:0 0 12px 12px}
+
 /* Pages */
 .page{display:none}.page.active{display:block}
 .main-page{display:none}.main-page.active{display:block}
@@ -93,17 +112,16 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .chart-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:14px}
 .chart-title{font-size:13px;font-weight:500;color:#1e293b;margin-bottom:12px}
 .chart-wrap{position:relative;height:200px}
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-/* 申し送り色分け */
 .memo-list{display:flex;flex-direction:column;gap:7px}
 .memo-item{padding:9px 12px;background:#f8fafc;border-radius:8px;border-left:4px solid #93c5fd}
 .memo-item.f2{border-left-color:#6ee7b7}
+.memo-item.sub{border-left-color:#c4b5fd;background:#fdf8ff}
 .memo-room{font-size:10px;font-weight:700;color:#2563eb;margin-bottom:2px}
 .memo-item.f2 .memo-room{color:#059669}
+.memo-item.sub .memo-room{color:#7c3aed}
 .memo-name{font-size:10px;color:#64748b;margin-bottom:3px}
 .memo-text{font-size:12px;color:#1e293b;line-height:1.6}
 .no-data{font-size:12px;color:#94a3b8;text-align:center;padding:16px 0}
-/* 入浴者一覧 */
 .bath-list-section{display:flex;flex-direction:column;gap:8px}
 .bath-group{background:#f8fafc;border-radius:8px;padding:10px 13px}
 .bath-group-title{font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:7px;display:flex;align-items:center;gap:6px}
@@ -111,7 +129,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .bath-person-list{display:flex;flex-wrap:wrap;gap:5px}
 .bath-person{font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:3px 9px;color:#1e293b}
 .bath-person .room-no{font-size:10px;color:#64748b;margin-right:4px}
-/* Weight/Height */
+.bath-person.is-sub{border-color:#c4b5fd;background:#fdf8ff}
+/* WH */
 .wh-page{padding:14px;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .wh-controls{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:12px 16px;flex-wrap:wrap}
 .wh-controls label{font-size:13px;font-weight:500;color:#64748b}
@@ -191,13 +210,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   <span class="sync-label" id="syncLabel">起動中...</span>
 </div>
 
-<!-- ケア記録 -->
 <div class="main-page active" id="mainPage0">
   <div id="page1" class="page active"><div class="summary-bar" id="sum1"></div><div class="grid" id="grid1"></div></div>
   <div id="page2" class="page"><div class="summary-bar" id="sum2"></div><div class="grid" id="grid2"></div></div>
 </div>
 
-<!-- 体重・身長 -->
 <div class="main-page" id="mainPage1">
   <div class="wh-page">
     <div class="wh-controls">
@@ -218,7 +235,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   </div>
 </div>
 
-<!-- ダッシュボード -->
 <div class="main-page" id="mainPage2">
   <div class="dashboard">
     <div class="stat-row">
@@ -227,25 +243,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       <div class="stat-card"><div class="stat-label">未入力</div><div class="stat-value" id="stat-empty">20</div><div class="stat-sub">部屋</div></div>
       <div class="stat-card"><div class="stat-label">連絡帳あり</div><div class="stat-value" id="stat-renrakucho">0</div><div class="stat-sub">名</div></div>
       <div class="stat-card"><div class="stat-label">薬変更あり</div><div class="stat-value" id="stat-yaku">0</div><div class="stat-sub">名</div></div>
-      <div class="stat-card accent"><div class="stat-label accent" id="stat-extra-label">入浴あり</div><div class="stat-value" id="stat-extra">0</div><div class="stat-sub">名（入浴選択）</div></div>
+      <div class="stat-card accent"><div class="stat-label accent" id="stat-extra-label">入浴あり</div><div class="stat-value" id="stat-extra">0</div><div class="stat-sub">名（入れ替え含む）</div></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">フロア別　入力状況</div>
-      <div class="chart-wrap"><canvas id="chartFloor"></canvas></div>
-    </div>
-    <!-- ★ 入浴者一覧（種別ごと） -->
+    <div class="chart-card"><div class="chart-title">フロア別　入力状況</div><div class="chart-wrap"><canvas id="chartFloor"></canvas></div></div>
     <div class="chart-card">
       <div class="chart-title" id="bathListTitle">入浴者一覧</div>
       <div class="bath-list-section" id="bathList"></div>
     </div>
     <div class="chart-card"><div class="chart-title">最終排便　日数分布</div><div class="chart-wrap" style="height:160px"><canvas id="chartHaiben"></canvas></div></div>
-    <!-- ★ 申し送り：1F青・2F緑で色分け -->
     <div class="chart-card">
       <div class="chart-title">
         本日の申し送り一覧
         <span style="margin-left:10px;font-size:10px;font-weight:400;color:#64748b">
           <span style="display:inline-block;width:10px;height:10px;background:#93c5fd;border-radius:2px;vertical-align:middle;margin-right:3px"></span>1F
           <span style="display:inline-block;width:10px;height:10px;background:#6ee7b7;border-radius:2px;vertical-align:middle;margin-left:8px;margin-right:3px"></span>2F
+          <span style="display:inline-block;width:10px;height:10px;background:#c4b5fd;border-radius:2px;vertical-align:middle;margin-left:8px;margin-right:3px"></span>入替
         </span>
       </div>
       <div class="memo-list" id="memoList"><div class="no-data">申し送りはありません</div></div>
@@ -253,7 +265,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   </div>
 </div>
 
-<!-- リンク -->
 <div class="main-page" id="mainPage3">
   <div class="links-page">
     <div class="links-header">
@@ -275,7 +286,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   </div>
 </div>
 
-<!-- Modal -->
 <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent"></div>
 </div>
@@ -297,34 +307,31 @@ const F1=[101,102,103,105,106,107,108,110,111,112];
 const F2=[201,202,203,205,206,207,208,210,211,212];
 const ALL=[...F1,...F2];
 const F1_SET=new Set(F1);
-
-// ★ 最終排便に '0日' を追加
 const HB=['0','不明','-1','-2','-3','-4','-5','-6','-7','-8','-9','-10'];
-
-// ★ 入浴種別（有/無→種別選択へ）
 const BATH_TYPES=['一般','リフト浴','機械浴','シャワー浴','清拭'];
-
 const YN=[{k:'renrakucho',l:'連絡帳'},{k:'yakuhenkou',l:'薬変更'},{k:'megusuri',l:'目薬'},{k:'nankou',l:'軟膏処置'}];
+const PROG_MAX=6;
 
 let currentDate=new Date().toISOString().slice(0,10);
+
+// メイン利用者データ
 let S={};
 ALL.forEach(r=>{S[r]={name:'',renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',_tag:''};});
+
+// ★ 入れ替え利用者データ（部屋ごと）
+let SUB={};
+ALL.forEach(r=>{SUB[r]={name:'',renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',_tag:''};});
+
+// ★ 入れ替えセクションの表示状態（localStorageのみ、DBに干渉しない）
+let subVisible={};
+ALL.forEach(r=>{subVisible[r]=false;});
 
 let extraLabel='入浴';
 let links=[];
 
-// extraVisible: localStorage のみ、DBには干渉しない
-let extraVisible={};
-ALL.forEach(r=>{extraVisible[r]=true;});
+function loadSubVisible(){const s=ls('subVisible');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)subVisible[r]=true;});}}
+function saveSubVisible(){lss('subVisible',subVisible);}
 
-function loadExtraVisible(){
-  const saved=ls('extraVisible');
-  if(saved&&typeof saved==='object'){ALL.forEach(r=>{if(saved[r]===false)extraVisible[r]=false;});}
-}
-function saveExtraVisible(){lss('extraVisible',extraVisible);}
-function progMax(r){return extraVisible[r]?6:5;}
-
-// Firebase
 let db=null;
 try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();db.ref('.info/connected').on('value',s=>{setSyncStatus(s.val()?'ok':'warn',s.val()?'Firebase リアルタイム同期中':'再接続中...');});}catch(e){setSyncStatus('warn','同期エラー');}
 
@@ -342,6 +349,7 @@ async function saveExtraLabel(l){extraLabel=l;lss('extraLabel',l);await fbSet('s
 async function loadLinks(){const s=await fbGet('settings/links')||ls('links');if(s)links=Array.isArray(s)?s:[];renderLinks();}
 async function saveLinks(){lss('links',links);await fbSet('settings/links',links);}
 
+// メイン保存
 async function saveRoomName(r,n){lss('rname_'+r,n);await fbSet('rooms/'+r+'/name',n);}
 async function saveDaily(room){
   const name=(S[room].name||'').trim();if(!name)return;
@@ -358,6 +366,24 @@ async function readByName(name){
   return{...emptyDaily(),_tag:'new'};
 }
 
+// 入れ替え保存（'sub_' プレフィックスで分離）
+async function saveSubRoomName(r,n){lss('sub_rname_'+r,n);await fbSet('sub_rooms/'+r+'/name',n);}
+async function saveSubDaily(room){
+  const name=(SUB[room].name||'').trim();if(!name)return;
+  const {_tag,_mt,name:n,...data}=SUB[room];
+  lss('sub_care_'+name+'_'+currentDate,data);lss('sub_care_'+name+'_latest',data);
+  const k=encKey(name);await fbSet(`sub_residents/${k}/dates/${currentDate}`,data);await fbSet(`sub_residents/${k}/latest`,data);
+}
+async function readSubByName(name){
+  if(!name||!name.trim())return{...emptyDaily(),_tag:''};
+  const n=name.trim(),k=encKey(n);
+  if(db){try{const td=await fbGet(`sub_residents/${k}/dates/${currentDate}`);if(td)return{...emptyDaily(),...td,_tag:'today'};const lt=await fbGet(`sub_residents/${k}/latest`);if(lt)return{...emptyDaily(),...lt,_tag:'carried'};return{...emptyDaily(),_tag:'new'};}catch(e){}}
+  const td=ls('sub_care_'+n+'_'+currentDate);if(td)return{...emptyDaily(),...td,_tag:'today'};
+  const lt=ls('sub_care_'+n+'_latest');if(lt)return{...emptyDaily(),...lt,_tag:'carried'};
+  return{...emptyDaily(),_tag:'new'};
+}
+
+// WH
 async function saveWH(name,month,weight,height){if(!name)return;const k=encKey(name.trim()),d={weight,height};lss('wh_'+name+'_'+month,d);await fbSet(`wh/${k}/${month.replace('-','_')}`,d);}
 async function loadWH(name,month){if(!name)return{weight:'',height:''};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}/${month.replace('-','_')}`);if(d)return d;}return ls('wh_'+name+'_'+month)||{weight:'',height:''};}
 async function loadWHHistory(name){if(!name)return{};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}`);if(d)return d;}const h={};for(let i=0;i<24;i++){const d=new Date();d.setMonth(d.getMonth()-i);const m=d.toISOString().slice(0,7);const v=ls('wh_'+name+'_'+m);if(v)h[m.replace('-','_')]=v;}return h;}
@@ -368,8 +394,7 @@ function listenResident(room,name){
   if(listeners[room])listeners[room].off();
   const ref=db.ref(`residents/${encKey(name)}/dates/${currentDate}`);
   ref.on('value',snap=>{
-    if(!snap.exists())return;
-    const data=snap.val();const cur=S[room];
+    if(!snap.exists())return;const data=snap.val();const cur=S[room];
     if(YN.some(f=>cur[f.k]!==data[f.k])||cur.haiben!==data.haiben||cur.extra!==data.extra||cur.memo!==data.memo){
       S[room]={...S[room],...emptyDaily(),...data,_tag:'today'};refreshCard(room);
     }
@@ -378,18 +403,27 @@ function listenResident(room,name){
 }
 
 async function loadAll(){
-  loadExtraVisible();await loadExtraLabel();await loadLinks();
-  for(const r of ALL){let name=ls('rname_'+r)||'';const fb=await fbGet('rooms/'+r+'/name');if(fb)name=fb;const data=await readByName(name);S[r]={...S[r],...data,name};}
+  loadSubVisible();await loadExtraLabel();await loadLinks();
+  for(const r of ALL){
+    let name=ls('rname_'+r)||'';const fb=await fbGet('rooms/'+r+'/name');if(fb)name=fb;
+    const data=await readByName(name);S[r]={...S[r],...data,name};
+    let sname=ls('sub_rname_'+r)||'';const sfb=await fbGet('sub_rooms/'+r+'/name');if(sfb)sname=sfb;
+    const sdata=await readSubByName(sname);SUB[r]={...SUB[r],...sdata,name:sname};
+  }
   renderAll();ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
 }
 
 async function onDateChange(d){
   currentDate=d;updateDateNote();Object.values(listeners).forEach(r=>r&&r.off&&r.off());
-  for(const r of ALL){const data=await readByName(S[r].name);S[r]={...S[r],...data};}
+  for(const r of ALL){
+    const data=await readByName(S[r].name);S[r]={...S[r],...data};
+    const sdata=await readSubByName(SUB[r].name);SUB[r]={...SUB[r],...sdata};
+  }
   renderAll();ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
 }
 function updateDateNote(){const d=new Date(currentDate+'T00:00:00');const w=['日','月','火','水','木','金','土'][d.getDay()];document.getElementById('dateNote').textContent=currentDate+'（'+w+'）の記録';}
 
+// メイン handlers
 function onNameInput(r,v){S[r].name=v;const el=document.getElementById('name-'+r);if(el)el.className='name-input';setTag(r,'');}
 async function onNameBlur(r){
   const name=(S[r].name||'').trim();await saveRoomName(r,name);
@@ -397,43 +431,53 @@ async function onNameBlur(r){
   const data=await readByName(name);S[r]={...S[r],...data,name};refreshCard(r);listenResident(r,name);
   flash(r,data._tag==='today'?'✓今日':data._tag==='carried'?'↑引継':'✓新規');
 }
-
 async function onSel(r,k,v,el){
   S[r][k]=v;S[r]._tag='today';
-  if(k==='haiben'){el.className='haiben-sel'+(v?' v-hb':'');}
-  else if(k==='extra'){el.className='fsel'+(v?' v-ari':'');}
-  else{el.className='fsel'+(v==='有'?' v-ari':'');}
-  const p=prog(r);const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p,r);
+  if(k==='haiben')el.className='haiben-sel'+(v?' v-hb':'');
+  else el.className='fsel'+(v&&v!=='無'?' v-ari':'');
+  const p=prog(r);const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p);
   updateChip(r,p);await saveDaily(r);flash(r,'✓ 保存');
   if(document.getElementById('mainPage2').classList.contains('active'))renderDashboard();
 }
-
 async function onMemoChange(r,v){
   S[r].memo=v;S[r]._tag='today';
   clearTimeout(S[r]._mt);S[r]._mt=setTimeout(async()=>{await saveDaily(r);flash(r,'✓ 保存');},700);
 }
+function clearRoom(r){S[r]={...S[r],...emptyDaily(),_tag:S[r]._tag};refreshCard(r);flash(r,'クリア');}
 
-// ★ クリア: 表示リセットのみ、DBには書き込まない
-function clearRoom(r){
-  S[r]={...S[r],...emptyDaily(),_tag:S[r]._tag};
-  refreshCard(r);flash(r,'クリア');
+// 入れ替え handlers
+function onSubNameInput(r,v){SUB[r].name=v;const el=document.getElementById('sub-name-'+r);if(el)el.className='sub-name-input';setSubTag(r,'');}
+async function onSubNameBlur(r){
+  const name=(SUB[r].name||'').trim();await saveSubRoomName(r,name);
+  if(!name){setSubTag(r,'');return;}
+  const data=await readSubByName(name);SUB[r]={...SUB[r],...data,name};refreshSubCard(r);
+  subFlash(r,data._tag==='today'?'✓今日':data._tag==='carried'?'↑引継':'✓新規');
 }
+async function onSubSel(r,k,v,el){
+  SUB[r][k]=v;SUB[r]._tag='today';
+  if(k==='haiben')el.className='haiben-sel'+(v?' v-hb':'');
+  else el.className='fsel'+(v&&v!=='無'?' v-ari':'');
+  await saveSubDaily(r);subFlash(r,'✓ 保存');
+  if(document.getElementById('mainPage2').classList.contains('active'))renderDashboard();
+}
+async function onSubMemoChange(r,v){
+  SUB[r].memo=v;SUB[r]._tag='today';
+  clearTimeout(SUB[r]._mt);SUB[r]._mt=setTimeout(async()=>{await saveSubDaily(r);subFlash(r,'✓ 保存');},700);
+}
+function clearSubRoom(r){SUB[r]={...SUB[r],...emptyDaily(),_tag:SUB[r]._tag};refreshSubCard(r);subFlash(r,'クリア');}
 
-// ★ 入れ換えフィールド 表示/非表示（display:noneで完全に隠す、DBに干渉しない）
-function toggleExtra(r){
-  extraVisible[r]=!extraVisible[r];
-  saveExtraVisible();
-  const wrap=document.getElementById('extra-wrap-'+r);
-  const btn=document.getElementById('extra-toggle-'+r);
-  if(wrap){wrap.className='extra-row'+(extraVisible[r]?'':' is-hidden');}
-  if(btn){btn.className='extra-toggle-btn'+(extraVisible[r]?'':' off');btn.textContent=extraVisible[r]?'非表示':'表示';}
-  const p=prog(r);
-  const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p,r);
-  updateChip(r,p);
+// ★ 入れ替えセクション 表示/非表示（display:noneで完全に切り替え）
+function toggleSub(r){
+  subVisible[r]=!subVisible[r];
+  saveSubVisible();
+  const sec=document.getElementById('sub-section-'+r);
+  const btn=document.getElementById('sub-toggle-'+r);
+  if(sec)sec.className='sub-section'+(subVisible[r]?' visible':'');
+  if(btn){btn.className='sub-toggle-btn'+(subVisible[r]?' active':'');btn.textContent=subVisible[r]?'入替 非表示':'入替 表示';}
 }
 
 function openExtraLabelEdit(){
-  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">入れ換えフィールドの名前を変更</div><div class="modal-row"><span class="modal-label">ラベル名</span><input class="modal-input" id="exLblIn" value="${extraLabel}" placeholder="例：入浴、リハビリ、外出"></div><button class="modal-save-btn" onclick="applyExtraLabel()">変更して保存</button>`;
+  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">入浴フィールドの名前を変更</div><div class="modal-row"><span class="modal-label">ラベル名</span><input class="modal-input" id="exLblIn" value="${extraLabel}" placeholder="例：入浴"></div><button class="modal-save-btn" onclick="applyExtraLabel()">変更して保存</button>`;
   document.getElementById('modalBg').style.display='flex';
 }
 async function applyExtraLabel(){
@@ -478,10 +522,9 @@ async function openWHHistory(name,room){
   document.getElementById('histTableWrap').innerHTML=`<table class="hist-table"><thead><tr><th>年月</th><th>体重(kg)</th><th>身長(cm)</th><th>BMI</th></tr></thead><tbody>${months.length?months.slice().reverse().map(m=>{const d=hist[m.replace('-','_')]||{};const w2=parseFloat(d.weight)||0,h2=parseFloat(d.height)||0;const b=h2>0?(w2/((h2/100)**2)).toFixed(1):'—';return`<tr><td>${m}</td><td>${d.weight||'—'}</td><td>${d.height||'—'}</td><td>${b}</td></tr>`;}).join(''):'<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">データなし</td></tr>'}</tbody></table>`;
   if(months.length){setTimeout(()=>{new Chart(document.getElementById('histChart'),{type:'line',data:{labels:months,datasets:[{label:'体重(kg)',data:weights,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.3,fill:true,yAxisID:'y'},{label:'身長(cm)',data:heights,borderColor:'#10b981',tension:0.3,fill:false,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans JP',size:11},boxWidth:12}}},scales:{y:{position:'left',grid:{color:'#f1f5f9'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}});},80);}
 }
-
 let whCharts={};
 function renderWHCharts(rows){
-  if(whCharts.w){whCharts.w.destroy();}if(whCharts.b){whCharts.b.destroy();}
+  if(whCharts.w)whCharts.w.destroy();if(whCharts.b)whCharts.b.destroy();
   const vw=rows.filter(r=>r.wh.weight&&r.name);
   whCharts.w=new Chart(document.getElementById('chartWeight'),{type:'bar',data:{labels:vw.map(r=>r.name),datasets:[{data:vw.map(r=>parseFloat(r.wh.weight)||0),backgroundColor:'#93c5fd',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'Noto Sans JP',size:10},maxRotation:45}},y:{grid:{color:'#f1f5f9'}}}}});
   const bk={'低体重':0,'普通':0,'過体重':0,'不明':0};
@@ -490,50 +533,31 @@ function renderWHCharts(rows){
 }
 
 // Links
-function renderLinks(){
-  const g=document.getElementById('linkGrid');
-  if(!links.length){g.innerHTML='<div class="no-data" style="grid-column:1/-1">リンクが追加されていません</div>';return;}
-  g.innerHTML=links.map((l,i)=>`<div class="link-card"><button class="link-del-btn" onclick="deleteLink(${i})">×</button><div class="link-icon">${l.icon}</div><div class="link-name">${l.name}</div><div class="link-url-text">${l.url}</div><a class="link-open-btn" href="${l.url}" target="_blank" rel="noopener">開く →</a></div>`).join('');
-}
-function openAddLink(){
-  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">リンクを追加</div><div class="modal-row"><span class="modal-label">名前</span><input class="modal-input" id="li-name" placeholder="例：ケア日誌"></div><div class="modal-row"><span class="modal-label">URL</span><input class="modal-input" id="li-url" placeholder="https://..." type="url"></div><div class="modal-row"><span class="modal-label">アイコン</span><input class="modal-input" id="li-icon" value="🔗" maxlength="2" style="max-width:60px"></div><button class="modal-save-btn" onclick="saveNewLink()">追加する</button>`;
-  document.getElementById('modalBg').style.display='flex';
-}
-async function saveNewLink(){
-  const name=document.getElementById('li-name').value.trim(),url=document.getElementById('li-url').value.trim(),icon=document.getElementById('li-icon').value.trim()||'🔗';
-  if(!name||!url){alert('名前とURLを入力してください');return;}
-  links.push({name,url,icon});await saveLinks();renderLinks();closeModal();
-}
+function renderLinks(){const g=document.getElementById('linkGrid');if(!links.length){g.innerHTML='<div class="no-data" style="grid-column:1/-1">リンクが追加されていません</div>';return;}g.innerHTML=links.map((l,i)=>`<div class="link-card"><button class="link-del-btn" onclick="deleteLink(${i})">×</button><div class="link-icon">${l.icon}</div><div class="link-name">${l.name}</div><div class="link-url-text">${l.url}</div><a class="link-open-btn" href="${l.url}" target="_blank" rel="noopener">開く →</a></div>`).join('');}
+function openAddLink(){document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">リンクを追加</div><div class="modal-row"><span class="modal-label">名前</span><input class="modal-input" id="li-name" placeholder="例：ケア日誌"></div><div class="modal-row"><span class="modal-label">URL</span><input class="modal-input" id="li-url" placeholder="https://..." type="url"></div><div class="modal-row"><span class="modal-label">アイコン</span><input class="modal-input" id="li-icon" value="🔗" maxlength="2" style="max-width:60px"></div><button class="modal-save-btn" onclick="saveNewLink()">追加する</button>`;document.getElementById('modalBg').style.display='flex';}
+async function saveNewLink(){const name=document.getElementById('li-name').value.trim(),url=document.getElementById('li-url').value.trim(),icon=document.getElementById('li-icon').value.trim()||'🔗';if(!name||!url){alert('名前とURLを入力してください');return;}links.push({name,url,icon});await saveLinks();renderLinks();closeModal();}
 async function addPreset(name,icon,url){links.push({name,url,icon});await saveLinks();renderLinks();}
 async function deleteLink(i){if(!confirm('このリンクを削除しますか？'))return;links.splice(i,1);await saveLinks();renderLinks();}
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // Progress
-function prog(r){
-  const base=[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben].filter(v=>v).length;
-  const ex=extraVisible[r]&&S[r].extra?1:0;
-  return base+ex;
-}
-function dotCol(p,r){const max=progMax(r);return p===max?'#22c55e':p>0?'#f59e0b':'#cbd5e1';}
-function updateChip(r,p){
-  const c=document.getElementById('chip-'+r);if(!c)return;
-  const max=progMax(r);
-  c.className='chip'+(p===max?' done':p>0?' partial':'');
-  c.querySelector('.chip-sub').textContent=p+'/'+max;
-}
+function prog(r){return[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben,S[r].extra].filter(v=>v).length;}
+function dotCol(p){return p===PROG_MAX?'#22c55e':p>0?'#f59e0b':'#cbd5e1';}
+function updateChip(r,p){const c=document.getElementById('chip-'+r);if(!c)return;c.className='chip'+(p===PROG_MAX?' done':p>0?' partial':'');c.querySelector('.chip-sub').textContent=p+'/'+PROG_MAX;}
 
 function switchMain(idx){
   [0,1,2,3].forEach(i=>{document.getElementById('mainTab'+i).className='main-tab'+(i===idx?' active':'');document.getElementById('mainPage'+i).className='main-page'+(i===idx?' active':'');});
   document.getElementById('floorTabRow').style.display=idx===0?'flex':'none';
-  if(idx===1)renderWHTable();
-  if(idx===2)renderDashboard();
+  if(idx===1)renderWHTable();if(idx===2)renderDashboard();
 }
 function switchFloor(f){
   document.getElementById('tab1').className='floor-tab'+(f===1?' active':'');document.getElementById('tab2').className='floor-tab'+(f===2?' active':'');
   document.getElementById('page1').className='page'+(f===1?' active':'');document.getElementById('page2').className='page'+(f===2?' active':'');
 }
 function setTag(r,tag){const el=document.getElementById('tag-'+r);if(!el)return;el.className='tag'+(tag==='today'?' today':tag==='carried'?' carried':tag==='new'?' new':'');el.textContent=tag==='today'?'今日':tag==='carried'?'引継':tag==='new'?'新規':'';}
+function setSubTag(r,tag){const el=document.getElementById('sub-tag-'+r);if(!el)return;el.className='sub-tag'+(tag==='today'?' today':tag==='carried'?' carried':tag==='new'?' new':'');el.textContent=tag==='today'?'今日':tag==='carried'?'引継':tag==='new'?'新規':'';}
 function flash(r,msg){const el=document.getElementById('flash-'+r);if(!el)return;el.textContent=msg;el.className='flash show';clearTimeout(el._ft);el._ft=setTimeout(()=>{el.className='flash';},1600);}
+function subFlash(r,msg){const el=document.getElementById('sub-flash-'+r);if(!el)return;el.textContent=msg;el.className='sub-flash show';clearTimeout(el._ft);el._ft=setTimeout(()=>{el.className='sub-flash';},1600);}
 
 function refreshCard(r){
   const d=S[r];const p=prog(r);
@@ -542,21 +566,49 @@ function refreshCard(r){
   const ex=document.getElementById('sel-'+r+'-extra');if(ex){ex.value=d.extra||'';ex.className='fsel'+(d.extra?' v-ari':'');}
   const memo=document.getElementById('memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('name-'+r);if(ni){ni.value=d.name||'';ni.className='name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
-  const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p,r);
+  const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p);
   setTag(r,d._tag);updateChip(r,p);
+}
+function refreshSubCard(r){
+  const d=SUB[r];
+  YN.forEach(f=>{const el=document.getElementById('sub-sel-'+r+'-'+f.k);if(!el)return;el.value=d[f.k]||'';el.className='fsel'+(d[f.k]==='有'?' v-ari':'');});
+  const hb=document.getElementById('sub-sel-'+r+'-haiben');if(hb){hb.value=d.haiben||'';hb.className='haiben-sel'+(d.haiben?' v-hb':'');}
+  const ex=document.getElementById('sub-sel-'+r+'-extra');if(ex){ex.value=d.extra||'';ex.className='fsel'+(d.extra?' v-ari':'');}
+  const memo=document.getElementById('sub-memo-'+r);if(memo)memo.value=d.memo||'';
+  const ni=document.getElementById('sub-name-'+r);if(ni){ni.value=d.name||'';ni.className='sub-name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
+  setSubTag(r,d._tag);
+}
+
+// カード共通HTML部品
+function buildYNSelects(r,prefix,data){
+  return YN.map(f=>{const v=data[f.k]||'';return`<div class="field"><div class="flabel">${f.l}</div><select id="${prefix}sel-${r}-${f.k}" class="fsel${v==='有'?' v-ari':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'${f.k}',this.value,this)"><option value="">未選択</option><option${v==='有'?' selected':''}>有</option><option${v==='無'?' selected':''}>無</option></select></div>`;}).join('');
+}
+function buildBathSelect(r,prefix,data){
+  const exV=data.extra||'';const bathOpts=BATH_TYPES.map(t=>`<option value="${t}"${exV===t?' selected':''}>${t}</option>`).join('');
+  return`<div class="field"><div class="flabel"><span>${extraLabel}</span>${prefix===''?`<button class="flabel-edit" onclick="openExtraLabelEdit()">✎</button>`:''}</div><select id="${prefix}sel-${r}-extra" class="fsel${exV?' v-ari':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'extra',this.value,this)"><option value="">未選択</option>${bathOpts}</select></div>`;
+}
+function buildHaibenMemo(r,prefix,data){
+  const hbOpts=HB.map(h=>`<option value="${h}"${data.haiben===h?' selected':''}>${h}日</option>`).join('');
+  return`<div class="memo-section">
+  <div class="memo-section-label">申し送り内容</div>
+  <div class="haiben-row">
+    <span class="haiben-row-label">最終排便</span>
+    <select id="${prefix}sel-${r}-haiben" class="haiben-sel${data.haiben?' v-hb':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'haiben',this.value,this)">
+      <option value="">未選択</option>${hbOpts}
+    </select>
+  </div>
+  <textarea id="${prefix}memo-${r}" class="fmemo" placeholder="申し送り内容を入力...">${data.memo||''}</textarea>
+</div>`;
 }
 
 function buildCard(r){
-  const d=S[r];const p=prog(r);const vis=extraVisible[r];
-  const ynHtml=YN.map(f=>{const v=d[f.k]||'';return`<div class="field"><div class="flabel">${f.l}</div><select id="sel-${r}-${f.k}" class="fsel${v==='有'?' v-ari':''}" onchange="onSel(${r},'${f.k}',this.value,this)"><option value="">未選択</option><option${v==='有'?' selected':''}>有</option><option${v==='無'?' selected':''}>無</option></select></div>`;}).join('');
-  // ★ 入浴種別プルダウン
-  const exV=d.extra||'';
-  const bathOpts=BATH_TYPES.map(t=>`<option value="${t}"${exV===t?' selected':''}>${t}</option>`).join('');
-  // ★ 最終排便はメモセクション内へ
-  const hbOpts=HB.map(h=>`<option value="${h}"${d.haiben===h?' selected':''}>${h}日</option>`).join('');
+  const d=S[r];const sd=SUB[r];const p=prog(r);const vis=subVisible[r];
   const niCls='name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');
   const tagCls='tag'+(d._tag==='today'?' today':d._tag==='carried'?' carried':d._tag==='new'?' new':'');
   const tagTxt=d._tag==='today'?'今日':d._tag==='carried'?'引継':d._tag==='new'?'新規':'';
+  const sniCls='sub-name-input'+(sd._tag==='today'?' loaded':sd._tag==='carried'?' carried':'');
+  const stagCls='sub-tag'+(sd._tag==='today'?' today':sd._tag==='carried'?' carried':sd._tag==='new'?' new':'');
+  const stagTxt=sd._tag==='today'?'今日':sd._tag==='carried'?'引継':sd._tag==='new'?'新規':'';
 
   return`<div class="card" id="card-${r}">
 <div class="card-head">
@@ -564,111 +616,138 @@ function buildCard(r){
   <input class="${niCls}" id="name-${r}" placeholder="お名前を入力" value="${d.name||''}" oninput="onNameInput(${r},this.value)" onblur="onNameBlur(${r})" onkeydown="if(event.key==='Enter')this.blur()">
   <span class="${tagCls}" id="tag-${r}">${tagTxt}</span>
   <span class="flash" id="flash-${r}"></span>
-  <div class="dot" id="dot-${r}" style="background:${dotCol(p,r)}"></div>
+  <div class="dot" id="dot-${r}" style="background:${dotCol(p)}"></div>
 </div>
 <div class="card-body">
   <div class="fields-grid">
-    ${ynHtml}
-    <div class="extra-row${vis?'':' is-hidden'}" id="extra-wrap-${r}">
-      <div class="flabel">
-        <span id="exlbl-${r}">${extraLabel}</span>
-        <button class="flabel-edit" onclick="openExtraLabelEdit()">✎</button>
-      </div>
-      <select id="sel-${r}-extra" class="fsel${exV?' v-ari':''}" onchange="onSel(${r},'extra',this.value,this)">
-        <option value="">未選択</option>${bathOpts}
-      </select>
-    </div>
+    ${buildYNSelects(r,'',d)}
+    ${buildBathSelect(r,'',d)}
   </div>
-  <div class="memo-section">
-    <div class="memo-section-label">申し送り内容</div>
-    <div class="haiben-row">
-      <span class="haiben-row-label">最終排便</span>
-      <select id="sel-${r}-haiben" class="haiben-sel${d.haiben?' v-hb':''}" onchange="onSel(${r},'haiben',this.value,this)">
-        <option value="">未選択</option>${hbOpts}
-      </select>
-    </div>
-    <textarea id="memo-${r}" class="fmemo" placeholder="申し送り内容を入力...">${d.memo||''}</textarea>
-  </div>
+  ${buildHaibenMemo(r,'',d)}
 </div>
 <div class="card-foot">
-  <button class="extra-toggle-btn${vis?'':' off'}" id="extra-toggle-${r}" onclick="toggleExtra(${r})">${vis?'非表示':'表示'}</button>
+  <button class="sub-toggle-btn${vis?' active':''}" id="sub-toggle-${r}" onclick="toggleSub(${r})">${vis?'入替 非表示':'入替 表示'}</button>
   <button class="clear-btn" onclick="clearRoom(${r})">クリア</button>
+</div>
+<div class="sub-section${vis?' visible':''}" id="sub-section-${r}">
+  <div class="sub-header">
+    <span class="sub-badge">入替</span>
+    <input class="${sniCls}" id="sub-name-${r}" placeholder="入替の方のお名前" value="${sd.name||''}" oninput="onSubNameInput(${r},this.value)" onblur="onSubNameBlur(${r})" onkeydown="if(event.key==='Enter')this.blur()">
+    <span class="${stagCls}" id="sub-tag-${r}">${stagTxt}</span>
+    <span class="sub-flash" id="sub-flash-${r}"></span>
+  </div>
+  <div class="sub-body">
+    <div class="fields-grid">
+      ${buildYNSelects(r,'sub-',sd)}
+      ${buildBathSelect(r,'sub-',sd)}
+    </div>
+    ${buildHaibenMemo(r,'sub-',sd)}
+  </div>
+  <div class="sub-foot">
+    <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
+  </div>
 </div>
 </div>`;
 }
 
 function renderSum(fl,rooms){
   document.getElementById('sum'+fl).innerHTML=rooms.map(r=>{
-    const p=prog(r);const max=progMax(r);
-    return`<div class="chip${p===max?' done':p>0?' partial':''}" id="chip-${r}" onclick="document.getElementById('card-${r}').scrollIntoView({behavior:'smooth',block:'start'})"><span class="chip-num">${r}</span><span class="chip-sub">${p}/${max}</span></div>`;
+    const p=prog(r);
+    return`<div class="chip${p===PROG_MAX?' done':p>0?' partial':''}" id="chip-${r}" onclick="document.getElementById('card-${r}').scrollIntoView({behavior:'smooth',block:'start'})"><span class="chip-num">${r}</span><span class="chip-sub">${p}/${PROG_MAX}</span></div>`;
   }).join('');
 }
 function renderAll(){
   renderSum(1,F1);document.getElementById('grid1').innerHTML=F1.map(buildCard).join('');
   renderSum(2,F2);document.getElementById('grid2').innerHTML=F2.map(buildCard).join('');
-  ALL.forEach(r=>{const ta=document.getElementById('memo-'+r);if(ta)ta.oninput=e=>onMemoChange(r,e.target.value);});
+  ALL.forEach(r=>{
+    const ta=document.getElementById('memo-'+r);if(ta)ta.oninput=e=>onMemoChange(r,e.target.value);
+    const sta=document.getElementById('sub-memo-'+r);if(sta)sta.oninput=e=>onSubMemoChange(r,e.target.value);
+  });
 }
 
 let dbCharts={};
 function ddc(id){if(dbCharts[id]){dbCharts[id].destroy();delete dbCharts[id];}}
-
 function renderDashboard(){
-  const visRooms=ALL.filter(r=>extraVisible[r]);
-  const done=ALL.filter(r=>prog(r)===progMax(r)).length;
-  const partial=ALL.filter(r=>{const p=prog(r);return p>0&&p<progMax(r);}).length;
+  const done=ALL.filter(r=>prog(r)===PROG_MAX).length;
+  const partial=ALL.filter(r=>{const p=prog(r);return p>0&&p<PROG_MAX;}).length;
   document.getElementById('stat-done').textContent=done;
   document.getElementById('stat-partial').textContent=partial;
   document.getElementById('stat-empty').textContent=ALL.length-done-partial;
   document.getElementById('stat-renrakucho').textContent=ALL.filter(r=>S[r].renrakucho==='有').length;
   document.getElementById('stat-yaku').textContent=ALL.filter(r=>S[r].yakuhenkou==='有').length;
-  document.getElementById('stat-extra').textContent=visRooms.filter(r=>S[r].extra).length;
+  const bathCount=ALL.filter(r=>S[r].extra).length+ALL.filter(r=>subVisible[r]&&SUB[r].extra).length;
+  document.getElementById('stat-extra').textContent=bathCount;
   document.getElementById('stat-extra-label').textContent=extraLabel+'あり';
 
-  // Floor chart
   ddc('floor');
-  const f1d=F1.filter(r=>prog(r)===progMax(r)).length,f1p=F1.filter(r=>{const p=prog(r);return p>0&&p<progMax(r);}).length,f1e=F1.length-f1d-f1p;
-  const f2d=F2.filter(r=>prog(r)===progMax(r)).length,f2p=F2.filter(r=>{const p=prog(r);return p>0&&p<progMax(r);}).length,f2e=F2.length-f2d-f2p;
+  const f1d=F1.filter(r=>prog(r)===PROG_MAX).length,f1p=F1.filter(r=>{const p=prog(r);return p>0&&p<PROG_MAX;}).length,f1e=F1.length-f1d-f1p;
+  const f2d=F2.filter(r=>prog(r)===PROG_MAX).length,f2p=F2.filter(r=>{const p=prog(r);return p>0&&p<PROG_MAX;}).length,f2e=F2.length-f2d-f2p;
   dbCharts['floor']=new Chart(document.getElementById('chartFloor').getContext('2d'),{type:'bar',data:{labels:['1F（100番台）','2F（200番台）'],datasets:[{label:'完了',data:[f1d,f2d],backgroundColor:'#86efac',borderRadius:4},{label:'入力中',data:[f1p,f2p],backgroundColor:'#fcd34d',borderRadius:4},{label:'未入力',data:[f1e,f2e],backgroundColor:'#e2e8f0',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans JP',size:11},boxWidth:12}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,max:10,ticks:{stepSize:2},grid:{color:'#f1f5f9'}}}}});
 
-  // ★ 入浴者一覧（種別グループ）
-  const bathGroups={};
-  BATH_TYPES.forEach(t=>{bathGroups[t]=[];});
+  // 入浴者一覧（メイン＋入れ替え）
+  const bathGroups={};BATH_TYPES.forEach(t=>{bathGroups[t]=[];});
   ALL.forEach(r=>{
-    if(S[r].extra&&BATH_TYPES.includes(S[r].extra)){
-      bathGroups[S[r].extra].push({r,name:S[r].name||'（未入力）'});
-    }
+    if(S[r].extra&&BATH_TYPES.includes(S[r].extra))bathGroups[S[r].extra].push({r,name:S[r].name||'未入力',isSub:false});
+    if(subVisible[r]&&SUB[r].extra&&BATH_TYPES.includes(SUB[r].extra))bathGroups[SUB[r].extra].push({r,name:SUB[r].name||'未入力',isSub:true});
   });
+  const tl=document.getElementById('bathListTitle');if(tl)tl.textContent=extraLabel+'者一覧';
   const bl=document.getElementById('bathList');
-  const title=document.getElementById('bathListTitle');
-  if(title)title.textContent=extraLabel+'者一覧';
   const anyBath=BATH_TYPES.some(t=>bathGroups[t].length>0);
   bl.innerHTML=anyBath?BATH_TYPES.filter(t=>bathGroups[t].length>0).map(t=>`
     <div class="bath-group">
       <div class="bath-group-title">${t}<span class="cnt">${bathGroups[t].length}名</span></div>
       <div class="bath-person-list">
-        ${bathGroups[t].map(p=>`<div class="bath-person"><span class="room-no">${p.r}号室</span>${p.name}</div>`).join('')}
+        ${bathGroups[t].map(p=>`<div class="bath-person${p.isSub?' is-sub':''}"><span class="room-no">${p.r}${p.isSub?'(入替)':''}</span>${p.name}</div>`).join('')}
       </div>
     </div>`).join(''):'<div class="no-data">入浴の記録はありません</div>';
 
-  // Haiben chart
   ddc('haiben');
-  const hbc={};HB.forEach(h=>{hbc[h]=0;});ALL.forEach(r=>{if(S[r].haiben)hbc[S[r].haiben]=(hbc[S[r].haiben]||0)+1;});
+  const hbc={};HB.forEach(h=>{hbc[h]=0;});
+  ALL.forEach(r=>{if(S[r].haiben)hbc[S[r].haiben]=(hbc[S[r].haiben]||0)+1;if(subVisible[r]&&SUB[r].haiben)hbc[SUB[r].haiben]=(hbc[SUB[r].haiben]||0)+1;});
   const hbl=HB.filter(h=>hbc[h]>0);
   const hbcol=hbl.map(h=>{if(h==='不明')return'#e2e8f0';const n=parseInt(h);return n>=0?'#86efac':n>=-2?'#86efac':n>=-4?'#fcd34d':'#fca5a5';});
   dbCharts['haiben']=new Chart(document.getElementById('chartHaiben').getContext('2d'),{type:'bar',data:{labels:hbl.length?hbl.map(h=>h+'日'):['データなし'],datasets:[{data:hbl.length?hbl.map(h=>hbc[h]):[0],backgroundColor:hbl.length?hbcol:['#e2e8f0'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'#f1f5f9'}}}}});
 
-  // ★ 申し送り：1F青・2F緑で色分け
-  const memos=ALL.filter(r=>S[r].memo&&S[r].memo.trim());
-  const memoItems=memos.map(r=>{
+  // 申し送り一覧（1F青・2F緑・入替紫）タップで詳細モーダル
+  const memoItems=[];
+  ALL.forEach(r=>{
     const isF1=F1_SET.has(r);
-    const hbText=S[r].haiben?`<span style="display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#0369a1">排便${S[r].haiben}日</span>`:'';
-    return`<div class="memo-item${isF1?'':' f2'}">
-      <div class="memo-room">${r}号室　<span style="font-weight:400;opacity:0.7">${isF1?'1F':'2F'}</span></div>
-      <div class="memo-name">${S[r].name||'（名前未入力）'}</div>
-      <div class="memo-text">${hbText}${S[r].memo.replace(/\n/g,'<br>')}</div>
-    </div>`;
+    if(S[r].memo&&S[r].memo.trim()){
+      const hbText=S[r].haiben?`<span style="display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#0369a1">排便${S[r].haiben}日</span>`:'';
+      memoItems.push(`<div class="memo-item${isF1?'':' f2'}" style="cursor:pointer" onclick="openMemoDetail(${r},false)"><div class="memo-room">${r}号室　${isF1?'1F':'2F'} <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${S[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${S[r].memo.replace(/\n/g,'<br>')}</div></div>`);
+    }
+    if(subVisible[r]&&SUB[r].memo&&SUB[r].memo.trim()){
+      const hbText=SUB[r].haiben?`<span style="display:inline-block;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#7c3aed">排便${SUB[r].haiben}日</span>`:'';
+      memoItems.push(`<div class="memo-item sub" style="cursor:pointer" onclick="openMemoDetail(${r},true)"><div class="memo-room">${r}号室　入替 <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${SUB[r].name||'（名前未入力）'}</div><div class="memo-text">${hbText}${SUB[r].memo.replace(/\n/g,'<br>')}</div></div>`);
+    }
   });
   document.getElementById('memoList').innerHTML=memoItems.length?memoItems.join(''):'<div class="no-data">申し送りはありません</div>';
+}
+
+// ── 申し送り詳細モーダル ─────────────────────────────
+function openMemoDetail(r,isSub){
+  const d=isSub?SUB[r]:S[r];
+  const isF1=F1_SET.has(r);
+  const flColor=isSub?'#7c3aed':isF1?'#2563eb':'#059669';
+  const flLabel=isSub?'入替':isF1?'1F':'2F';
+  const bdColor=isSub?'#c4b5fd':isF1?'#93c5fd':'#6ee7b7';
+  function bdg(val,col){
+    if(!val)return'<span style="font-size:12px;color:#94a3b8">未選択</span>';
+    return'<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+val+'</span>';
+  }
+  const ynRows=YN.map(f=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+f.l+'</span>'+bdg(d[f.k],'#2563eb')+'</div>').join('');
+  const bathRow=d.extra?'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+extraLabel+'</span>'+bdg(d.extra,'#7c3aed')+'</div>':''
+  const hbRow='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-size:12px;color:#64748b;font-weight:500">最終排便</span>'+(d.haiben?'<span style="font-size:13px;font-weight:500;color:#0369a1">'+d.haiben+'日</span>':'<span style="font-size:12px;color:#94a3b8">未選択</span>')+'</div>';
+  const memoBlock=d.memo?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:6px">申し送り内容</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;line-height:1.8;color:#1e293b;white-space:pre-wrap">'+d.memo+'</div></div>':''
+  document.getElementById('modalContent').innerHTML=
+    '<button class="modal-close" onclick="closeModal()">×</button>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'+
+    '<span style="font-size:22px;font-weight:700;color:#1e293b">'+r+'号室</span>'+
+    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+flColor+'22;color:'+flColor+';border:1px solid '+bdColor+'">'+flLabel+'</span>'+
+    '<span style="font-size:16px;font-weight:500;color:#1e293b;flex:1">'+( d.name||'（名前未入力）')+'</span></div>'+
+    '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;margin-bottom:6px">'+ynRows+bathRow+hbRow+'</div>'+
+    memoBlock;
+  document.getElementById('modalBg').style.display='flex';
 }
 
 document.getElementById('dateInput').value=currentDate;
