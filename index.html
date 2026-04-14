@@ -174,6 +174,37 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .hist-table th{background:#f8fafc;padding:7px 10px;text-align:center;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0}
 .hist-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:center}
 .hist-chart-wrap{height:180px;margin-bottom:4px}
+
+/* ── 説明書ページ ── */
+.manual-page{padding:14px;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-bottom:40px}
+.manual-cover{background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #e2e8f0;border-radius:12px;padding:20px;text-align:center}
+.manual-cover-title{font-size:18px;font-weight:700;color:#1e293b;margin-bottom:5px}
+.manual-cover-sub{font-size:12px;color:#64748b}
+.manual-toc{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px}
+.manual-toc-title{font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:0.05em}
+.manual-toc-list{display:flex;flex-direction:column;gap:3px}
+.manual-toc-list a{font-size:13px;color:#2563eb;text-decoration:none;padding:2px 0}
+.manual-toc-list a:hover{text-decoration:underline}
+.msec{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px}
+.msec-title{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #eff6ff;display:flex;align-items:center;gap:8px}
+.msec-num{background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;flex-shrink:0}
+.mssec{font-size:13px;font-weight:700;color:#1e3a5f;margin:10px 0 6px;display:flex;align-items:center;gap:5px}
+.mbody{font-size:13px;color:#334155;line-height:1.75;margin-bottom:8px}
+.msteps{display:flex;flex-direction:column;gap:7px;margin:8px 0}
+.mstep{display:flex;gap:10px;align-items:flex-start;background:#f8fafc;border-radius:8px;padding:9px 12px;font-size:13px;color:#1e293b;line-height:1.6}
+.mstep-num{background:#2563eb;color:#fff;font-size:11px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.mpoint{background:#eff6ff;border-left:3px solid #2563eb;border-radius:0 7px 7px 0;padding:8px 12px;font-size:12px;color:#1e3a5f;margin:7px 0;line-height:1.6}
+.mpoint-warn{background:#fffbeb;border-left-color:#f59e0b;color:#78350f}
+.mpoint-green{background:#f0fdf4;border-left-color:#22c55e;color:#14532d}
+.mpoint-purple{background:#faf5ff;border-left-color:#7c3aed;color:#4c1d95}
+.mtbl{width:100%;border-collapse:collapse;font-size:12px;margin:7px 0}
+.mtbl th{background:#f8fafc;padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;border:1px solid #e2e8f0}
+.mtbl td{padding:7px 10px;border:1px solid #e2e8f0;color:#1e293b;vertical-align:top;line-height:1.6}
+.mtbl tr:nth-child(even) td{background:#fafbfc}
+.mbadge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.mfaq{background:#f8fafc;border-radius:8px;padding:11px 13px;margin-bottom:8px}
+.mfaq-q{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:5px}
+.mfaq-a{font-size:13px;color:#334155;line-height:1.7}
 </style>
 </head>
 <body>
@@ -188,6 +219,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     <button class="main-tab" id="mainTab1" onclick="switchMain(1)">体重・身長</button>
     <button class="main-tab" id="mainTab2" onclick="switchMain(2)">ダッシュボード</button>
     <button class="main-tab" id="mainTab3" onclick="switchMain(3)">リンク</button>
+    <button class="main-tab" id="mainTab4" onclick="switchMain(4)">📖 説明書</button>
   </div>
   <div id="floorTabRow">
     <div class="floor-tabs">
@@ -275,6 +307,227 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       </div>
     </div>
     <div class="link-grid" id="linkGrid"><div class="no-data" style="grid-column:1/-1">リンクが追加されていません</div></div>
+  </div>
+</div>
+
+<!-- 説明書 -->
+<div class="main-page" id="mainPage4">
+  <div class="manual-page">
+    <div class="manual-cover">
+      <div class="manual-cover-title">📖　日常ケア記録アプリ　操作説明書</div>
+      <div class="manual-cover-sub">はじめてでもわかる使い方ガイド</div>
+    </div>
+
+    <div class="manual-toc">
+      <div class="manual-toc-title">もくじ</div>
+      <div class="manual-toc-list">
+        <a href="#m1">1. アプリの基本画面と構成</a>
+        <a href="#m2">2. ケア記録の入力方法</a>
+        <a href="#m3">3. 申し送り内容・最終排便の記入</a>
+        <a href="#m4">4. 入れ替え利用者の記録</a>
+        <a href="#m5">5. 退所ボタンの使い方</a>
+        <a href="#m6">6. クリア・元に戻す（バックアップ）</a>
+        <a href="#m7">7. ダッシュボードの見方</a>
+        <a href="#m8">8. 体重・身長の記録</a>
+        <a href="#m9">9. リンクの登録と使い方</a>
+        <a href="#m10">10. 翌日への引き継ぎ・自動処理</a>
+        <a href="#m11">11. 2台のiPadで同期する</a>
+        <a href="#m12">12. よくある質問</a>
+      </div>
+    </div>
+
+    <div class="msec" id="m1">
+      <div class="msec-title"><span class="msec-num">1</span>アプリの基本画面と構成</div>
+      <div class="mssec">■ 画面上部のタブ（メニュー）</div>
+      <p class="mbody">画面の上部に5つのタブがあります。タップするとページが切り替わります。</p>
+      <table class="mtbl"><tr><th>タブ名</th><th>できること</th></tr>
+        <tr><td>ケア記録</td><td>各部屋の連絡帳・薬変更・入浴・最終排便・申し送りを入力する（メイン画面）</td></tr>
+        <tr><td>体重・身長</td><td>月ごとの体重・身長・BMIを記録・確認する</td></tr>
+        <tr><td>ダッシュボード</td><td>全体の入力状況・入浴者一覧・申し送り一覧をまとめて確認する</td></tr>
+        <tr><td>リンク</td><td>NotionやGoogleドライブなど外部サービスへのリンクを管理する</td></tr>
+        <tr><td>📖 説明書</td><td>この操作説明書（今見ているページ）</td></tr>
+      </table>
+      <div class="mssec">■ フロアの切り替え（1F / 2F）</div>
+      <p class="mbody">「ケア記録」タブを開いたとき「1F 100番台」「2F 200番台」ボタンが表示されます。タップするとフロアが切り替わります。</p>
+      <div class="mssec">■ 日付の変更</div>
+      <p class="mbody">画面右上の日付欄をタップすると日付を変更できます。過去の日付に戻すとその日の記録を確認できます。</p>
+      <div class="mpoint">📅　日付を変えても名前は消えません。ケアデータだけが日付ごとに保存されています。</div>
+      <div class="mssec">■ サマリーバーの色の意味</div>
+      <table class="mtbl"><tr><th>色</th><th>意味</th></tr>
+        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力（何も入力されていない）</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">黄色</span></td><td>入力中（一部の項目が入力済み）</td></tr>
+        <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a">緑</span></td><td>完了（全6項目が入力済み）</td></tr>
+      </table>
+      <p class="mbody">部屋番号をタップすると、その部屋のカードまで自動でスクロールします。</p>
+    </div>
+
+    <div class="msec" id="m2">
+      <div class="msec-title"><span class="msec-num">2</span>ケア記録の入力方法</div>
+      <div class="mssec">■ 名前を入力してデータを呼び起こす</div>
+      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。引っ越しや入替があっても、新しい部屋で同じ名前を入力すればデータが引き継がれます。</p>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>お名前欄をタップしてキーボードを表示します</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>利用者の名前を入力します（例：山田　太郎）</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>Enterキーを押すか、入力欄の外をタップします</div></div>
+        <div class="mstep"><div class="mstep-num">4</div><div>過去のデータがあれば自動で読み込まれ、タグが表示されます</div></div>
+      </div>
+      <table class="mtbl" style="margin-top:8px"><tr><th>タグ</th><th>意味</th></tr>
+        <tr><td><span class="mbadge" style="background:#eff6ff;color:#2563eb">今日</span></td><td>今日すでに入力・保存されているデータ</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>今日はまだ入力がなく、前回の記録を引き継いで表示</td></tr>
+        <tr><td><span class="mbadge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0">新規</span></td><td>初めて登録される利用者</td></tr>
+      </table>
+      <div class="mssec" style="margin-top:10px">■ プルダウンで各項目を選択する</div>
+      <table class="mtbl"><tr><th>項目</th><th>選択肢</th></tr>
+        <tr><td>連絡帳・薬変更・目薬・軟膏処置</td><td>未選択 / 有 / 無</td></tr>
+        <tr><td>入浴</td><td>未選択 / 一般 / リフト浴 / 機械浴 / シャワー浴 / 清拭</td></tr>
+        <tr><td>最終排便</td><td>未選択 / 0日 / 不明 / -1〜-10日</td></tr>
+      </table>
+      <div class="mpoint">💡　「有」を選択すると欄が青くなります。すぐに目でわかるようになっています。</div>
+    </div>
+
+    <div class="msec" id="m3">
+      <div class="msec-title"><span class="msec-num">3</span>申し送り内容・最終排便の記入</div>
+      <p class="mbody">各カードの下部に「申し送り内容」セクションがあります。上段に最終排便のプルダウン、下段に自由記入のテキスト欄があります。</p>
+      <table class="mtbl"><tr><th>選択肢</th><th>意味</th></tr>
+        <tr><td>0日</td><td>本日排便あり</td></tr>
+        <tr><td>不明</td><td>排便状況が把握できていない</td></tr>
+        <tr><td>-1〜-10</td><td>最後の排便から○日経過</td></tr>
+      </table>
+      <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると、引継データの場合は自動で1日加算されます（例：-3日→翌日-4日）。今日入力済みのデータには影響しません。</div>
+      <div class="mpoint">📌　入力した申し送り内容はダッシュボードの申し送り一覧にも表示されます。1Fは青、2Fは緑で色分けされています。</div>
+    </div>
+
+    <div class="msec" id="m4">
+      <div class="msec-title"><span class="msec-num">4</span>入れ替え利用者の記録</div>
+      <p class="mbody">同じ部屋に一時的に別の方が入る場合（短期・一時入所など）に使います。メインの利用者とは完全に別のデータとして管理されます。</p>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「入替 表示」ボタン（紫色）をタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>カードの下に紫色の「入替」セクションが表示されます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>入替の方のお名前を入力し、通常と同じ手順でケア項目を入力します</div></div>
+      </div>
+      <div class="mpoint mpoint-purple">💜　翌日の日付切替で入替の方が自動でメイン利用者に移行されます。不要な場合は「入替 非表示」をタップで隠せます。</div>
+    </div>
+
+    <div class="msec" id="m5">
+      <div class="msec-title"><span class="msec-num">5</span>退所ボタンの使い方</div>
+      <p class="mbody">その日に退所した利用者の部屋に使います。翌日に日付を切り替えると、名前とすべてのデータが自動でクリアされ空室状態になります。</p>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「退所」ボタンをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>カードが赤くなり「退所済」に変わります</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>翌日に日付を切り替えると自動でその部屋がクリアされます</div></div>
+      </div>
+      <div class="mpoint mpoint-warn">⚠️　間違えて押した場合は、もう一度「退所済」をタップすれば解除できます。</div>
+    </div>
+
+    <div class="msec" id="m6">
+      <div class="msec-title"><span class="msec-num">6</span>クリア・元に戻す（バックアップ）</div>
+      <p class="mbody">入力を間違えたときに、その部屋の画面表示だけをリセットします。FirebaseにもlocalStorageにも書き込まれません。</p>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」ボタンをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>入力内容が消え、「元に戻す」ボタンが12秒間表示されます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>「元に戻す」を12秒以内にタップすると、クリア前の状態に復元されます</div></div>
+      </div>
+      <div class="mpoint mpoint-warn">⚠️　「元に戻す」が消えてしまった後は復元できません。クリア前に確認しましょう。</div>
+    </div>
+
+    <div class="msec" id="m7">
+      <div class="msec-title"><span class="msec-num">7</span>ダッシュボードの見方</div>
+      <div class="mssec">■ 概要カード</div>
+      <table class="mtbl"><tr><th>カード名</th><th>内容</th></tr>
+        <tr><td>本日の完了部屋</td><td>全6項目が入力済みの部屋の数</td></tr>
+        <tr><td>入力中（途中）</td><td>一部だけ入力されている部屋の数</td></tr>
+        <tr><td>未入力</td><td>何も入力されていない部屋の数</td></tr>
+        <tr><td>連絡帳あり</td><td>「有」を選んだ利用者の数</td></tr>
+        <tr><td>薬変更あり</td><td>「有」を選んだ利用者の数</td></tr>
+        <tr><td>入浴あり（紫）</td><td>入浴種別を選んだ利用者の数（入れ替え含む）</td></tr>
+      </table>
+      <div class="mssec" style="margin-top:10px">■ 最終排便　日数分布の色</div>
+      <table class="mtbl"><tr><th>色</th><th>内容</th></tr>
+        <tr><td><span style="color:#16a34a;font-weight:700">緑</span></td><td>0〜-2日（最近排便あり）</td></tr>
+        <tr><td><span style="color:#b45309;font-weight:700">黄</span></td><td>-3〜-4日（やや注意）</td></tr>
+        <tr><td><span style="color:#dc2626;font-weight:700">赤</span></td><td>-5日以上（要注意）</td></tr>
+      </table>
+      <div class="mssec" style="margin-top:10px">■ 申し送り一覧の操作</div>
+      <p class="mbody">各申し送りをタップすると、その方のケア項目を一覧で確認できるポップアップが開きます。右上の × で閉じます。</p>
+      <table class="mtbl"><tr><th>色</th><th>フロア・種別</th></tr>
+        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#93c5fd;border-radius:2px;vertical-align:middle"></span></td><td>1F（100番台）</td></tr>
+        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#6ee7b7;border-radius:2px;vertical-align:middle"></span></td><td>2F（200番台）</td></tr>
+        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#c4b5fd;border-radius:2px;vertical-align:middle"></span></td><td>入替の方</td></tr>
+      </table>
+    </div>
+
+    <div class="msec" id="m8">
+      <div class="msec-title"><span class="msec-num">8</span>体重・身長の記録</div>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>上部の「体重・身長」タブをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>「表示月」で記録したい月を選択します（例：2026-04）</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>一覧表の各部屋の「体重」「身長」欄に数字を入力します</div></div>
+        <div class="mstep"><div class="mstep-num">4</div><div>入力欄から外れると自動でBMIが計算・表示されます</div></div>
+      </div>
+      <div class="mpoint">📊　一覧右端の「履歴」ボタンをタップすると、過去24ヶ月分の推移グラフと一覧表が表示されます。</div>
+    </div>
+
+    <div class="msec" id="m9">
+      <div class="msec-title"><span class="msec-num">9</span>リンクの登録と使い方</div>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>「リンク」タブをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>プリセットボタン（Notion・Googleドライブなど）をタップするだけで追加できます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>独自のURLは「＋ リンクを追加」から名前・URL・絵文字を入力して登録します</div></div>
+      </div>
+      <div class="mpoint">🔗　登録したリンクはFirebaseに保存されるため、2台のiPadで共有されます。</div>
+    </div>
+
+    <div class="msec" id="m10">
+      <div class="msec-title"><span class="msec-num">10</span>翌日への引き継ぎ・自動処理</div>
+      <p class="mbody">翌日に日付を変更したとき、以下の処理が自動で行われます。手動での操作は不要です。</p>
+      <table class="mtbl"><tr><th>状況</th><th>自動で行われること</th></tr>
+        <tr><td>通常の利用者</td><td>前日のデータが「引継」として読み込まれます。最終排便が1日加算されます</td></tr>
+        <tr><td>今日すでに入力した利用者</td><td>今日のデータがそのまま残ります（最終排便の加算なし）</td></tr>
+        <tr><td>退所ボタンを押した部屋</td><td>名前とデータが自動でクリアされ、空室になります</td></tr>
+        <tr><td>入替の方がいた部屋</td><td>入替の方が自動でメイン利用者に移行。入替欄は空になります</td></tr>
+      </table>
+      <div class="mpoint mpoint-green">✅　すべての処理は日付を変更した瞬間に自動で行われます。</div>
+    </div>
+
+    <div class="msec" id="m11">
+      <div class="msec-title"><span class="msec-num">11</span>2台のiPadで同期する</div>
+      <p class="mbody">両方のiPadが同じURLのアプリを開いていれば、自動でリアルタイム同期されます。特別な操作は不要です。</p>
+      <table class="mtbl"><tr><th>同期される</th><th>同期されない（端末ごとの設定）</th></tr>
+        <tr><td>ケアデータ（各項目・申し送り）</td><td>入替セクションの表示/非表示</td></tr>
+        <tr><td>利用者の名前・部屋の紐付け</td><td>クリア前のバックアップデータ</td></tr>
+        <tr><td>体重・身長データ / 外部リンク</td><td></td></tr>
+      </table>
+      <p class="mbody" style="margin-top:8px">同期が止まったときはWi-Fi接続を確認し、Safariを再読み込みしてください。</p>
+    </div>
+
+    <div class="msec" id="m12">
+      <div class="msec-title"><span class="msec-num">12</span>よくある質問</div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 名前を間違えて入力してしまいました</div>
+        <div class="mfaq-a">名前欄をタップして正しい名前に修正し、Enterを押してください。新しい名前でデータを読み込み直します。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 誤って入力した内容を消したい</div>
+        <div class="mfaq-a">カード右下の「クリア」ボタンを使います。12秒以内なら「元に戻す」で復元できます。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 申し送りがダッシュボードに表示されない</div>
+        <div class="mfaq-a">申し送りのテキスト欄に文字を入力した後、少し待つと自動保存されます。ダッシュボードをタップし直してみてください。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 翌日に切り替えたら名前が消えてしまった</div>
+        <div class="mfaq-a">退所ボタンが押されていた可能性があります。前日の日付に戻してデータを確認し、正しい名前を再入力してください。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 同期がうまくいかない</div>
+        <div class="mfaq-a">両方のiPadが同じWi-Fiに接続されているか確認してください。Safariを再読み込みすると解決することが多いです。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 入替欄を使わない部屋は非表示にできますか？</div>
+        <div class="mfaq-a">カード下部の「入替 表示」ボタンをタップするたびに表示/非表示が切り替わります。</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -665,7 +918,7 @@ function updateChip(r,p){const c=document.getElementById('chip-'+r);if(!c)return
 
 // ── UI 切替 ───────────────────────────────────────
 function switchMain(idx){
-  [0,1,2,3].forEach(i=>{document.getElementById('mainTab'+i).className='main-tab'+(i===idx?' active':'');document.getElementById('mainPage'+i).className='main-page'+(i===idx?' active':'');});
+  [0,1,2,3,4].forEach(i=>{document.getElementById('mainTab'+i).className='main-tab'+(i===idx?' active':'');document.getElementById('mainPage'+i).className='main-page'+(i===idx?' active':'');});
   document.getElementById('floorTabRow').style.display=idx===0?'flex':'none';
   if(idx===1)renderWHTable();if(idx===2)renderDashboard();
 }
