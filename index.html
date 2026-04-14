@@ -205,6 +205,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .mfaq{background:#f8fafc;border-radius:8px;padding:11px 13px;margin-bottom:8px}
 .mfaq-q{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:5px}
 .mfaq-a{font-size:13px;color:#334155;line-height:1.7}
+/* memo undo */
+.memo-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.memo-undo-btn{border:1px solid #e2e8f0;border-radius:7px;padding:3px 10px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.memo-undo-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
+.memo-undo-btn:disabled{opacity:0.35;cursor:default}
 </style>
 </head>
 <body>
@@ -573,6 +578,31 @@ ALL.forEach(r=>{discharged[r]=false;});
 
 let extraLabel='入浴';
 let links=[];
+// 申し送りアンドゥ履歴（部屋ごと最大20件、メイン・入替）
+const memoHistory={};
+const subMemoHistory={};
+ALL.forEach(r=>{memoHistory[r]=[];subMemoHistory[r]=[];});
+function pushMemoHistory(r,val,isSub){
+  const h=isSub?subMemoHistory[r]:memoHistory[r];
+  if(h.length===0||h[h.length-1]!==val){h.push(val);if(h.length>20)h.shift();}
+  updateUndoBtn(r,isSub);
+}
+function undoMemo(r,isSub){
+  const h=isSub?subMemoHistory[r]:memoHistory[r];
+  if(h.length<=1){return;}
+  h.pop();// 現在の状態を捨てる
+  const prev=h[h.length-1]||'';
+  if(isSub){SUB[r].memo=prev;const ta=document.getElementById('sub-memo-'+r);if(ta)ta.value=prev;onSubMemoChange(r,prev);}
+  else{S[r].memo=prev;const ta=document.getElementById('memo-'+r);if(ta)ta.value=prev;onMemoChange(r,prev);}
+  updateUndoBtn(r,isSub);
+}
+function updateUndoBtn(r,isSub){
+  const id=(isSub?'sub-':'')+'memo-undo-'+r;
+  const btn=document.getElementById(id);
+  if(!btn)return;
+  const h=isSub?subMemoHistory[r]:memoHistory[r];
+  btn.disabled=h.length<=1;
+}
 
 // ── ローカルストレージ helpers ─────────────────────
 function ls(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
@@ -635,12 +665,12 @@ async function readByName(name){
       const td=await fbGet(`residents/${k}/dates/${currentDate}`);
       if(td)return{...emptyDaily(),...td,_tag:'today'};
       const lt=await fbGet(`residents/${k}/latest`);
-      if(lt)return{...emptyDaily(),...lt,_tag:'carried'};
+      if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
       return{...emptyDaily(),_tag:'new'};
     }catch(e){setSyncStatus('warn','読込エラー');}
   }
   const td=ls('care_'+n+'_'+currentDate);if(td)return{...emptyDaily(),...td,_tag:'today'};
-  const lt=ls('care_'+n+'_latest');if(lt)return{...emptyDaily(),...lt,_tag:'carried'};
+  const lt=ls('care_'+n+'_latest');if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
   return{...emptyDaily(),_tag:'new'};
 }
 
@@ -661,12 +691,12 @@ async function readSubByName(name){
       const td=await fbGet(`sub_residents/${k}/dates/${currentDate}`);
       if(td)return{...emptyDaily(),...td,_tag:'today'};
       const lt=await fbGet(`sub_residents/${k}/latest`);
-      if(lt)return{...emptyDaily(),...lt,_tag:'carried'};
+      if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
       return{...emptyDaily(),_tag:'new'};
     }catch(e){}
   }
   const td=ls('sub_care_'+n+'_'+currentDate);if(td)return{...emptyDaily(),...td,_tag:'today'};
-  const lt=ls('sub_care_'+n+'_latest');if(lt)return{...emptyDaily(),...lt,_tag:'carried'};
+  const lt=ls('sub_care_'+n+'_latest');if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
   return{...emptyDaily(),_tag:'new'};
 }
 
@@ -775,6 +805,7 @@ async function onSel(r,k,v,el){
 }
 async function onMemoChange(r,v){
   S[r].memo=v;S[r]._tag='today';
+  pushMemoHistory(r,v,false);
   clearTimeout(S[r]._mt);
   S[r]._mt=setTimeout(async()=>{await saveDaily(r);flash(r,'✓ 保存');},700);
   if(document.getElementById('mainPage2').classList.contains('active'))refreshDashboardMemo();
@@ -830,6 +861,7 @@ async function onSubSel(r,k,v,el){
 }
 async function onSubMemoChange(r,v){
   SUB[r].memo=v;SUB[r]._tag='today';
+  pushMemoHistory(r,v,true);
   clearTimeout(SUB[r]._mt);
   SUB[r]._mt=setTimeout(async()=>{await saveSubDaily(r);subFlash(r,'✓ 保存');},700);
   if(document.getElementById('mainPage2').classList.contains('active'))refreshDashboardMemo();
@@ -860,21 +892,89 @@ async function applyExtraLabel(){
 
 // ── 体重・身長テーブル ────────────────────────────
 const whCache={};
+// DB内のwh登録者名を全取得
+async function loadAllWHNames(){
+  const names=new Set();
+  // 現在の部屋の名前
+  ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())names.add(S[r].name.trim());});
+  // Firebase wh/以下のキー（登録済み全員）
+  if(db){
+    try{
+      const snap=await db.ref('wh').get();
+      if(snap.exists()){
+        Object.keys(snap.val()).forEach(k=>{
+          // encKeyの逆変換
+          try{names.add(decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']')));}catch(e){}
+        });
+      }
+    }catch(e){}
+  }
+  // localStorage内のwh登録名
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(key&&key.startsWith('wh_')){
+      const parts=key.split('_');
+      if(parts.length>=3){const name=parts.slice(1,parts.length-2).join('_');if(name)names.add(name);}
+    }
+  }
+  return Array.from(names).filter(Boolean).sort();
+}
 async function renderWHTable(){
   const month=document.getElementById('whMonth').value||currentDate.slice(0,7);
   const tbody=document.getElementById('whTableBody');
   tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">読み込み中...</td></tr>`;
+  // DBに登録のある全利用者名を取得
+  const allNames=await loadAllWHNames();
+  // 現在の部屋マッピング（名前→部屋番号）
+  const nameToRoom={};
+  ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())nameToRoom[S[r].name.trim()]=r;});
   const rows=[];
-  for(const r of ALL){const name=S[r].name||'';const wh=await loadWH(name,month);rows.push({r,name,wh});}
+  for(const name of allNames){
+    const r=nameToRoom[name]||null;
+    const wh=await loadWH(name,month);
+    rows.push({r,name,wh});
+  }
+  // 現在の部屋に名前がなくてもDB登録者はすべて表示済み
+  // 現在入力中（部屋あり・DB未登録）も追加
+  ALL.forEach(r=>{
+    const name=S[r].name||'';
+    if(!name||allNames.includes(name))return;
+    rows.push({r,name,wh:{weight:'',height:''}});
+  });
+  if(rows.length===0){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">データがありません</td></tr>`;
+    return;
+  }
   tbody.innerHTML=rows.map(({r,name,wh})=>{
     const w=parseFloat(wh.weight)||0,h=parseFloat(wh.height)||0;
     const bmiVal=h>0?(w/((h/100)**2)).toFixed(1):'—';
     const bmiCls=bmiVal==='—'?'':parseFloat(bmiVal)<18.5?'bmi-under':parseFloat(bmiVal)>=25?'bmi-over':'bmi-normal';
     const bmiHtml=bmiVal==='—'?'—':`<span class="bmi-badge ${bmiCls}">${bmiVal}</span>`;
-    const dis=!name?'disabled':'';
-    return`<tr><td><span class="wh-room-badge">${r}</span></td><td style="font-size:13px">${name||'<span style="color:#94a3b8;font-size:12px">未入力</span>'}</td><td><input class="wh-input" type="number" step="0.1" placeholder="—" value="${wh.weight||''}" onchange="onWHChange(${r},this.value,'weight','${month}')" ${dis}></td><td><input class="wh-input" type="number" step="0.1" placeholder="—" value="${wh.height||''}" onchange="onWHChange(${r},this.value,'height','${month}')" ${dis}></td><td>${bmiHtml}</td><td><button class="wh-history-btn" onclick="openWHHistory('${name}',${r})" ${dis}>履歴</button></td></tr>`;
+    const roomBadge=r?`<span class="wh-room-badge">${r}</span>`:`<span style="font-size:10px;color:#94a3b8">退所・不在</span>`;
+    const nameKey=name+'__whrow';
+    return`<tr><td>${roomBadge}</td><td style="font-size:13px">${name}</td><td><input class="wh-input" type="number" step="0.1" placeholder="—" value="${wh.weight||''}" onchange="onWHChangeByName('${name}',this.value,'weight','${month}')"></td><td><input class="wh-input" type="number" step="0.1" placeholder="—" value="${wh.height||''}" onchange="onWHChangeByName('${name}',this.value,'height','${month}')"></td><td>${bmiHtml}</td><td><button class="wh-history-btn" onclick="openWHHistoryByName('${name}')">履歴</button></td></tr>`;
   }).join('');
   renderWHCharts(rows);
+}
+// 名前ベースの保存（onWHChangeByName）
+async function onWHChangeByName(name,val,field,month){
+  if(!name)return;
+  const key='name_'+name+'_'+month;
+  if(!whCache[key])whCache[key]=await loadWH(name,month);
+  whCache[key][field]=val;
+  await saveWH(name,month,whCache[key].weight||'',whCache[key].height||'');
+  const el=document.getElementById('whSaved');if(el){el.style.opacity=1;clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity=0;},1500);}
+}
+async function openWHHistoryByName(name){
+  if(!name)return;
+  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">${name}　体重・身長履歴</div><div class="hist-chart-wrap"><canvas id="histChart"></canvas></div><div id="histTableWrap"><div class="no-data">読み込み中...</div></div>`;
+  document.getElementById('modalBg').style.display='flex';
+  const hist=await loadWHHistory(name);
+  const months=Object.keys(hist).sort().map(k=>k.replace('_','-'));
+  const weights=months.map(m=>parseFloat(hist[m.replace('-','_')]?.weight)||null);
+  const heights=months.map(m=>parseFloat(hist[m.replace('-','_')]?.height)||null);
+  document.getElementById('histTableWrap').innerHTML=`<table class="hist-table"><thead><tr><th>年月</th><th>体重(kg)</th><th>身長(cm)</th><th>BMI</th></tr></thead><tbody>${months.length?months.slice().reverse().map(m=>{const d=hist[m.replace('-','_')]||{};const w2=parseFloat(d.weight)||0,h2=parseFloat(d.height)||0;const b=h2>0?(w2/((h2/100)**2)).toFixed(1):'—';return`<tr><td>${m}</td><td>${d.weight||'—'}</td><td>${d.height||'—'}</td><td>${b}</td></tr>`;}).join(''):'<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">データなし</td></tr>'}</tbody></table>`;
+  if(months.length){setTimeout(()=>{new Chart(document.getElementById('histChart'),{type:'line',data:{labels:months,datasets:[{label:'体重(kg)',data:weights,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.3,fill:true,yAxisID:'y'},{label:'身長(cm)',data:heights,borderColor:'#10b981',tension:0.3,fill:false,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans JP',size:11},boxWidth:12}}},scales:{y:{position:'left',grid:{color:'#f1f5f9'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}});},80);}
 }
 async function onWHChange(room,val,field,month){
   const name=(S[room].name||'').trim();if(!name)return;
@@ -973,6 +1073,10 @@ function buildHaibenMemo(r,prefix,data){
     <select id="${prefix}sel-${r}-haiben" class="haiben-sel${data.haiben?' v-hb':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'haiben',this.value,this)">
       <option value="">未選択</option>${hbOpts}
     </select>
+  </div>
+  <div class="memo-toolbar">
+    <span class="memo-section-label" style="margin:0">申し送りテキスト</span>
+    <button id="${prefix}memo-undo-${r}" class="memo-undo-btn" onclick="undoMemo(${r},${prefix==='sub-'?'true':'false'})" disabled title="一個前に戻す">↩ 元に戻す</button>
   </div>
   <textarea id="${prefix}memo-${r}" class="fmemo" placeholder="申し送り内容を入力..." oninput="${fn}(${r},this.value)">${data.memo||''}</textarea>
 </div>`;
