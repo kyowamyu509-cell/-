@@ -1234,6 +1234,64 @@ document.getElementById('whMonth').value=currentDate.slice(0,7);
 document.getElementById('whMonth').onchange=()=>renderWHTable();
 updateDateNote();
 loadAll();
+
+// ── 日付自動更新 ─────────────────────────────────────────────
+// ① 日付チェック共通関数
+function checkDateAutoUpdate(){
+  const today=new Date().toISOString().slice(0,10);
+  if(today!==currentDate){
+    document.getElementById('dateInput').value=today;
+    onDateChange(today);
+    showDateChangedToast(today);
+  }
+}
+
+// ② 画面通知トースト（日付が変わったことを画面上で知らせる）
+function showDateChangedToast(newDate){
+  let toast=document.getElementById('date-toast');
+  if(!toast){
+    toast=document.createElement('div');
+    toast.id='date-toast';
+    toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'+
+      'background:#1e293b;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;'+
+      'font-family:Noto Sans JP,sans-serif;font-weight:500;z-index:999;'+
+      'box-shadow:0 4px 20px rgba(0,0,0,0.3);opacity:0;transition:opacity 0.4s;white-space:nowrap';
+    document.body.appendChild(toast);
+  }
+  const d=new Date(newDate+'T00:00:00');
+  const w=['日','月','火','水','木','金','土'][d.getDay()];
+  toast.textContent='📅 日付が '+newDate+'（'+w+'）に切り替わりました';
+  toast.style.opacity='1';
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>{toast.style.opacity='0';},5000);
+}
+
+// ③ 深夜0時ちょうどに実行するタイマー（精度優先）
+function scheduleMidnightUpdate(){
+  const now=new Date();
+  const msUntilMidnight=
+    (24*60*60*1000)
+    -(now.getHours()*60*60*1000)
+    -(now.getMinutes()*60*1000)
+    -(now.getSeconds()*1000)
+    -now.getMilliseconds()
+    +500; // 0.5秒余裕を持たせる
+  setTimeout(()=>{
+    checkDateAutoUpdate();
+    scheduleMidnightUpdate(); // 翌日の深夜0時用に再スケジュール
+  }, msUntilMidnight);
+}
+
+// ④ 画面が再びアクティブになったとき（スリープ復帰・タブ切替）
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') checkDateAutoUpdate();
+});
+
+// ⑤ 念のため1分ごとにもチェック（確実なフォールバック）
+setInterval(checkDateAutoUpdate, 60000);
+
+// ⑥ 起動時に深夜タイマーをセット
+scheduleMidnightUpdate();
 </script>
 </body>
 </html>
