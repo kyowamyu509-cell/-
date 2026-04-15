@@ -213,6 +213,24 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .memo-undo-btn{border:1px solid #e2e8f0;border-radius:7px;padding:3px 10px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .memo-undo-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
 .memo-undo-btn:disabled{opacity:0.35;cursor:default}
+/* 音声・スキャンボタン */
+.memo-action-btn{border:1px solid #e2e8f0;border-radius:7px;padding:4px 10px;font-size:12px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.memo-action-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
+.memo-action-btn.recording{background:#fee2e2;color:#dc2626;border-color:#fca5a5;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.memo-action-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+/* スキャンモーダル */
+.scan-modal-inner{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto}
+.scan-video-wrap{position:relative;width:100%;border-radius:10px;overflow:hidden;background:#000;margin-bottom:10px}
+.scan-video{width:100%;max-height:300px;object-fit:cover;display:block}
+.scan-overlay{position:absolute;inset:0;border:3px solid #3b82f6;border-radius:10px;pointer-events:none;box-shadow:inset 0 0 0 2000px rgba(0,0,0,0.15)}
+.scan-result{width:100%;min-height:80px;padding:9px 11px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;line-height:1.7}
+.scan-result:focus{border-color:#93c5fd;background:#fff}
+.scan-btn-row{display:flex;gap:8px;margin-top:10px}
+.scan-capture-btn{flex:1;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.scan-capture-btn:active{background:#1d4ed8}
+.scan-add-btn{flex:1;padding:11px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.scan-add-btn:active{background:#dcfce7}
 </style>
 </head>
 <body>
@@ -1022,7 +1040,180 @@ function openAddLink(){document.getElementById('modalContent').innerHTML=`<butto
 async function saveNewLink(){const name=document.getElementById('li-name').value.trim(),url=document.getElementById('li-url').value.trim(),icon=document.getElementById('li-icon').value.trim()||'🔗';if(!name||!url){alert('名前とURLを入力してください');return;}links.push({name,url,icon});await saveLinks();renderLinks();closeModal();}
 async function addPreset(name,icon,url){links.push({name,url,icon});await saveLinks();renderLinks();}
 async function deleteLink(i){if(!confirm('このリンクを削除しますか？'))return;links.splice(i,1);await saveLinks();renderLinks();}
-function closeModal(){document.getElementById('modalBg').style.display='none';}
+
+// ── 音声入力 ──────────────────────────────────────────
+const voiceState={};
+function toggleVoice(r,prefix){
+  const isSub=prefix==='sub-';
+  const btnId=prefix+'memo-mic-'+r;
+  const taId=prefix+'memo-'+r;
+  const key=prefix+r;
+
+  // 既に録音中なら停止
+  if(voiceState[key]&&voiceState[key].recognition){
+    voiceState[key].recognition.stop();
+    return;
+  }
+
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    alert('このブラウザは音声入力に対応していません。\nSafari（iOS 14.5以上）をお使いください。');
+    return;
+  }
+
+  const recognition=new SpeechRecognition();
+  recognition.lang='ja-JP';
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  voiceState[key]={recognition,interim:''};
+
+  const btn=document.getElementById(btnId);
+  const ta=document.getElementById(taId);
+  if(btn)btn.className='memo-action-btn recording';
+  if(btn)btn.textContent='⏹ 停止';
+
+  // 録音開始時点の既存テキストを保持
+  const baseText=(isSub?SUB[r].memo:S[r].memo)||'';
+  voiceState[key].base=baseText;
+
+  recognition.onresult=e=>{
+    let interim='';
+    let final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    voiceState[key].interim=interim;
+    const sep=(baseText&&final)?'\n':'';
+    const newVal=baseText+sep+voiceState[key].finals+(final||'')+(interim?'（'+interim+'）':'');
+    if(!voiceState[key].finals)voiceState[key].finals='';
+    if(final){voiceState[key].finals+=final;}
+    const display=baseText+(baseText&&voiceState[key].finals?'\n':'')+voiceState[key].finals+(interim?interim:'');
+    if(ta)ta.value=display;
+    if(isSub)onSubMemoChange(r,display);
+    else onMemoChange(r,display);
+  };
+
+  recognition.onend=()=>{
+    if(btn){btn.className='memo-action-btn';btn.textContent='🎤 音声入力';}
+    voiceState[key]=null;
+  };
+
+  recognition.onerror=e=>{
+    if(btn){btn.className='memo-action-btn';btn.textContent='🎤 音声入力';}
+    voiceState[key]=null;
+    if(e.error!=='aborted')alert('音声認識エラー: '+e.error);
+  };
+
+  voiceState[key].finals='';
+  recognition.start();
+}
+
+// ── カメラスキャン ────────────────────────────────────
+let scanStream=null;
+let scanTarget={r:null,prefix:''};
+
+function openScan(r,prefix){
+  scanTarget={r,prefix};
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeScan()">×</button>
+    <div class="modal-title">📷 カメラでスキャン</div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:10px">カメラを文字に向けて「撮影」を押してください。認識したテキストが申し送りに追加されます。</p>
+    <div class="scan-video-wrap">
+      <video id="scanVideo" class="scan-video" autoplay playsinline muted></video>
+      <div class="scan-overlay"></div>
+    </div>
+    <div class="scan-btn-row">
+      <button class="scan-capture-btn" onclick="captureAndOCR()">📸 撮影・文字認識</button>
+    </div>
+    <div id="scanResultWrap" style="display:none;margin-top:12px">
+      <div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:5px">認識結果（編集できます）</div>
+      <textarea id="scanResult" class="scan-result" placeholder="認識したテキスト..."></textarea>
+      <div class="scan-btn-row">
+        <button class="scan-add-btn" onclick="appendScanResult()">✅ 申し送りに追加</button>
+        <button class="scan-capture-btn" onclick="captureAndOCR()" style="background:#64748b">🔄 撮り直す</button>
+      </div>
+    </div>`;
+  document.getElementById('modalBg').style.display='flex';
+  startCamera();
+}
+
+async function startCamera(){
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
+    });
+    const v=document.getElementById('scanVideo');
+    if(v){v.srcObject=scanStream;v.play();}
+  }catch(e){
+    const wrap=document.querySelector('.scan-video-wrap');
+    if(wrap)wrap.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">カメラへのアクセスが許可されていません。<br>設定 → Safari → カメラ を「許可」にしてください。</div>';
+  }
+}
+
+async function captureAndOCR(){
+  const v=document.getElementById('scanVideo');
+  if(!v||!v.srcObject){return;}
+
+  // Canvas に描画してBase64取得
+  const canvas=document.createElement('canvas');
+  canvas.width=v.videoWidth||640;
+  canvas.height=v.videoHeight||480;
+  canvas.getContext('2d').drawImage(v,0,0);
+  const imageData=canvas.toDataURL('image/jpeg',0.85);
+
+  const resultWrap=document.getElementById('scanResultWrap');
+  const resultArea=document.getElementById('scanResult');
+  if(resultArea){resultArea.value='認識中...';resultArea.style.color='#94a3b8';}
+  if(resultWrap)resultWrap.style.display='block';
+
+  // Claude API (Anthropic) でOCR
+  try{
+    const base64=imageData.split(',')[1];
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
+            {type:'text',text:'この画像に写っているテキストをそのまま抽出してください。文字だけを返してください。説明や補足は不要です。'}
+          ]
+        }]
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.map(b=>b.text||'').join('').trim()||'テキストを認識できませんでした';
+    if(resultArea){resultArea.value=text;resultArea.style.color='#1e293b';}
+  }catch(e){
+    if(resultArea){resultArea.value='認識に失敗しました。もう一度お試しください。';resultArea.style.color='#dc2626';}
+  }
+}
+
+function appendScanResult(){
+  const text=(document.getElementById('scanResult')?.value||'').trim();
+  if(!text)return;
+  const {r,prefix}=scanTarget;
+  const isSub=prefix==='sub-';
+  const cur=(isSub?SUB[r].memo:S[r].memo)||'';
+  const sep=cur?'\n':'';
+  const newVal=cur+sep+text;
+  const ta=document.getElementById(prefix+'memo-'+r);
+  if(ta)ta.value=newVal;
+  if(isSub)onSubMemoChange(r,newVal);
+  else onMemoChange(r,newVal);
+  closeScan();
+}
+
+function closeScan(){
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  closeModal();
+}
+
+function closeModal(){if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
 function prog(r){return[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben,S[r].extra].filter(v=>v).length;}
@@ -1106,8 +1297,9 @@ function buildHaibenMemo(r,prefix,data){
       <option value="">未選択</option>${hbOpts}
     </select>
   </div>
-  <div class="memo-toolbar">
-    <span class="memo-section-label" style="margin:0">申し送りテキスト</span>
+  <div class="memo-action-row">
+    <button id="${prefix}memo-mic-${r}" class="memo-action-btn" onclick="toggleVoice(${r},'${prefix}')" title="音声入力">🎤 音声入力</button>
+    <button class="memo-action-btn" onclick="openScan(${r},'${prefix}')" title="カメラでスキャン">📷 スキャン</button>
     <button id="${prefix}memo-undo-${r}" class="memo-undo-btn" onclick="undoMemo(${r},${prefix==='sub-'?'true':'false'})" disabled title="一個前に戻す">↩ 元に戻す</button>
   </div>
   <textarea id="${prefix}memo-${r}" class="fmemo" placeholder="申し送り内容を入力..." oninput="${fn}(${r},this.value)">${data.memo||''}</textarea>
