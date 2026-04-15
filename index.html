@@ -70,6 +70,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .haiben-row-label{font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;flex-shrink:0}
 .haiben-sel{flex:1;border:none;background:transparent;font-size:13px;color:#1e293b;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;padding:0}
 .haiben-sel.v-hb{color:#2563eb;font-weight:500}
+.haiben-sel.v-hb-warn{color:#dc2626;font-weight:700}
 .fmemo{width:100%;padding:8px 10px;border-radius:0 0 8px 8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:80px;line-height:1.7}
 .fmemo:focus{border-color:#cbd5e1;background:#fff}
 .card-foot{padding:7px 12px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -798,7 +799,12 @@ async function onNameBlur(r){
 }
 async function onSel(r,k,v,el){
   S[r][k]=v;S[r]._tag='today';
-  if(k==='haiben')el.className='haiben-sel'+(v?' v-hb':'');
+  if(k==='haiben'){
+    const n=parseInt(v);
+    if(v&&v!=='不明'&&!isNaN(n)&&n<=-3) el.className='haiben-sel v-hb-warn';
+    else if(v) el.className='haiben-sel v-hb';
+    else el.className='haiben-sel';
+  }
   else el.className='fsel'+(v&&v!=='無'?' v-ari':'');
   const p=prog(r);
   const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p);
@@ -856,7 +862,12 @@ async function onSubNameBlur(r){
 }
 async function onSubSel(r,k,v,el){
   SUB[r][k]=v;SUB[r]._tag='today';
-  if(k==='haiben')el.className='haiben-sel'+(v?' v-hb':'');
+  if(k==='haiben'){
+    const n=parseInt(v);
+    if(v&&v!=='不明'&&!isNaN(n)&&n<=-3) el.className='haiben-sel v-hb-warn';
+    else if(v) el.className='haiben-sel v-hb';
+    else el.className='haiben-sel';
+  }
   else el.className='fsel'+(v&&v!=='無'?' v-ari':'');
   await saveSubDaily(r);subFlash(r,'✓ 保存');
   if(document.getElementById('mainPage2').classList.contains('active'))renderDashboard();
@@ -1039,7 +1050,13 @@ function subFlash(r,msg){const el=document.getElementById('sub-flash-'+r);if(!el
 function refreshCard(r){
   const d=S[r];const p=prog(r);
   YN.forEach(f=>{const el=document.getElementById('sel-'+r+'-'+f.k);if(!el)return;el.value=d[f.k]||'';el.className='fsel'+(d[f.k]==='有'?' v-ari':'');});
-  const hb=document.getElementById('sel-'+r+'-haiben');if(hb){hb.value=d.haiben||'';hb.className='haiben-sel'+(d.haiben?' v-hb':'');}
+  const hb=document.getElementById('sel-'+r+'-haiben');if(hb){
+    hb.value=d.haiben||'';
+    const _hn=parseInt(d.haiben);
+    if(d.haiben&&d.haiben!=='不明'&&!isNaN(_hn)&&_hn<=-3) hb.className='haiben-sel v-hb-warn';
+    else if(d.haiben) hb.className='haiben-sel v-hb';
+    else hb.className='haiben-sel';
+  }
   const ex=document.getElementById('sel-'+r+'-extra');if(ex){ex.value=d.extra||'';ex.className='fsel'+(d.extra?' v-ari':'');}
   const memo=document.getElementById('memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('name-'+r);if(ni){ni.value=d.name||'';ni.className='name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
@@ -1049,7 +1066,13 @@ function refreshCard(r){
 function refreshSubCard(r){
   const d=SUB[r];
   YN.forEach(f=>{const el=document.getElementById('sub-sel-'+r+'-'+f.k);if(!el)return;el.value=d[f.k]||'';el.className='fsel'+(d[f.k]==='有'?' v-ari':'');});
-  const hb=document.getElementById('sub-sel-'+r+'-haiben');if(hb){hb.value=d.haiben||'';hb.className='haiben-sel'+(d.haiben?' v-hb':'');}
+  const hb=document.getElementById('sub-sel-'+r+'-haiben');if(hb){
+    hb.value=d.haiben||'';
+    const _shn=parseInt(d.haiben);
+    if(d.haiben&&d.haiben!=='不明'&&!isNaN(_shn)&&_shn<=-3) hb.className='haiben-sel v-hb-warn';
+    else if(d.haiben) hb.className='haiben-sel v-hb';
+    else hb.className='haiben-sel';
+  }
   const ex=document.getElementById('sub-sel-'+r+'-extra');if(ex){ex.value=d.extra||'';ex.className='fsel'+(d.extra?' v-ari':'');}
   const memo=document.getElementById('sub-memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('sub-name-'+r);if(ni){ni.value=d.name||'';ni.className='sub-name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
@@ -1065,6 +1088,13 @@ function buildBathSelect(r,prefix,data){
   const bathOpts=BATH_TYPES.map(t=>`<option value="${t}"${exV===t?' selected':''}>${t}</option>`).join('');
   return`<div class="field"><div class="flabel"><span>${extraLabel}</span>${prefix===''?'<button class="flabel-edit" onclick="openExtraLabelEdit()">✎</button>':''}</div><select id="${prefix}sel-${r}-extra" class="fsel${exV?' v-ari':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'extra',this.value,this)"><option value="">未選択</option>${bathOpts}</select></div>`;
 }
+// haiben クラス判定ヘルパー
+function haibenCls(val){
+  const n=parseInt(val);
+  if(val&&val!=='不明'&&!isNaN(n)&&n<=-3)return' v-hb-warn';
+  if(val)return' v-hb';
+  return'';
+}
 function buildHaibenMemo(r,prefix,data){
   const hbOpts=HB.map(h=>`<option value="${h}"${data.haiben===h?' selected':''}>${h}日</option>`).join('');
   const fn=prefix==='sub-'?'onSubMemoChange':'onMemoChange';
@@ -1072,7 +1102,7 @@ function buildHaibenMemo(r,prefix,data){
   <div class="memo-section-label">申し送り内容</div>
   <div class="haiben-row">
     <span class="haiben-row-label">最終排便</span>
-    <select id="${prefix}sel-${r}-haiben" class="haiben-sel${data.haiben?' v-hb':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'haiben',this.value,this)">
+    <select id="${prefix}sel-${r}-haiben" class="haiben-sel${haibenCls(data.haiben)}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'haiben',this.value,this)">
       <option value="">未選択</option>${hbOpts}
     </select>
   </div>
@@ -1154,11 +1184,13 @@ function refreshDashboardMemo(){
   ALL.forEach(r=>{
     const isF1=F1_SET.has(r);
     if(S[r].memo&&S[r].memo.trim()){
-      const hbTxt=S[r].haiben?`<span style="display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#0369a1">排便${S[r].haiben}日</span>`:'';
+      const _hn=parseInt(S[r].haiben);const _hwarn=S[r].haiben&&S[r].haiben!=='不明'&&!isNaN(_hn)&&_hn<=-3;
+      const hbTxt=S[r].haiben?`<span style="display:inline-block;background:${_hwarn?'#fff5f5':'#f0f9ff'};border:1px solid ${_hwarn?'#fca5a5':'#bae6fd'};border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:${_hwarn?'#dc2626':'#0369a1'};font-weight:${_hwarn?'700':'400'}">排便${S[r].haiben}日${_hwarn?'⚠':''}` + '</span>':'';
       items.push(`<div class="memo-item${isF1?'':' f2'}" onclick="openMemoDetail(${r},false)"><div class="memo-room">${r}号室　${isF1?'1F':'2F'} <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${S[r].name||'（名前未入力）'}</div><div class="memo-text">${hbTxt}${S[r].memo.replace(/\n/g,'<br>')}</div></div>`);
     }
     if(subVisible[r]&&SUB[r].memo&&SUB[r].memo.trim()){
-      const hbTxt=SUB[r].haiben?`<span style="display:inline-block;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:#7c3aed">排便${SUB[r].haiben}日</span>`:'';
+      const _shn=parseInt(SUB[r].haiben);const _shwarn=SUB[r].haiben&&SUB[r].haiben!=='不明'&&!isNaN(_shn)&&_shn<=-3;
+      const hbTxt=SUB[r].haiben?`<span style="display:inline-block;background:${_shwarn?'#fff5f5':'#f5f3ff'};border:1px solid ${_shwarn?'#fca5a5':'#c4b5fd'};border-radius:5px;font-size:10px;padding:1px 6px;margin-right:6px;color:${_shwarn?'#dc2626':'#7c3aed'};font-weight:${_shwarn?'700':'400'}">排便${SUB[r].haiben}日${_shwarn?'⚠':''}` + '</span>':'';
       items.push(`<div class="memo-item sub" onclick="openMemoDetail(${r},true)"><div class="memo-room">${r}号室　入替 <span style="font-size:9px;opacity:0.6">▶ 詳細</span></div><div class="memo-name">${SUB[r].name||'（名前未入力）'}</div><div class="memo-text">${hbTxt}${SUB[r].memo.replace(/\n/g,'<br>')}</div></div>`);
     }
   });
