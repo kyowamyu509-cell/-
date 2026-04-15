@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#2563eb">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <style>
@@ -231,6 +232,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .scan-capture-btn:active{background:#1d4ed8}
 .scan-add-btn{flex:1;padding:11px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .scan-add-btn:active{background:#dcfce7}
+.scan-file-btn{width:100%;padding:11px;background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;margin-bottom:8px}
+.scan-progress{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:12px;color:#64748b;text-align:center;margin:8px 0}
+.scan-progress-bar{height:4px;background:#e2e8f0;border-radius:4px;margin-top:8px;overflow:hidden}
+.scan-progress-fill{height:100%;background:#2563eb;border-radius:4px;transition:width 0.3s}
 </style>
 </head>
 <body>
@@ -1118,78 +1123,97 @@ function openScan(r,prefix){
   document.getElementById('modalContent').innerHTML=`
     <button class="modal-close" onclick="closeScan()">×</button>
     <div class="modal-title">📷 カメラでスキャン</div>
-    <p style="font-size:12px;color:#64748b;margin-bottom:10px">カメラを文字に向けて「撮影」を押してください。認識したテキストが申し送りに追加されます。</p>
-    <div class="scan-video-wrap">
-      <video id="scanVideo" class="scan-video" autoplay playsinline muted></video>
-      <div class="scan-overlay"></div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:12px">
+      写真を撮るか、ギャラリーから選択してください。<br>
+      <span style="color:#2563eb;font-weight:500">日本語・英語の文字を自動認識します。</span>
+    </p>
+    <label style="display:block">
+      <div class="scan-file-btn">📸 写真を撮る / ギャラリーから選択</div>
+      <input type="file" accept="image/*" capture="environment" id="scanFileInput" style="display:none" onchange="handleScanFile(this)">
+    </label>
+    <div id="scanPreviewWrap" style="display:none;margin-bottom:10px">
+      <img id="scanPreview" style="width:100%;border-radius:8px;border:1px solid #e2e8f0;max-height:280px;object-fit:contain">
     </div>
-    <div class="scan-btn-row">
-      <button class="scan-capture-btn" onclick="captureAndOCR()">📸 撮影・文字認識</button>
+    <div id="scanProgress" class="scan-progress" style="display:none">
+      <div id="scanProgressText">認識準備中...</div>
+      <div class="scan-progress-bar"><div class="scan-progress-fill" id="scanProgressFill" style="width:0%"></div></div>
     </div>
-    <div id="scanResultWrap" style="display:none;margin-top:12px">
+    <div id="scanResultWrap" style="display:none;margin-top:10px">
       <div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:5px">認識結果（編集できます）</div>
       <textarea id="scanResult" class="scan-result" placeholder="認識したテキスト..."></textarea>
-      <div class="scan-btn-row">
+      <div class="scan-btn-row" style="margin-top:8px">
         <button class="scan-add-btn" onclick="appendScanResult()">✅ 申し送りに追加</button>
-        <button class="scan-capture-btn" onclick="captureAndOCR()" style="background:#64748b">🔄 撮り直す</button>
+        <button class="scan-capture-btn" style="background:#64748b" onclick="document.getElementById('scanFileInput').click()">🔄 撮り直す</button>
       </div>
     </div>`;
   document.getElementById('modalBg').style.display='flex';
-  startCamera();
 }
 
-async function startCamera(){
-  try{
-    scanStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
-    });
-    const v=document.getElementById('scanVideo');
-    if(v){v.srcObject=scanStream;v.play();}
-  }catch(e){
-    const wrap=document.querySelector('.scan-video-wrap');
-    if(wrap)wrap.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">カメラへのアクセスが許可されていません。<br>設定 → Safari → カメラ を「許可」にしてください。</div>';
-  }
-}
+async function handleScanFile(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
 
-async function captureAndOCR(){
-  const v=document.getElementById('scanVideo');
-  if(!v||!v.srcObject){return;}
-
-  // Canvas に描画してBase64取得
-  const canvas=document.createElement('canvas');
-  canvas.width=v.videoWidth||640;
-  canvas.height=v.videoHeight||480;
-  canvas.getContext('2d').drawImage(v,0,0);
-  const imageData=canvas.toDataURL('image/jpeg',0.85);
-
+  // プレビュー表示
+  const previewWrap=document.getElementById('scanPreviewWrap');
+  const preview=document.getElementById('scanPreview');
+  const progress=document.getElementById('scanProgress');
+  const progressText=document.getElementById('scanProgressText');
+  const progressFill=document.getElementById('scanProgressFill');
   const resultWrap=document.getElementById('scanResultWrap');
   const resultArea=document.getElementById('scanResult');
-  if(resultArea){resultArea.value='認識中...';resultArea.style.color='#94a3b8';}
-  if(resultWrap)resultWrap.style.display='block';
 
-  // Claude API (Anthropic) でOCR
+  const url=URL.createObjectURL(file);
+  if(preview){preview.src=url;previewWrap.style.display='block';}
+
+  // 進捗表示開始
+  if(progress)progress.style.display='block';
+  if(resultWrap)resultWrap.style.display='none';
+  if(progressText)progressText.textContent='Tesseractを読み込み中...';
+  if(progressFill)progressFill.style.width='10%';
+
   try{
-    const base64=imageData.split(',')[1];
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{
-          role:'user',
-          content:[
-            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
-            {type:'text',text:'この画像に写っているテキストをそのまま抽出してください。文字だけを返してください。説明や補足は不要です。'}
-          ]
-        }]
-      })
+    // Tesseract.js でOCR（日本語＋英語）
+    const worker=await Tesseract.createWorker(['jpn','eng'],1,{
+      logger:m=>{
+        if(progressText){
+          if(m.status==='loading tesseract core')progressText.textContent='OCRエンジン準備中...';
+          else if(m.status==='initializing tesseract')progressText.textContent='初期化中...';
+          else if(m.status==='loading language traineddata')progressText.textContent='日本語データ読込中...';
+          else if(m.status==='initializing api')progressText.textContent='API初期化中...';
+          else if(m.status==='recognizing text'){
+            progressText.textContent='文字認識中... '+Math.round((m.progress||0)*100)+'%';
+            if(progressFill)progressFill.style.width=(10+Math.round((m.progress||0)*85))+'%';
+          }
+        }
+      }
     });
-    const data=await res.json();
-    const text=data.content?.map(b=>b.text||'').join('').trim()||'テキストを認識できませんでした';
-    if(resultArea){resultArea.value=text;resultArea.style.color='#1e293b';}
+    if(progressText)progressText.textContent='文字認識中...';
+    if(progressFill)progressFill.style.width='50%';
+
+    const {data}=await worker.recognize(url);
+    await worker.terminate();
+    URL.revokeObjectURL(url);
+
+    if(progressFill)progressFill.style.width='100%';
+    setTimeout(()=>{if(progress)progress.style.display='none';},500);
+
+    const text=(data.text||'').trim();
+    if(resultArea){
+      resultArea.value=text||'文字を認識できませんでした。鮮明な写真で試してください。';
+      resultArea.style.color=text?'#1e293b':'#dc2626';
+    }
+    if(resultWrap)resultWrap.style.display='block';
+
   }catch(e){
-    if(resultArea){resultArea.value='認識に失敗しました。もう一度お試しください。';resultArea.style.color='#dc2626';}
+    if(progress)progress.style.display='none';
+    if(resultArea){
+      resultArea.value='認識に失敗しました。
+
+手動でテキストを入力してください。';
+      resultArea.style.color='#dc2626';
+    }
+    if(resultWrap)resultWrap.style.display='block';
+    console.error('OCR error:',e);
   }
 }
 
