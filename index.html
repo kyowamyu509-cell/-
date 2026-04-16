@@ -1245,9 +1245,7 @@ async function handleScanFile(input){
     setTimeout(()=>{if(progress)progress.style.display='none';},400);
 
     if(resultArea){
-      resultArea.value=text||'文字を認識できませんでした。
-
-手書きの場合は Vision API キーの設定が必要です（説明書 9章参照）。';
+      resultArea.value=text||'文字を認識できませんでした。手書きの場合は Vision API キーの設定が必要です。';
       resultArea.style.color=text?'#1e293b':'#dc2626';
     }
     if(resultWrap)resultWrap.style.display='block';
@@ -1255,13 +1253,7 @@ async function handleScanFile(input){
   }catch(e){
     if(progress)progress.style.display='none';
     if(resultArea){
-      resultArea.value='認識に失敗しました。
-
-エラー: '+e.message+'
-
-手動でテキストを入力してください。';
-
-手動でテキストを入力してください。';
+      resultArea.value='認識に失敗しました。エラー: '+e.message+'\n手動でテキストを入力してください。';
       resultArea.style.color='#dc2626';
     }
     if(resultWrap)resultWrap.style.display='block';
