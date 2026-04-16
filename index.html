@@ -894,14 +894,19 @@ async function loadAll(){
 
 // ── 日付変更 ──────────────────────────────────────
 async function onDateChange(d){
+  const prevDate=currentDate;
   currentDate=d;updateDateNote();
   Object.values(listeners).forEach(r=>r&&r.off&&r.off());
+  // 退所処理は「今日以降の日付に進んだとき」だけ実行
+  // 過去の日付に戻して記録を確認する場合は退所させない
+  const today=new Date().toISOString().slice(0,10);
+  const isMovingForward=(d>prevDate);
   for(const r of ALL){
-    // ① 退所チェックがある → 名前含めクリア
-    if(discharged[r]){
+    // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
+    if(discharged[r]&&isMovingForward){
       // 退所者ログに保存（7日間保持）
       const dName=(S[r].name||'').trim();
-      if(dName) await addDischargedLog(dName,r,currentDate);
+      if(dName) await addDischargedLog(dName,r,d);
       S[r]={name:'',...emptyDaily(),_tag:''};
       await saveRoomName(r,'');
       discharged[r]=false;
