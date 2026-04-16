@@ -704,7 +704,12 @@ const BATH_TYPES=['一般','リフト浴','機械浴','シャワー浴','清拭'
 const YN=[{k:'renrakucho',l:'連絡帳'},{k:'yakuhenkou',l:'薬変更'},{k:'megusuri',l:'目薬'},{k:'nankou',l:'軟膏処置'}];
 const PROG_MAX=6;
 
-let currentDate=new Date().toISOString().slice(0,10);
+// 日本時間でのローカル日付取得（toISOStringはUTCなので午前0〜9時に前日になるバグを防ぐ）
+function getLocalDate(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+let currentDate=getLocalDate();
 let S={};
 ALL.forEach(r=>{S[r]={name:'',renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',_tag:''};});
 let SUB={};
@@ -763,7 +768,8 @@ async function loadDischargedLog(){
   const saved=fb||ls('dischargedLog')||[];
   // 7日以上前のエントリを削除
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);
-  const cutoffStr=cutoff.toISOString().slice(0,10);
+  const cy=cutoff.getFullYear(),cm=String(cutoff.getMonth()+1).padStart(2,'0'),cd=String(cutoff.getDate()).padStart(2,'0');
+  const cutoffStr=cy+'-'+cm+'-'+cd;
   dischargedLog=saved.filter(e=>e.date>=cutoffStr);
   await saveDischargedLog();
 }
@@ -826,7 +832,7 @@ async function showDischargedDetail(name,room,dischargeDate){
   const rows=[];
   for(let i=0;i<7;i++){
     const d=new Date(dischargeDate+'T00:00:00');d.setDate(d.getDate()-i);
-    const dateStr=d.toISOString().slice(0,10);
+    const dateStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const k=encKey(name);
     let data=null;
     if(db){try{const s=await db.ref(`residents/${k}/dates/${dateStr}`).get();if(s.exists())data=s.val();}catch(e){}}
@@ -946,7 +952,7 @@ async function readSubByName(name){
 // ── 体重・身長 ────────────────────────────────────
 async function saveWH(name,month,weight,height){if(!name)return;const k=encKey(name.trim()),d={weight,height};lss('wh_'+name+'_'+month,d);await fbSet(`wh/${k}/${month.replace('-','_')}`,d);}
 async function loadWH(name,month){if(!name)return{weight:'',height:''};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}/${month.replace('-','_')}`);if(d)return d;}return ls('wh_'+name+'_'+month)||{weight:'',height:''};}
-async function loadWHHistory(name){if(!name)return{};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}`);if(d)return d;}const h={};for(let i=0;i<24;i++){const d=new Date();d.setMonth(d.getMonth()-i);const m=d.toISOString().slice(0,7);const v=ls('wh_'+name+'_'+m);if(v)h[m.replace('-','_')]=v;}return h;}
+async function loadWHHistory(name){if(!name)return{};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}`);if(d)return d;}const h={};for(let i=0;i<24;i++){const d=new Date();d.setMonth(d.getMonth()-i);const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const v=ls('wh_'+name+'_'+m);if(v)h[m.replace('-','_')]=v;}return h;}
 
 // ── Firebase リスナー ─────────────────────────────
 const listeners={};
@@ -987,41 +993,52 @@ async function onDateChange(d){
   const prevDate=currentDate;
   currentDate=d;updateDateNote();
   Object.values(listeners).forEach(r=>r&&r.off&&r.off());
-  // 退所処理は「今日以降の日付に進んだとき」だけ実行
-  // 過去の日付に戻して記録を確認する場合は退所させない
-  const today=new Date().toISOString().slice(0,10);
   const isMovingForward=(d>prevDate);
+
+  // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
+  for(const r of ALL){
+    const fbName=await fbGet('rooms/'+r+'/name');
+    if(fbName!=null) S[r].name=fbName;
+    const fbSubName=await fbGet('sub_rooms/'+r+'/name');
+    if(fbSubName!=null) SUB[r].name=fbSubName;
+  }
+
   for(const r of ALL){
     // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
     if(discharged[r]&&isMovingForward){
-      // 退所者ログに保存（7日間保持）
       const dName=(S[r].name||'').trim();
       if(dName) await addDischargedLog(dName,r,d);
       S[r]={name:'',...emptyDaily(),_tag:''};
       await saveRoomName(r,'');
       discharged[r]=false;
     }
-    // ② 入替者がいればメインに移行
-    if(SUB[r].name&&SUB[r].name.trim()){
+    // ② 入替者がいればメインに移行（翌日以降に進んだときのみ）
+    if(isMovingForward&&SUB[r].name&&SUB[r].name.trim()){
       const subName=SUB[r].name.trim();
-      const subData=await readByName(subName);
+      // 入替データは sub_residents/ から読む
+      const subData=await readSubByName(subName);
       if(subData._tag==='carried')subData.haiben=decrementHaiben(subData.haiben);
+      subData.extra=''; // 入浴は翌日クリア
       S[r]={...subData,name:subName};
       await saveRoomName(r,subName);
-      await saveDaily(r);
+      await saveDaily(r); // residents/ に書き込む
       SUB[r]={name:'',...emptyDaily(),_tag:''};
       await saveSubRoomName(r,'');
+    } else if(!isMovingForward&&SUB[r].name&&SUB[r].name.trim()){
+      // 過去日付に戻した場合は入替データもそのまま読み込む
+      const sdata=await readSubByName(SUB[r].name);
+      SUB[r]={...SUB[r],...sdata};
     } else {
       // ③ 通常引継（haiben デクリメント）
       const data=await readByName(S[r].name);
       if(data._tag==='carried')data.haiben=decrementHaiben(data.haiben);
       S[r]={...S[r],...data};
-    }
-    // ④ 入替側も引継
-    if(SUB[r].name&&SUB[r].name.trim()){
-      const sdata=await readSubByName(SUB[r].name);
-      if(sdata._tag==='carried')sdata.haiben=decrementHaiben(sdata.haiben);
-      SUB[r]={...SUB[r],...sdata};
+      // ④ 入替側も引継
+      if(SUB[r].name&&SUB[r].name.trim()){
+        const sdata=await readSubByName(SUB[r].name);
+        if(sdata._tag==='carried')sdata.haiben=decrementHaiben(sdata.haiben);
+        SUB[r]={...SUB[r],...sdata};
+      }
     }
   }
   saveDischarged();
@@ -1344,6 +1361,39 @@ let scanStream=null;
 let scanTarget={r:null,prefix:''};
 
 // ── Google Cloud Vision OCR（手書き高精度）────────────────
+// ── Gemini API OCR（手書き高精度・無料）────────────────
+// Firebase Functions プロキシURL（キーを隠す場合はここにURLを設定）
+// デプロイ後に表示される URL を貼り付ける例:
+// const GEMINI_PROXY_URL = 'https://asia-northeast1-mousi-bab8c.cloudfunctions.net/geminiOcr';
+const GEMINI_PROXY_URL = ''; // ← Functionsをデプロイした場合はURLを貼る（空の場合は直接呼び出し）
+
+async function ocrWithGemini(base64){
+  // プロキシURL設定済みならFirebase Functions経由（キーが外部に出ない）
+  if(GEMINI_PROXY_URL){
+    const res=await fetch(GEMINI_PROXY_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({base64})
+    });
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error('Proxy error: '+res.status+(err.error?' / '+err.error:''));}
+    const data=await res.json();
+    return(data.text||'').trim();
+  }
+  // プロキシなしの場合はGemini APIを直接呼び出し（APIキーがJS内に見える）
+  if(!GEMINI_API_KEY||GEMINI_API_KEY==='YOUR_GEMINI_API_KEY') throw new Error('Gemini APIキーが設定されていません');
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const body={
+    contents:[{parts:[
+      {inline_data:{mime_type:'image/jpeg',data:base64}},
+      {text:'この画像に写っている文字をすべてそのまま抽出してください。手書き・印刷どちらも対応します。文字だけを返してください。説明・補足・マークダウンは不要です。'}
+    ]}]
+  };
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error('Gemini error: '+res.status+(err.error?.message?' / '+err.error.message:''));}
+  const data=await res.json();
+  return(data.candidates?.[0]?.content?.parts?.[0]?.text||'').trim();
+}
+
 async function ocrWithVision(base64){
   const body={requests:[{image:{content:base64},features:[{type:'DOCUMENT_TEXT_DETECTION',maxResults:1}],imageContext:{languageHints:['ja','en']}}]};
   const res=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,{
@@ -1382,8 +1432,8 @@ function openScan(r,prefix){
     <div class="modal-title">📷 カメラでスキャン</div>
     <p style="font-size:12px;color:#64748b;margin-bottom:10px">
       写真を撮るか、ギャラリーから選択してください。<br>
-      <span style="color:${useVision?'#16a34a':'#f59e0b'};font-weight:500">
-        ${useVision?'✅ Google Vision API（手書き高精度モード）':'⚡ Tesseract.js（印刷文字向け）— Vision APIキー設定で手書き精度UP'}
+      <span style="font-weight:500;color:${(GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY')?'#16a34a':(VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY')?'#16a34a':'#f59e0b'}">
+        ${(GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY')?'✅ Gemini AI（手書き高精度・無料モード）':(VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY')?'✅ Google Vision API（手書き高精度モード）':'⚡ Tesseract.js（印刷文字向け）— Gemini APIキー設定で手書き精度UP'}
       </span>
     </p>
     <label style="display:block">
@@ -1419,56 +1469,103 @@ async function handleScanFile(input){
   const resultWrap=document.getElementById('scanResultWrap');
   const resultArea=document.getElementById('scanResult');
 
-  // プレビュー
   const url=URL.createObjectURL(file);
   if(preview){preview.src=url;previewWrap.style.display='block';}
   if(progress)progress.style.display='block';
   if(resultWrap)resultWrap.style.display='none';
-  if(progressFill)progressFill.style.width='20%';
+  if(progressFill)progressFill.style.width='10%';
 
+  const useGemini=GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY';
   const useVision=VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY';
+  let text='';
+  let visionFailed=false;
 
-  try{
-    let text='';
-    if(useVision){
-      // ── Google Cloud Vision（手書き対応）────────────────
-      if(progressText)progressText.textContent='Google Vision で認識中（手書き対応）...';
-      if(progressFill)progressFill.style.width='40%';
-      // Fileをbase64に変換
+  // ── ① Gemini API を最優先（無料・手書き対応）────────────
+  if(useGemini){
+    try{
+      if(progressText)progressText.textContent='Gemini AIで認識中（手書き対応）...';
+      if(progressFill)progressFill.style.width='35%';
       const base64=await new Promise((res,rej)=>{
         const reader=new FileReader();
         reader.onload=()=>res(reader.result.split(',')[1]);
         reader.onerror=rej;
         reader.readAsDataURL(file);
       });
-      if(progressFill)progressFill.style.width='60%';
+      if(progressFill)progressFill.style.width='65%';
+      text=await ocrWithGemini(base64);
+      if(progressFill)progressFill.style.width='100%';
+      URL.revokeObjectURL(url);
+      setTimeout(()=>{if(progress)progress.style.display='none';},400);
+      if(resultArea){resultArea.value=text||'文字を認識できませんでした。明るい場所で鮮明に撮影してみてください。';resultArea.style.color=text?'#1e293b':'#dc2626';}
+      if(resultWrap)resultWrap.style.display='block';
+      return;
+    }catch(e){
+      console.warn('Gemini OCR failed:',e.message,', trying next...');
+      if(progressText)progressText.textContent='Geminiエラー → 次の方法で再試行中...';
+    }
+  }
+
+  // ── ② Vision API（Gemini未設定 or 失敗時）──────────────
+  if(useVision){
+    try{
+      if(progressText)progressText.textContent='Google Vision で認識中...';
+      if(progressFill)progressFill.style.width='35%';
+      const base64=await new Promise((res,rej)=>{
+        const reader=new FileReader();
+        reader.onload=()=>res(reader.result.split(',')[1]);
+        reader.onerror=rej;
+        reader.readAsDataURL(file);
+      });
+      if(progressFill)progressFill.style.width='55%';
       text=await ocrWithVision(base64);
       if(progressFill)progressFill.style.width='100%';
-    }else{
-      // ── Tesseract フォールバック ─────────────────────────
-      if(progressText)progressText.textContent='Tesseract で認識中...';
+    }catch(e){
+      // Vision API 失敗（403など）→ Tesseractへ自動切替
+      visionFailed=true;
+      const code=e.message.replace('Vision API error: ','');
+      let hint='';
+      if(code==='403')hint='APIキーの権限エラーです。Google Cloudコンソールで「Cloud Vision API」が有効化されているか、APIキーの制限設定を確認してください。';
+      else if(code==='400')hint='APIキーが正しくありません。index.htmlのVISION_API_KEYを確認してください。';
+      else hint='エラーコード: '+code;
+      if(progressText)progressText.textContent='Vision API エラー → Tesseractで再試行中...';
+      console.warn('Vision API failed ('+code+'), falling back to Tesseract.',hint);
+    }
+  }
+
+  // ── ② Tesseract（Vision未設定 or Vision失敗時）──────────
+  if(!useVision||visionFailed){
+    try{
+      if(progressText)progressText.textContent=visionFailed?'Tesseractで再認識中...':'Tesseractで認識中...';
+      if(progressFill)progressFill.style.width='20%';
       text=await ocrWithTesseract(url,progressText,progressFill);
       if(progressFill)progressFill.style.width='100%';
+    }catch(e2){
+      if(progress)progress.style.display='none';
+      if(resultArea){
+        resultArea.value='認識に失敗しました。もう一度お試しください。';
+        resultArea.style.color='#dc2626';
+      }
+      if(resultWrap)resultWrap.style.display='block';
+      URL.revokeObjectURL(url);
+      return;
     }
-
-    URL.revokeObjectURL(url);
-    setTimeout(()=>{if(progress)progress.style.display='none';},400);
-
-    if(resultArea){
-      resultArea.value=text||'文字を認識できませんでした。手書きの場合は Vision API キーの設定が必要です。';
-      resultArea.style.color=text?'#1e293b':'#dc2626';
-    }
-    if(resultWrap)resultWrap.style.display='block';
-
-  }catch(e){
-    if(progress)progress.style.display='none';
-    if(resultArea){
-      resultArea.value='認識に失敗しました。エラー: '+e.message+'\n手動でテキストを入力してください。';
-      resultArea.style.color='#dc2626';
-    }
-    if(resultWrap)resultWrap.style.display='block';
-    console.error('OCR error:',e);
   }
+
+  URL.revokeObjectURL(url);
+  setTimeout(()=>{if(progress)progress.style.display='none';},400);
+
+  if(resultArea){
+    let displayText=text||'文字を認識できませんでした。明るい場所で鮮明に撮影してみてください。';
+    // Vision失敗時は注記を追加
+    if(visionFailed&&text){
+      displayText+='\n\n※ Google Vision APIが使えなかったため、Tesseractで認識しました。手書き文字の精度はやや低くなります。Vision APIの設定を確認してください（403エラー）。';
+    } else if(visionFailed&&!text){
+      displayText='Vision API: 403エラー（権限なし）\nTesseractでも認識できませんでした。\n\n【対処法】\n・Google CloudコンソールでCloud Vision APIが有効か確認\n・APIキーの制限設定を確認（HTTPリファラー制限でGitHub PagesのURLが許可されているか）\n・課金アカウントが有効か確認';
+    }
+    resultArea.value=displayText;
+    resultArea.style.color=text?'#1e293b':'#dc2626';
+  }
+  if(resultWrap)resultWrap.style.display='block';
 }
 
 function appendScanResult(){
@@ -1734,7 +1831,7 @@ function openMemoDetail(r,isSub){
 }
 
 // ── 起動 ──────────────────────────────────────────
-document.getElementById('dateInput').value=currentDate;
+document.getElementById('dateInput').value=getLocalDate();currentDate=getLocalDate();
 document.getElementById('whMonth').value=currentDate.slice(0,7);
 document.getElementById('whMonth').onchange=()=>renderWHTable();
 updateDateNote();
@@ -1743,12 +1840,20 @@ loadAll();
 // ── 日付自動更新 ─────────────────────────────────────────────
 // ① 日付チェック共通関数
 function checkDateAutoUpdate(){
-  const today=new Date().toISOString().slice(0,10);
-  if(today!==currentDate){
+  const today=getLocalDate();
+  if(today===currentDate) return; // 既に今日なら何もしない
+  // 現在表示中の日付が「昨日より前」の場合は手動で過去を見ている可能性があるため
+  // 自動更新は「昨日→今日（1日差）のみ」に限定する
+  // ただし2日以上ずれている場合（長期スリープなど）は強制更新
+  const diffMs=new Date(today+'T00:00:00')-new Date(currentDate+'T00:00:00');
+  const diffDays=Math.round(diffMs/(1000*60*60*24));
+  if(diffDays===1||diffDays>=2){
+    // 1日進んだ（深夜0時超え）または2日以上ずれた（長期スリープ）→ 自動更新
     document.getElementById('dateInput').value=today;
     onDateChange(today);
     showDateChangedToast(today);
   }
+  // diffDaysが負（今日より未来の日付を手動設定中）→ 触らない
 }
 
 // ② 画面通知トースト（日付が変わったことを画面上で知らせる）
@@ -1774,13 +1879,14 @@ function showDateChangedToast(newDate){
 // ③ 深夜0時ちょうどに実行するタイマー（精度優先）
 function scheduleMidnightUpdate(){
   const now=new Date();
+  // getHours/getMinutes/getSeconds はローカル時刻を返すので日本時間で正確に動く
   const msUntilMidnight=
     (24*60*60*1000)
     -(now.getHours()*60*60*1000)
     -(now.getMinutes()*60*1000)
     -(now.getSeconds()*1000)
     -now.getMilliseconds()
-    +500; // 0.5秒余裕を持たせる
+    +500;
   setTimeout(()=>{
     checkDateAutoUpdate();
     scheduleMidnightUpdate(); // 翌日の深夜0時用に再スケジュール
