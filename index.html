@@ -236,6 +236,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .scan-progress{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:12px;color:#64748b;text-align:center;margin:8px 0}
 .scan-progress-bar{height:4px;background:#e2e8f0;border-radius:4px;margin-top:8px;overflow:hidden}
 .scan-progress-fill{height:100%;background:#2563eb;border-radius:4px;transition:width 0.3s}
+/* 退所者履歴 */
+.discharged-log-section{background:#fff;border-radius:12px;border:1px solid #fca5a5;padding:12px 14px;margin:0 12px 12px;max-width:1400px;width:calc(100% - 24px);margin-left:auto;margin-right:auto}
+.discharged-log-title{font-size:12px;font-weight:700;color:#dc2626;margin-bottom:8px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.discharged-log-list{display:flex;flex-direction:column;gap:6px}
+.discharged-log-item{background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:9px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.discharged-log-info{display:flex;flex-direction:column;gap:2px}
+.discharged-log-name{font-size:13px;font-weight:700;color:#1e293b}
+.discharged-log-meta{font-size:11px;color:#64748b}
+.discharged-log-detail-btn{border:1px solid #fca5a5;border-radius:7px;padding:4px 11px;font-size:11px;color:#dc2626;background:#fff;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;flex-shrink:0}
+.discharged-log-detail-btn:active{background:#fee2e2}
+.discharged-days-left{font-size:10px;background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:20px;font-weight:600;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -654,6 +665,107 @@ function saveSubVisible(){lss('subVisible',subVisible);}
 function loadDischarged(){const s=ls('discharged');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)discharged[r]=true;});}}
 function saveDischarged(){lss('discharged',discharged);}
 
+// ── 退所者履歴ログ（7日間保持）─────────────────────────────
+let dischargedLog=[];// [{name, room, date}]
+
+async function loadDischargedLog(){
+  const fb=await fbGet('settings/dischargedLog');
+  const saved=fb||ls('dischargedLog')||[];
+  // 7日以上前のエントリを削除
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);
+  const cutoffStr=cutoff.toISOString().slice(0,10);
+  dischargedLog=saved.filter(e=>e.date>=cutoffStr);
+  await saveDischargedLog();
+}
+async function saveDischargedLog(){
+  lss('dischargedLog',dischargedLog);
+  await fbSet('settings/dischargedLog',dischargedLog);
+}
+async function addDischargedLog(name,room,date){
+  if(!name||!name.trim())return;
+  // 重複防止
+  dischargedLog=dischargedLog.filter(e=>!(e.name===name&&e.room===room));
+  dischargedLog.push({name:name.trim(),room,date});
+  await saveDischargedLog();
+}
+function daysLeft(dateStr){
+  const diff=Math.ceil((new Date(dateStr+'T00:00:00').getTime()-new Date().getTime())/(1000*60*60*24))+7;
+  return Math.max(0,diff);
+}
+function renderDischargedLog(){
+  const allPages=[document.getElementById('page1'),document.getElementById('page2')];
+  allPages.forEach(page=>{
+    if(!page)return;
+    let section=page.querySelector('.discharged-log-section');
+    // 7日以内の退所者だけ
+    const recent=dischargedLog.filter(e=>daysLeft(e.date)>0);
+    if(!recent.length){if(section)section.remove();return;}
+    if(!section){
+      section=document.createElement('div');
+      section.className='discharged-log-section';
+      page.insertBefore(section,page.querySelector('.grid'));
+    }
+    section.innerHTML=`
+      <div class="discharged-log-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+        🏠 退所者履歴（7日以内）<span style="font-size:10px;font-weight:400;color:#94a3b8">▼ タップで開閉</span>
+      </div>
+      <div class="discharged-log-list" style="display:none">
+        ${recent.map(e=>`
+          <div class="discharged-log-item">
+            <div class="discharged-log-info">
+              <div class="discharged-log-name">${e.name}</div>
+              <div class="discharged-log-meta">${e.room}号室・退所日 ${e.date}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <span class="discharged-days-left">残り${daysLeft(e.date)}日</span>
+              <button class="discharged-log-detail-btn" onclick="showDischargedDetail('${e.name}','${e.room}','${e.date}')">記録を見る</button>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  });
+}
+async function showDischargedDetail(name,room,dischargeDate){
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">🏠 ${name}（${room}号室）退所者記録</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:12px">退所日: ${dischargeDate}　※7日間参照可能</div>
+    <div id="dischDetailBody"><div class="no-data">読み込み中...</div></div>`;
+  document.getElementById('modalBg').style.display='flex';
+
+  // 過去7日分のデータを取得
+  const rows=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(dischargeDate+'T00:00:00');d.setDate(d.getDate()-i);
+    const dateStr=d.toISOString().slice(0,10);
+    const k=encKey(name);
+    let data=null;
+    if(db){try{const s=await db.ref(`residents/${k}/dates/${dateStr}`).get();if(s.exists())data=s.val();}catch(e){}}
+    if(!data)data=ls('care_'+name+'_'+dateStr);
+    if(data)rows.push({date:dateStr,data});
+  }
+
+  const body=document.getElementById('dischDetailBody');
+  if(!body)return;
+  if(!rows.length){body.innerHTML='<div class="no-data">記録が見つかりません</div>';return;}
+
+  body.innerHTML=rows.map(({date,data})=>{
+    const hb=data.haiben||'未選択';
+    const hn=parseInt(hb);
+    const hbColor=(!isNaN(hn)&&hn<=-3)?'#dc2626':'#0369a1';
+    return`<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #fca5a5">
+      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px">${date}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">
+        ${[{k:'renrakucho',l:'連絡帳'},{k:'yakuhenkou',l:'薬変更'},{k:'megusuri',l:'目薬'},{k:'nankou',l:'軟膏処置'}].map(f=>
+          data[f.k]?`<span style="font-size:11px;background:${data[f.k]==='有'?'#eff6ff':'#f1f5f9'};color:${data[f.k]==='有'?'#2563eb':'#64748b'};padding:2px 8px;border-radius:20px">${f.l}: ${data[f.k]}</span>`:''
+        ).join('')}
+        ${data.extra?`<span style="font-size:11px;background:#faf5ff;color:#7c3aed;padding:2px 8px;border-radius:20px">入浴: ${data.extra}</span>`:''}
+        <span style="font-size:11px;background:#f0f9ff;color:${hbColor};padding:2px 8px;border-radius:20px;font-weight:${(!isNaN(hn)&&hn<=-3)?'700':'400'}">排便: ${hb}${(!isNaN(hn)&&hn<=-3)?'⚠':''}</span>
+      </div>
+      ${data.memo?`<div style="font-size:12px;color:#1e293b;white-space:pre-wrap;line-height:1.7;background:#fff;border-radius:6px;padding:7px 9px;border:1px solid #e2e8f0">${data.memo}</div>`:'<div style="font-size:11px;color:#94a3b8">申し送りなし</div>'}
+    </div>`;
+  }).join('');
+}
+
 // 最終排便を1日マイナス
 function decrementHaiben(val){
   if(!val||val==='不明')return val;
@@ -766,7 +878,7 @@ function listenResident(room,name){
 
 // ── 初期ロード ────────────────────────────────────
 async function loadAll(){
-  loadSubVisible();loadDischarged();
+  loadSubVisible();loadDischarged();await loadDischargedLog();
   await loadExtraLabel();await loadLinks();
   for(const r of ALL){
     let name=ls('rname_'+r)||'';
@@ -787,6 +899,9 @@ async function onDateChange(d){
   for(const r of ALL){
     // ① 退所チェックがある → 名前含めクリア
     if(discharged[r]){
+      // 退所者ログに保存（7日間保持）
+      const dName=(S[r].name||'').trim();
+      if(dName) await addDischargedLog(dName,r,currentDate);
       S[r]={name:'',...emptyDaily(),_tag:''};
       await saveRoomName(r,'');
       discharged[r]=false;
@@ -1435,6 +1550,7 @@ function renderSum(fl,rooms){
 function renderAll(){
   renderSum(1,F1);document.getElementById('grid1').innerHTML=F1.map(buildCard).join('');
   renderSum(2,F2);document.getElementById('grid2').innerHTML=F2.map(buildCard).join('');
+  renderDischargedLog();
 }
 
 // ── 申し送り一覧（リアルタイム更新） ──────────────
