@@ -1379,12 +1379,12 @@ function openScan(r,prefix){
         ${(GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY')?'✅ Gemini AI（手書き高精度・無料モード）':(VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY')?'✅ Google Vision API（手書き高精度モード）':'⚡ Tesseract.js（印刷文字向け）— Gemini APIキー設定で手書き精度UP'}
       </span>
     </p>
-    <div style="position:relative;overflow:hidden;margin-bottom:0">
-      <button class="scan-file-btn" onclick="document.getElementById('scanFileInput').click()">📸 写真を撮る / ギャラリーから選択</button>
+    <label for="scanFileInput" style="display:block;position:relative;overflow:hidden;cursor:pointer">
+      <div class="scan-file-btn" style="pointer-events:none">📸 写真を撮る / ギャラリーから選択</div>
       <input type="file" accept="image/*" id="scanFileInput"
-        style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0"
+        style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px"
         onchange="handleScanFile(this)">
-    </div>
+    </label>
     <div id="scanPreviewWrap" style="display:none;margin-bottom:10px">
       <img id="scanPreview" style="width:100%;border-radius:8px;border:1px solid #e2e8f0;max-height:260px;object-fit:contain">
     </div>
@@ -1397,7 +1397,12 @@ function openScan(r,prefix){
       <textarea id="scanResult" class="scan-result" placeholder="認識したテキスト..."></textarea>
       <div class="scan-btn-row" style="margin-top:8px">
         <button class="scan-add-btn" onclick="appendScanResult()">✅ 申し送りに追加</button>
-        <button class="scan-capture-btn" style="background:#64748b" onclick="document.getElementById('scanFileInput').click()">🔄 撮り直す</button>
+        <label for="scanFileInput2" style="flex:1;display:block;position:relative;overflow:hidden;cursor:pointer">
+          <div class="scan-capture-btn" style="background:#64748b;pointer-events:none">🔄 撮り直す</div>
+          <input type="file" accept="image/*" id="scanFileInput2"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px"
+            onchange="handleScanFile(this)">
+        </label>
       </div>
     </div>`;
   document.getElementById('modalBg').style.display='flex';
