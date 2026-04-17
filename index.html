@@ -1031,13 +1031,29 @@ async function onDateChange(d){
     } else {
       // ③ 通常引継（haiben デクリメント）
       const data=await readByName(S[r].name);
-      if(data._tag==='carried')data.haiben=decrementHaiben(data.haiben);
-      S[r]={...S[r],...data};
-      // ④ 入替側も引継
+      if(data._tag==='carried'){
+        data.haiben=decrementHaiben(data.haiben);
+        // ★ 引継データをデクリメントしたら即座に今日の日付で保存する
+        // これにより次回の日付切替で二重デクリメントが起きなくなる
+        if(S[r].name&&S[r].name.trim()){
+          S[r]={...S[r],...data,_tag:'today'};
+          await saveDaily(r);
+        } else {
+          S[r]={...S[r],...data};
+        }
+      } else {
+        S[r]={...S[r],...data};
+      }
+      // ④ 入替側も引継（同様に即座に保存）
       if(SUB[r].name&&SUB[r].name.trim()){
         const sdata=await readSubByName(SUB[r].name);
-        if(sdata._tag==='carried')sdata.haiben=decrementHaiben(sdata.haiben);
-        SUB[r]={...SUB[r],...sdata};
+        if(sdata._tag==='carried'){
+          sdata.haiben=decrementHaiben(sdata.haiben);
+          SUB[r]={...SUB[r],...sdata,_tag:'today'};
+          await saveSubDaily(r);
+        } else {
+          SUB[r]={...SUB[r],...sdata};
+        }
       }
     }
   }
