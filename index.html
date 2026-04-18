@@ -11,7 +11,6 @@
 <meta name="theme-color" content="#2563eb">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <style>
@@ -209,32 +208,41 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .mfaq{background:#f8fafc;border-radius:8px;padding:11px 13px;margin-bottom:8px}
 .mfaq-q{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:5px}
 .mfaq-a{font-size:13px;color:#334155;line-height:1.7}
+/* admin DB panel */
+.db-panel{padding:14px;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-bottom:40px}
+.db-section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px}
+.db-section-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.db-path-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.db-path-input{flex:1;min-width:160px;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif}
+.db-path-input:focus{border-color:#93c5fd;background:#fff}
+.db-btn{border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
+.db-btn-blue{background:#eff6ff;color:#2563eb;border:1px solid #93c5fd}
+.db-btn-green{background:#f0fdf4;color:#16a34a;border:1px solid #86efac}
+.db-btn-red{background:#fff5f5;color:#dc2626;border:1px solid #fca5a5}
+.db-btn-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
+.db-result{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;line-height:1.7}
+.db-result .key{color:#93c5fd}
+.db-result .val-str{color:#86efac}
+.db-result .val-num{color:#fcd34d}
+.db-result .val-null{color:#94a3b8}
+.db-edit-area{width:100%;min-height:80px;padding:9px 11px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;font-family:monospace;color:#1e293b;background:#f8fafc;outline:none;resize:vertical;line-height:1.7}
+.db-edit-area:focus{border-color:#93c5fd;background:#fff}
+.db-pin-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:30px 20px}
+.db-pin-title{font-size:15px;font-weight:700;color:#1e293b}
+.db-pin-dots{display:flex;gap:10px}
+.db-pin-dot{width:14px;height:14px;border-radius:50%;background:#e2e8f0;transition:background 0.2s}
+.db-pin-dot.filled{background:#2563eb}
+.db-pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:220px}
+.db-pin-btn{padding:16px;border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:18px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center}
+.db-pin-btn:active{background:#eff6ff;border-color:#93c5fd}
+.db-badge-tree{font-size:10px;background:#eff6ff;color:#2563eb;padding:2px 7px;border-radius:20px;font-weight:500}
+.db-log{font-size:11px;color:#64748b;background:#f8fafc;border-radius:6px;padding:6px 10px;max-height:80px;overflow-y:auto;line-height:1.6}
 /* memo undo */
 .memo-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
 .memo-undo-btn{border:1px solid #e2e8f0;border-radius:7px;padding:3px 10px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .memo-undo-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
 .memo-undo-btn:disabled{opacity:0.35;cursor:default}
-/* 音声・スキャンボタン */
-.memo-action-btn{border:1px solid #e2e8f0;border-radius:7px;padding:4px 10px;font-size:12px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap}
-.memo-action-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
-50%{opacity:0.5}}
-.memo-action-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px}
-/* スキャンモーダル */
-.scan-modal-inner{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto}
-.scan-video-wrap{position:relative;width:100%;border-radius:10px;overflow:hidden;background:#000;margin-bottom:10px}
-.scan-video{width:100%;max-height:300px;object-fit:cover;display:block}
-.scan-overlay{position:absolute;inset:0;border:3px solid #3b82f6;border-radius:10px;pointer-events:none;box-shadow:inset 0 0 0 2000px rgba(0,0,0,0.15)}
-.scan-result{width:100%;min-height:80px;padding:9px 11px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;line-height:1.7}
-.scan-result:focus{border-color:#93c5fd;background:#fff}
-.scan-btn-row{display:flex;gap:8px;margin-top:10px}
-.scan-capture-btn{flex:1;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
-.scan-capture-btn:active{background:#1d4ed8}
-.scan-add-btn{flex:1;padding:11px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
-.scan-add-btn:active{background:#dcfce7}
-.scan-file-btn{width:100%;padding:11px;background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;margin-bottom:8px}
-.scan-progress{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:12px;color:#64748b;text-align:center;margin:8px 0}
-.scan-progress-bar{height:4px;background:#e2e8f0;border-radius:4px;margin-top:8px;overflow:hidden}
-.scan-progress-fill{height:100%;background:#2563eb;border-radius:4px;transition:width 0.3s}
+
 /* 退所者履歴 */
 .discharged-log-section{background:#fff;border-radius:12px;border:1px solid #fca5a5;padding:12px 14px;margin:0 12px 12px;max-width:1400px;width:calc(100% - 24px);margin-left:auto;margin-right:auto}
 .discharged-log-title{font-size:12px;font-weight:700;color:#dc2626;margin-bottom:8px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
@@ -252,7 +260,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 
 <div class="header">
   <div class="header-top">
-    <div><div class="app-title">日常ケア記録</div><div class="app-sub" id="dateNote"></div></div>
+    <div><div class="app-title" id="appTitle" onclick="onTitleTap()" style="cursor:default;user-select:none">日常ケア記録</div><div class="app-sub" id="dateNote"></div></div>
     <input type="date" class="date-input" id="dateInput" onchange="onDateChange(this.value)">
   </div>
   <div class="main-tabs">
@@ -261,6 +269,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     <button class="main-tab" id="mainTab2" onclick="switchMain(2)">ダッシュボード</button>
     <button class="main-tab" id="mainTab3" onclick="switchMain(3)">リンク</button>
     <button class="main-tab" id="mainTab4" onclick="switchMain(4)">📖 説明書</button>
+    <button class="main-tab" id="mainTab5" onclick="switchMain(5)" style="display:none">🔧</button>
   </div>
   <div id="floorTabRow">
     <div class="floor-tabs">
@@ -351,6 +360,107 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   </div>
 </div>
 
+<!-- DB管理パネル（隠し） -->
+<div class="main-page" id="mainPage5">
+  <div class="db-panel" id="dbPanelInner">
+    <!-- PIN認証画面 -->
+    <div id="dbPinScreen" class="db-section">
+      <div class="db-pin-wrap">
+        <div class="db-pin-title">🔐 管理パネル</div>
+        <div class="db-pin-dots" id="dbPinDots">
+          <div class="db-pin-dot" id="dot0"></div>
+          <div class="db-pin-dot" id="dot1"></div>
+          <div class="db-pin-dot" id="dot2"></div>
+          <div class="db-pin-dot" id="dot3"></div>
+        </div>
+        <div class="db-pin-grid" id="dbPinGrid">
+          <button class="db-pin-btn" onclick="dbPinInput('1')">1</button>
+          <button class="db-pin-btn" onclick="dbPinInput('2')">2</button>
+          <button class="db-pin-btn" onclick="dbPinInput('3')">3</button>
+          <button class="db-pin-btn" onclick="dbPinInput('4')">4</button>
+          <button class="db-pin-btn" onclick="dbPinInput('5')">5</button>
+          <button class="db-pin-btn" onclick="dbPinInput('6')">6</button>
+          <button class="db-pin-btn" onclick="dbPinInput('7')">7</button>
+          <button class="db-pin-btn" onclick="dbPinInput('8')">8</button>
+          <button class="db-pin-btn" onclick="dbPinInput('9')">9</button>
+          <button class="db-pin-btn" onclick="dbPinClear()" style="font-size:13px;color:#94a3b8">C</button>
+          <button class="db-pin-btn" onclick="dbPinInput('0')">0</button>
+          <button class="db-pin-btn" onclick="dbPinBack()" style="font-size:13px;color:#94a3b8">⌫</button>
+        </div>
+        <div style="font-size:11px;color:#94a3b8">※ PINは設定で変更できます</div>
+      </div>
+    </div>
+    <!-- 管理パネル本体（PIN認証後に表示） -->
+    <div id="dbMainScreen" style="display:none;flex-direction:column;gap:12px">
+      <!-- ヘッダー -->
+      <div class="db-section" style="padding:12px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="font-size:14px;font-weight:700;color:#1e293b">🔧 DB管理パネル</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="db-btn db-btn-gray" onclick="dbLock()">🔒 ロック</button>
+            <button class="db-btn db-btn-gray" onclick="openChangePIN()">⚙️ PIN変更</button>
+          </div>
+        </div>
+        <div class="db-log" id="dbLog" style="margin-top:8px">操作ログ</div>
+      </div>
+
+      <!-- パス指定で読み取り -->
+      <div class="db-section">
+        <div class="db-section-title">📖 データ読み取り <span class="db-badge-tree">READ</span></div>
+        <div class="db-path-row">
+          <input class="db-path-input" id="dbReadPath" placeholder="パス例: residents / rooms / settings" value="">
+          <button class="db-btn db-btn-blue" onclick="dbRead()">読み取る</button>
+          <button class="db-btn db-btn-gray" onclick="document.getElementById('dbReadResult').textContent=''">クリア</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="db-btn db-btn-gray" style="font-size:11px" onclick="dbSetPath('rooms')">rooms</button>
+          <button class="db-btn db-btn-gray" style="font-size:11px" onclick="dbSetPath('residents')">residents</button>
+          <button class="db-btn db-btn-gray" style="font-size:11px" onclick="dbSetPath('sub_residents')">sub_residents</button>
+          <button class="db-btn db-btn-gray" style="font-size:11px" onclick="dbSetPath('wh')">wh</button>
+          <button class="db-btn db-btn-gray" style="font-size:11px" onclick="dbSetPath('settings')">settings</button>
+          <button class="db-btn db-btn-gray" style="font-size:11px" onclick="dbSetPath('')">ルート全体</button>
+        </div>
+        <div class="db-result" id="dbReadResult">ここに結果が表示されます</div>
+      </div>
+
+      <!-- パス指定で書き込み -->
+      <div class="db-section">
+        <div class="db-section-title">✏️ データ書き込み <span class="db-badge-tree" style="background:#fef9c3;color:#a16207">WRITE</span></div>
+        <div class="db-path-row">
+          <input class="db-path-input" id="dbWritePath" placeholder="書き込みパス例: settings/extraLabel">
+        </div>
+        <textarea class="db-edit-area" id="dbWriteValue" placeholder='値をJSON形式で入力&#10;例: "入浴"  または  {"key":"value"}  または  123'></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="db-btn db-btn-green" onclick="dbWrite()">✅ 書き込む（SET）</button>
+          <button class="db-btn db-btn-gray" onclick="dbWriteFromRead()">📋 読取結果を編集欄に展開</button>
+        </div>
+      </div>
+
+      <!-- パス指定で削除 -->
+      <div class="db-section">
+        <div class="db-section-title">🗑️ データ削除 <span class="db-badge-tree" style="background:#fff5f5;color:#dc2626">DELETE</span></div>
+        <div class="db-path-row">
+          <input class="db-path-input" id="dbDeletePath" placeholder="削除パス例: rooms/101/name">
+          <button class="db-btn db-btn-red" onclick="dbDelete()">削除実行</button>
+        </div>
+        <div style="font-size:11px;color:#f59e0b;margin-top:4px">⚠️ 削除したデータは復元できません</div>
+      </div>
+
+      <!-- よく使う操作 -->
+      <div class="db-section">
+        <div class="db-section-title">⚡ よく使う操作</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="db-btn db-btn-blue" onclick="dbQuick('allRooms')">全部屋の名前一覧</button>
+          <button class="db-btn db-btn-blue" onclick="dbQuick('today')">本日の全データ</button>
+          <button class="db-btn db-btn-blue" onclick="dbQuick('dischargedLog')">退所者履歴</button>
+          <button class="db-btn db-btn-blue" onclick="dbQuick('settings')">設定情報</button>
+          <button class="db-btn db-btn-red" onclick="dbQuick('clearRoom')">特定部屋をクリア</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 説明書 -->
 <div class="main-page" id="mainPage4">
   <div class="manual-page">
@@ -365,17 +475,16 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <a href="#m1">1. アプリの基本画面と構成</a>
         <a href="#m2">2. ケア記録の入力方法</a>
         <a href="#m3">3. 申し送り内容・最終排便の記入</a>
-        <a href="#m4">4. カメラスキャン</a>
-        <a href="#m5">5. 入れ替え利用者の記録</a>
-        <a href="#m6">6. 退所ボタンの使い方・退所者履歴</a>
-        <a href="#m7">7. クリア・元に戻す（バックアップ）</a>
-        <a href="#m8">8. ダッシュボードの見方</a>
-        <a href="#m9">9. 体重・身長の記録</a>
-        <a href="#m10">10. リンクの登録と使い方</a>
-        <a href="#m11">11. 翌日への引き継ぎ・自動処理</a>
-        <a href="#m12">12. 日付自動更新・アプリ化（PWA）</a>
-        <a href="#m13">13. 2台のiPadで同期する</a>
-        <a href="#m14">14. よくある質問</a>
+        <a href="#m4">4. 入れ替え利用者の記録</a>
+        <a href="#m5">5. 退所ボタンの使い方・退所者履歴</a>
+        <a href="#m6">6. クリア・元に戻す（バックアップ）</a>
+        <a href="#m7">7. ダッシュボードの見方</a>
+        <a href="#m8">8. 体重・身長の記録</a>
+        <a href="#m9">9. リンクの登録と使い方</a>
+        <a href="#m10">10. 翌日への引き継ぎ・自動処理</a>
+        <a href="#m11">11. 日付自動更新・アプリ化（PWA）</a>
+        <a href="#m12">12. 2台のiPadで同期する</a>
+        <a href="#m13">13. よくある質問</a>
       </div>
     </div>
 
@@ -442,33 +551,22 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると、引継データの場合は自動で1日加算されます（例：-3日→翌日-4日）。今日入力済みのデータには影響しません。</div>
       <div class="mssec">■ 申し送りテキストの操作ボタン</div>
       <table class="mtbl"><tr><th>ボタン</th><th>機能</th></tr>
-        <tr><td>📷 スキャン</td><td>カメラで撮影した文字を認識して追記（次章参照）</td></tr>
         <tr><td>↩ 元に戻す</td><td>直前の入力状態に戻す（最大20段階）</td></tr>
       </table>
       <div class="mpoint">📌　入力した申し送りはダッシュボードの申し送り一覧にも表示されます。1Fは青、2Fは緑で色分けされています。</div>
     </div>
-
-    <!-- 4 -->
-    <div class="msec" id="m4">
-      <div class="msec-title"><span class="msec-num">4</span>カメラスキャン</div>
-      <div class="mssec">■ カメラスキャン（📷）</div>
-      <p class="mbody">紙の申し送りやメモを撮影すると、文字を自動認識して申し送りに追記できます。<strong>既存のテキストは消えず末尾に追加</strong>されます。</p>
-      <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>「📷 スキャン」ボタンをタップ</div></div>
+    </div>
         <div class="mstep"><div class="mstep-num">2</div><div>「📸 写真を撮る / ギャラリーから選択」をタップ</div></div>
         <div class="mstep"><div class="mstep-num">3</div><div>文字が写るように撮影（明るい場所・文字を大きく写すと精度UP）</div></div>
         <div class="mstep"><div class="mstep-num">4</div><div>認識結果を確認・編集して「✅ 申し送りに追加」をタップ</div></div>
       </div>
       <table class="mtbl"><tr><th>認識エンジン</th><th>特徴</th></tr>
-        <tr><td>Google Vision API（設定済みの場合）</td><td>手書き文字・くずし字も高精度で認識。グリーン表示</td></tr>
-        <tr><td>Tesseract.js（未設定時の自動切替）</td><td>印刷文字向け。手書きは精度が下がる場合あり</td></tr>
       </table>
-      <div class="mpoint mpoint-purple">💜　Google Vision APIの設定方法はシステム担当者にご確認ください。Firebase（mousi-bab8c）と同じGoogle Cloudプロジェクトで有効化できます。</div>
-    </div>
+          </div>
 
     <!-- 5 -->
-    <div class="msec" id="m5">
-      <div class="msec-title"><span class="msec-num">5</span>入れ替え利用者の記録</div>
+    <div class="msec" id="m4">
+      <div class="msec-title"><span class="msec-num">4</span>入れ替え利用者の記録</div>
       <p class="mbody">同じ部屋に一時的に別の方が入る場合（短期・一時入所など）に使います。メインの利用者とは完全に別のデータとして管理されます。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「入替 表示」ボタン（紫色）をタップ</div></div>
@@ -479,8 +577,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 6 -->
-    <div class="msec" id="m6">
-      <div class="msec-title"><span class="msec-num">6</span>退所ボタンの使い方・退所者履歴</div>
+    <div class="msec" id="m5">
+      <div class="msec-title"><span class="msec-num">5</span>退所ボタンの使い方・退所者履歴</div>
       <div class="mssec">■ 退所ボタンの操作</div>
       <p class="mbody">その日に退所した利用者の部屋に使います。翌日以降の日付に切り替えると、名前とすべてのデータが自動でクリアされ空室状態になります。</p>
       <div class="msteps">
@@ -499,8 +597,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 7 -->
-    <div class="msec" id="m7">
-      <div class="msec-title"><span class="msec-num">7</span>クリア・元に戻す（バックアップ）</div>
+    <div class="msec" id="m6">
+      <div class="msec-title"><span class="msec-num">6</span>クリア・元に戻す（バックアップ）</div>
       <p class="mbody">入力を間違えたときに、その部屋の画面表示だけをリセットします。FirebaseにもlocalStorageにも書き込まれません。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」ボタンをタップします</div></div>
@@ -511,8 +609,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 8 -->
-    <div class="msec" id="m8">
-      <div class="msec-title"><span class="msec-num">8</span>ダッシュボードの見方</div>
+    <div class="msec" id="m7">
+      <div class="msec-title"><span class="msec-num">7</span>ダッシュボードの見方</div>
       <div class="mssec">■ 概要カード</div>
       <table class="mtbl"><tr><th>カード名</th><th>内容</th></tr>
         <tr><td>本日の完了部屋</td><td>全6項目が入力済みの部屋の数</td></tr>
@@ -540,8 +638,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 9 -->
-    <div class="msec" id="m9">
-      <div class="msec-title"><span class="msec-num">9</span>体重・身長の記録</div>
+    <div class="msec" id="m8">
+      <div class="msec-title"><span class="msec-num">8</span>体重・身長の記録</div>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>上部の「体重・身長」タブをタップします</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>「表示月」で記録したい月を選択します</div></div>
@@ -557,8 +655,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 10 -->
-    <div class="msec" id="m10">
-      <div class="msec-title"><span class="msec-num">10</span>リンクの登録と使い方</div>
+    <div class="msec" id="m9">
+      <div class="msec-title"><span class="msec-num">9</span>リンクの登録と使い方</div>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>「リンク」タブをタップします</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>プリセットボタン（Notion・Googleドライブなど）をタップするだけで追加できます</div></div>
@@ -568,8 +666,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 11 -->
-    <div class="msec" id="m11">
-      <div class="msec-title"><span class="msec-num">11</span>翌日への引き継ぎ・自動処理</div>
+    <div class="msec" id="m10">
+      <div class="msec-title"><span class="msec-num">10</span>翌日への引き継ぎ・自動処理</div>
       <p class="mbody">翌日以降の日付に切り替えたとき、以下の処理が<strong>自動で</strong>行われます。手動操作は不要です。</p>
       <table class="mtbl"><tr><th>状況</th><th>自動で行われること</th></tr>
         <tr><td>通常の利用者（引継）</td><td>最終排便が1日加算（-3→-4など）。入浴はクリア</td></tr>
@@ -581,8 +679,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 12 -->
-    <div class="msec" id="m12">
-      <div class="msec-title"><span class="msec-num">12</span>日付自動更新・アプリ化（PWA）</div>
+    <div class="msec" id="m11">
+      <div class="msec-title"><span class="msec-num">11</span>日付自動更新・アプリ化（PWA）</div>
       <div class="mssec">■ 日付の自動更新</div>
       <p class="mbody">以下のタイミングで自動的に今日の日付に切り替わります。手動で変更する必要はありません。</p>
       <table class="mtbl"><tr><th>タイミング</th><th>動作</th></tr>
@@ -602,8 +700,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 13 -->
-    <div class="msec" id="m13">
-      <div class="msec-title"><span class="msec-num">13</span>2台のiPadで同期する</div>
+    <div class="msec" id="m12">
+      <div class="msec-title"><span class="msec-num">12</span>2台のiPadで同期する</div>
       <p class="mbody">両方のiPadが同じURLを開いていれば、入力内容がリアルタイムで自動同期されます。特別な操作は不要です。</p>
       <table class="mtbl"><tr><th>同期される</th><th>同期されない（端末ごとの設定）</th></tr>
         <tr><td>ケアデータ（各項目・申し送り）</td><td>入替セクションの表示/非表示</td></tr>
@@ -615,8 +713,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 14 -->
-    <div class="msec" id="m14">
-      <div class="msec-title"><span class="msec-num">14</span>よくある質問</div>
+    <div class="msec" id="m13">
+      <div class="msec-title"><span class="msec-num">13</span>よくある質問</div>
       <div class="mfaq">
         <div class="mfaq-q">Q. 名前を間違えて入力してしまいました</div>
         <div class="mfaq-a">名前欄をタップして正しい名前に修正し、Enterを押してください。新しい名前でデータを読み込み直します。</div>
@@ -642,10 +740,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <div class="mfaq-a">退所後7日以内であれば、ケア記録画面上部の「🏠 退所者履歴」から「記録を見る」をタップしてください。退所前7日分のケア記録が確認できます。</div>
       </div>
       <div class="mfaq">
-        <div class="mfaq-q">Q. スキャンで手書き文字がうまく認識されない</div>
-        <div class="mfaq-a">明るい場所で文字を大きく写してください。より精度を上げるにはGoogle Vision APIキーの設定が必要です。スキャン画面に「✅ Google Vision API（手書き高精度モード）」と表示されていれば手書き対応モードで動作しています。</div>
-      </div>
-      <div class="mfaq">
         <div class="mfaq-q">Q. 同期がうまくいかない</div>
         <div class="mfaq-a">両方のiPadが同じWi-Fiに接続されているか確認してください。Safariを再読み込みすると解決することが多いです。</div>
       </div>
@@ -660,19 +754,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 <script>
 // ================================================================
 
-// ================================================================
-// Google Cloud Vision API キー（手書き文字認識）
-// 設定方法は下記コメント参照。未設定の場合はTesseract.jsで動作します。
-//
-// 設定手順:
-//  1. https://console.cloud.google.com にアクセス
-//  2. mousi-bab8c プロジェクト → 「APIとサービス」→「ライブラリ」
-//  3. 「Cloud Vision API」を検索して有効化
-//  4. 「認証情報」→「APIキーを作成」→ キーをコピー
-//  5. 下記の YOUR_VISION_API_KEY を貼り替える
-// ================================================================
-const VISION_API_KEY = 'AIzaSyDQl-tXgrvXxPFAxnS1f0PvcQUuYocdBmM';
-// ================================================================
 
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyBCUKrjGlyOqigYrwySaqQjUYRsyXv-_Ys",
@@ -1299,242 +1380,9 @@ async function saveNewLink(){const name=document.getElementById('li-name').value
 async function addPreset(name,icon,url){links.push({name,url,icon});await saveLinks();renderLinks();}
 async function deleteLink(i){if(!confirm('このリンクを削除しますか？'))return;links.splice(i,1);await saveLinks();renderLinks();}
 
-// ── カメラスキャン ────────────────────────────────────
-let scanStream=null;
-let scanTarget={r:null,prefix:''};
 
-// ── Google Cloud Vision OCR（手書き高精度）────────────────
-// ── Gemini API OCR（手書き高精度・無料）────────────────
-// Firebase Functions プロキシURL（キーを隠す場合はここにURLを設定）
-// デプロイ後に表示される URL を貼り付ける例:
-// const GEMINI_PROXY_URL = 'https://asia-northeast1-mousi-bab8c.cloudfunctions.net/geminiOcr';
-const GEMINI_PROXY_URL = ''; // ← Functionsをデプロイした場合はURLを貼る（空の場合は直接呼び出し）
 
-async function ocrWithGemini(base64){
-  // プロキシURL設定済みならFirebase Functions経由（キーが外部に出ない）
-  if(GEMINI_PROXY_URL){
-    const res=await fetch(GEMINI_PROXY_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({base64})
-    });
-    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error('Proxy error: '+res.status+(err.error?' / '+err.error:''));}
-    const data=await res.json();
-    return(data.text||'').trim();
-  }
-  // プロキシなしの場合はGemini APIを直接呼び出し（APIキーがJS内に見える）
-  if(!GEMINI_API_KEY||GEMINI_API_KEY==='YOUR_GEMINI_API_KEY') throw new Error('Gemini APIキーが設定されていません');
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-  const body={
-    contents:[{parts:[
-      {inline_data:{mime_type:'image/jpeg',data:base64}},
-      {text:'この画像に写っている文字をすべてそのまま抽出してください。手書き・印刷どちらも対応します。文字だけを返してください。説明・補足・マークダウンは不要です。'}
-    ]}]
-  };
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error('Gemini error: '+res.status+(err.error?.message?' / '+err.error.message:''));}
-  const data=await res.json();
-  return(data.candidates?.[0]?.content?.parts?.[0]?.text||'').trim();
-}
-
-async function ocrWithVision(base64){
-  const body={requests:[{image:{content:base64},features:[{type:'DOCUMENT_TEXT_DETECTION',maxResults:1}],imageContext:{languageHints:['ja','en']}}]};
-  const res=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
-  });
-  if(!res.ok)throw new Error('Vision API error: '+res.status);
-  const data=await res.json();
-  const text=data.responses?.[0]?.fullTextAnnotation?.text||'';
-  return text.trim();
-}
-
-// ── Tesseract フォールバック OCR ─────────────────────────
-async function ocrWithTesseract(url,progressText,progressFill){
-  const worker=await Tesseract.createWorker(['jpn','eng'],1,{
-    logger:m=>{
-      if(!progressText)return;
-      if(m.status==='loading tesseract core')progressText.textContent='OCRエンジン準備中...';
-      else if(m.status==='loading language traineddata')progressText.textContent='日本語データ読込中...';
-      else if(m.status==='recognizing text'){
-        const pct=Math.round((m.progress||0)*100);
-        progressText.textContent='文字認識中... '+pct+'%';
-        if(progressFill)progressFill.style.width=(10+Math.round((m.progress||0)*85))+'%';
-      }
-    }
-  });
-  const {data}=await worker.recognize(url);
-  await worker.terminate();
-  return(data.text||'').trim();
-}
-
-function openScan(r,prefix){
-  scanTarget={r,prefix};
-  const useVision=VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY';
-  document.getElementById('modalContent').innerHTML=`
-    <button class="modal-close" onclick="closeScan()">×</button>
-    <div class="modal-title">📷 カメラでスキャン</div>
-    <p style="font-size:12px;color:#64748b;margin-bottom:10px">
-      写真を撮るか、ギャラリーから選択してください。<br>
-      <span style="font-weight:500;color:${(GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY')?'#16a34a':(VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY')?'#16a34a':'#f59e0b'}">
-        ${(GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY')?'✅ Gemini AI（手書き高精度・無料モード）':(VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY')?'✅ Google Vision API（手書き高精度モード）':'⚡ Tesseract.js（印刷文字向け）— Gemini APIキー設定で手書き精度UP'}
-      </span>
-    </p>
-    <label style="display:block;cursor:pointer">
-      <div class="scan-file-btn">📸 写真を撮る / ギャラリーから選択</div>
-      <input type="file" accept="image/*" id="scanFileInput" style="display:none" onchange="handleScanFile(this)">
-    </label>
-    <div id="scanPreviewWrap" style="display:none;margin-bottom:10px">
-      <img id="scanPreview" style="width:100%;border-radius:8px;border:1px solid #e2e8f0;max-height:260px;object-fit:contain">
-    </div>
-    <div id="scanProgress" class="scan-progress" style="display:none">
-      <div id="scanProgressText">認識準備中...</div>
-      <div class="scan-progress-bar"><div class="scan-progress-fill" id="scanProgressFill" style="width:0%"></div></div>
-    </div>
-    <div id="scanResultWrap" style="display:none;margin-top:10px">
-      <div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:5px">認識結果（編集できます）</div>
-      <textarea id="scanResult" class="scan-result" placeholder="認識したテキスト..."></textarea>
-      <div class="scan-btn-row" style="margin-top:8px">
-        <button class="scan-add-btn" onclick="appendScanResult()">✅ 申し送りに追加</button>
-        <label style="flex:1;display:block;cursor:pointer">
-          <div class="scan-capture-btn" style="background:#64748b">🔄 撮り直す</div>
-          <input type="file" accept="image/*" id="scanFileInput2" style="display:none" onchange="handleScanFile(this)">
-        </label>
-      </div>
-    </div>`;
-  document.getElementById('modalBg').style.display='flex';
-}
-
-async function handleScanFile(input){
-  if(!input.files||!input.files[0])return;
-  const file=input.files[0];
-  const previewWrap=document.getElementById('scanPreviewWrap');
-  const preview=document.getElementById('scanPreview');
-  const progress=document.getElementById('scanProgress');
-  const progressText=document.getElementById('scanProgressText');
-  const progressFill=document.getElementById('scanProgressFill');
-  const resultWrap=document.getElementById('scanResultWrap');
-  const resultArea=document.getElementById('scanResult');
-
-  const url=URL.createObjectURL(file);
-  if(preview){preview.src=url;previewWrap.style.display='block';}
-  if(progress)progress.style.display='block';
-  if(resultWrap)resultWrap.style.display='none';
-  if(progressFill)progressFill.style.width='10%';
-
-  const useGemini=GEMINI_API_KEY&&GEMINI_API_KEY!=='YOUR_GEMINI_API_KEY';
-  const useVision=VISION_API_KEY&&VISION_API_KEY!=='YOUR_VISION_API_KEY';
-  let text='';
-  let visionFailed=false;
-
-  // ── ① Gemini API を最優先（無料・手書き対応）────────────
-  if(useGemini){
-    try{
-      if(progressText)progressText.textContent='Gemini AIで認識中（手書き対応）...';
-      if(progressFill)progressFill.style.width='35%';
-      const base64=await new Promise((res,rej)=>{
-        const reader=new FileReader();
-        reader.onload=()=>res(reader.result.split(',')[1]);
-        reader.onerror=rej;
-        reader.readAsDataURL(file);
-      });
-      if(progressFill)progressFill.style.width='65%';
-      text=await ocrWithGemini(base64);
-      if(progressFill)progressFill.style.width='100%';
-      URL.revokeObjectURL(url);
-      setTimeout(()=>{if(progress)progress.style.display='none';},400);
-      if(resultArea){resultArea.value=text||'文字を認識できませんでした。明るい場所で鮮明に撮影してみてください。';resultArea.style.color=text?'#1e293b':'#dc2626';}
-      if(resultWrap)resultWrap.style.display='block';
-      return;
-    }catch(e){
-      console.warn('Gemini OCR failed:',e.message,', trying next...');
-      if(progressText)progressText.textContent='Geminiエラー → 次の方法で再試行中...';
-    }
-  }
-
-  // ── ② Vision API（Gemini未設定 or 失敗時）──────────────
-  if(useVision){
-    try{
-      if(progressText)progressText.textContent='Google Vision で認識中...';
-      if(progressFill)progressFill.style.width='35%';
-      const base64=await new Promise((res,rej)=>{
-        const reader=new FileReader();
-        reader.onload=()=>res(reader.result.split(',')[1]);
-        reader.onerror=rej;
-        reader.readAsDataURL(file);
-      });
-      if(progressFill)progressFill.style.width='55%';
-      text=await ocrWithVision(base64);
-      if(progressFill)progressFill.style.width='100%';
-    }catch(e){
-      // Vision API 失敗（403など）→ Tesseractへ自動切替
-      visionFailed=true;
-      const code=e.message.replace('Vision API error: ','');
-      let hint='';
-      if(code==='403')hint='APIキーの権限エラーです。Google Cloudコンソールで「Cloud Vision API」が有効化されているか、APIキーの制限設定を確認してください。';
-      else if(code==='400')hint='APIキーが正しくありません。index.htmlのVISION_API_KEYを確認してください。';
-      else hint='エラーコード: '+code;
-      if(progressText)progressText.textContent='Vision API エラー → Tesseractで再試行中...';
-      console.warn('Vision API failed ('+code+'), falling back to Tesseract.',hint);
-    }
-  }
-
-  // ── ② Tesseract（Vision未設定 or Vision失敗時）──────────
-  if(!useVision||visionFailed){
-    try{
-      if(progressText)progressText.textContent=visionFailed?'Tesseractで再認識中...':'Tesseractで認識中...';
-      if(progressFill)progressFill.style.width='20%';
-      text=await ocrWithTesseract(url,progressText,progressFill);
-      if(progressFill)progressFill.style.width='100%';
-    }catch(e2){
-      if(progress)progress.style.display='none';
-      if(resultArea){
-        resultArea.value='認識に失敗しました。もう一度お試しください。';
-        resultArea.style.color='#dc2626';
-      }
-      if(resultWrap)resultWrap.style.display='block';
-      URL.revokeObjectURL(url);
-      return;
-    }
-  }
-
-  URL.revokeObjectURL(url);
-  setTimeout(()=>{if(progress)progress.style.display='none';},400);
-
-  if(resultArea){
-    let displayText=text||'文字を認識できませんでした。明るい場所で鮮明に撮影してみてください。';
-    // Vision失敗時は注記を追加
-    if(visionFailed&&text){
-      displayText+='\n\n※ Google Vision APIが使えなかったため、Tesseractで認識しました。手書き文字の精度はやや低くなります。Vision APIの設定を確認してください（403エラー）。';
-    } else if(visionFailed&&!text){
-      displayText='Vision API: 403エラー（権限なし）\nTesseractでも認識できませんでした。\n\n【対処法】\n・Google CloudコンソールでCloud Vision APIが有効か確認\n・APIキーの制限設定を確認（HTTPリファラー制限でGitHub PagesのURLが許可されているか）\n・課金アカウントが有効か確認';
-    }
-    resultArea.value=displayText;
-    resultArea.style.color=text?'#1e293b':'#dc2626';
-  }
-  if(resultWrap)resultWrap.style.display='block';
-}
-
-function appendScanResult(){
-  const text=(document.getElementById('scanResult')?.value||'').trim();
-  if(!text)return;
-  const {r,prefix}=scanTarget;
-  const isSub=prefix==='sub-';
-  const cur=(isSub?SUB[r].memo:S[r].memo)||'';
-  const sep=cur?'\n':'';
-  const newVal=cur+sep+text;
-  const ta=document.getElementById(prefix+'memo-'+r);
-  if(ta)ta.value=newVal;
-  if(isSub)onSubMemoChange(r,newVal);
-  else onMemoChange(r,newVal);
-  closeScan();
-}
-
-function closeScan(){
-  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
-  closeModal();
-}
-
-function closeModal(){if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}document.getElementById('modalBg').style.display='none';}
+function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
 function prog(r){return[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben,S[r].extra].filter(v=>v).length;}
@@ -1543,7 +1391,7 @@ function updateChip(r,p){const c=document.getElementById('chip-'+r);if(!c)return
 
 // ── UI 切替 ───────────────────────────────────────
 function switchMain(idx){
-  [0,1,2,3,4].forEach(i=>{document.getElementById('mainTab'+i).className='main-tab'+(i===idx?' active':'');document.getElementById('mainPage'+i).className='main-page'+(i===idx?' active':'');});
+  [0,1,2,3,4,5].forEach(i=>{const t=document.getElementById('mainTab'+i);const p=document.getElementById('mainPage'+i);if(t)t.className='main-tab'+(i===idx?' active':'');if(p)p.className='main-page'+(i===idx?' active':'');});
   document.getElementById('floorTabRow').style.display=idx===0?'flex':'none';
   if(idx===1)renderWHTable();if(idx===2)renderDashboard();
 }
@@ -1619,7 +1467,6 @@ function buildHaibenMemo(r,prefix,data){
     </select>
   </div>
   <div class="memo-action-row">
-    <button class="memo-action-btn" onclick="openScan(${r},'${prefix}')" title="カメラでスキャン">📷 スキャン</button>
     <button id="${prefix}memo-undo-${r}" class="memo-undo-btn" onclick="undoMemo(${r},${prefix==='sub-'?'true':'false'})" disabled title="一個前に戻す">↩ 元に戻す</button>
   </div>
   <textarea id="${prefix}memo-${r}" class="fmemo" placeholder="申し送り内容を入力..." oninput="${fn}(${r},this.value)">${data.memo||''}</textarea>
@@ -1773,6 +1620,181 @@ function openMemoDetail(r,isSub){
     '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;margin-bottom:6px">'+ynRows+bathRow+hbRow+'</div>'+
     memoBlock;
   document.getElementById('modalBg').style.display='flex';
+}
+
+// ── DB管理パネル ─────────────────────────────────────────────
+const DB_PIN_KEY='dbAdminPIN';
+let dbPinBuf='';
+let dbUnlocked=false;
+let titleTapCount=0;let titleTapTimer=null;
+
+function onTitleTap(){
+  titleTapCount++;
+  clearTimeout(titleTapTimer);
+  if(titleTapCount>=5){
+    titleTapCount=0;
+    const btn=document.getElementById('mainTab5');
+    if(btn){btn.style.display='';btn.click();}
+  }else{
+    titleTapTimer=setTimeout(()=>{titleTapCount=0;},1500);
+  }
+}
+
+function getDbPin(){return ls(DB_PIN_KEY)||'1234';}
+
+function dbPinInput(d){
+  if(dbPinBuf.length>=4)return;
+  dbPinBuf+=d;
+  updatePinDots();
+  if(dbPinBuf.length===4){
+    if(dbPinBuf===getDbPin()){
+      dbUnlocked=true;
+      document.getElementById('dbPinScreen').style.display='none';
+      const m=document.getElementById('dbMainScreen');
+      m.style.display='flex';
+      dbLog('✅ 認証成功');
+    }else{
+      dbLog('❌ PINが違います');
+      setTimeout(()=>{dbPinBuf='';updatePinDots();},600);
+    }
+  }
+}
+function dbPinBack(){if(dbPinBuf.length>0){dbPinBuf=dbPinBuf.slice(0,-1);updatePinDots();}}
+function dbPinClear(){dbPinBuf='';updatePinDots();}
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('dot'+i);
+    if(dot)dot.className='db-pin-dot'+(i<dbPinBuf.length?' filled':'');
+  }
+}
+function dbLock(){
+  dbUnlocked=false;dbPinBuf='';updatePinDots();
+  document.getElementById('dbPinScreen').style.display='';
+  document.getElementById('dbMainScreen').style.display='none';
+  const btn=document.getElementById('mainTab5');if(btn)btn.style.display='none';
+  switchMain(0);
+}
+function dbLog(msg){
+  const el=document.getElementById('dbLog');if(!el)return;
+  const t=getLocalDate()+' '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  el.textContent=t+' '+msg+'\n'+el.textContent;
+}
+function dbSetPath(p){const el=document.getElementById('dbReadPath');if(el)el.value=p;}
+
+async function dbRead(){
+  const path=(document.getElementById('dbReadPath')?.value||'').trim();
+  const el=document.getElementById('dbReadResult');
+  if(!el)return;
+  el.textContent='読み込み中...';
+  try{
+    const data=await fbGet(path||'/');
+    el.textContent=data===null?'（データなし）':JSON.stringify(data,null,2);
+    dbLog('READ: '+(path||'ルート'));
+  }catch(e){el.textContent='エラー: '+e.message;dbLog('ERROR: '+e.message);}
+}
+
+async function dbWrite(){
+  if(!dbUnlocked)return;
+  const path=(document.getElementById('dbWritePath')?.value||'').trim();
+  const valStr=(document.getElementById('dbWriteValue')?.value||'').trim();
+  if(!path){alert('パスを入力してください');return;}
+  if(!valStr){alert('値を入力してください');return;}
+  if(!confirm('「'+path+'」に書き込みます。よろしいですか？'))return;
+  try{
+    const val=JSON.parse(valStr);
+    await fbSet(path,val);
+    dbLog('WRITE: '+path);
+    alert('書き込み完了: '+path);
+  }catch(e){alert('エラー: '+e.message);dbLog('ERROR: '+e.message);}
+}
+
+function dbWriteFromRead(){
+  const src=document.getElementById('dbReadResult')?.textContent||'';
+  const dst=document.getElementById('dbWriteValue');
+  const pathSrc=document.getElementById('dbReadPath')?.value||'';
+  const pathDst=document.getElementById('dbWritePath');
+  if(dst&&src&&src!=='（データなし）'&&src!=='ここに結果が表示されます'){
+    dst.value=src;if(pathDst&&pathSrc)pathDst.value=pathSrc;
+    dbLog('編集欄に展開: '+pathSrc);
+  }
+}
+
+async function dbDelete(){
+  if(!dbUnlocked)return;
+  const path=(document.getElementById('dbDeletePath')?.value||'').trim();
+  if(!path){alert('削除するパスを入力してください');return;}
+  if(!confirm('「'+path+'」を削除します。この操作は取り消せません。続行しますか？'))return;
+  try{
+    await fbSet(path,null);
+    dbLog('DELETE: '+path);
+    alert('削除完了: '+path);
+  }catch(e){alert('エラー: '+e.message);dbLog('ERROR: '+e.message);}
+}
+
+async function dbQuick(action){
+  if(!dbUnlocked)return;
+  const el=document.getElementById('dbReadResult');
+  const pathEl=document.getElementById('dbReadPath');
+  if(action==='allRooms'){
+    if(pathEl)pathEl.value='rooms';
+    await dbRead();
+  }else if(action==='today'){
+    const d=currentDate;
+    if(pathEl)pathEl.value='';
+    el.textContent='読み込み中...';
+    try{
+      // 全部屋の今日のデータを集める
+      const result={};
+      for(const r of ALL){
+        const name=S[r].name;if(!name)continue;
+        const k=encKey(name);
+        const data=await fbGet('residents/'+k+'/dates/'+d);
+        if(data)result[r+'_'+name]=data;
+      }
+      el.textContent=Object.keys(result).length?JSON.stringify(result,null,2):'（今日のデータなし）';
+      dbLog('QUICK: 本日データ一覧 '+d);
+    }catch(e){el.textContent='エラー: '+e.message;}
+  }else if(action==='dischargedLog'){
+    if(pathEl)pathEl.value='settings/dischargedLog';
+    await dbRead();
+  }else if(action==='settings'){
+    if(pathEl)pathEl.value='settings';
+    await dbRead();
+  }else if(action==='clearRoom'){
+    const r=prompt('クリアする部屋番号を入力してください（例: 101）');
+    if(!r)return;
+    const room=parseInt(r);
+    if(!ALL.includes(room)){alert('無効な部屋番号です');return;}
+    if(!confirm(room+'号室の名前と部屋データをクリアします。よろしいですか？'))return;
+    await saveRoomName(room,'');
+    S[room]={name:'',...emptyDaily(),_tag:''};
+    renderAll();
+    dbLog('CLEAR ROOM: '+room);
+    alert(room+'号室をクリアしました');
+  }
+}
+
+function openChangePIN(){
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">⚙️ PIN変更</div>
+    <div class="modal-row"><span class="modal-label">現在のPIN</span><input class="modal-input" id="pinOld" type="password" inputmode="numeric" maxlength="4" placeholder="現在の4桁PIN"></div>
+    <div class="modal-row"><span class="modal-label">新しいPIN</span><input class="modal-input" id="pinNew" type="password" inputmode="numeric" maxlength="4" placeholder="新しい4桁PIN"></div>
+    <div class="modal-row"><span class="modal-label">確認</span><input class="modal-input" id="pinNew2" type="password" inputmode="numeric" maxlength="4" placeholder="新しいPINをもう一度"></div>
+    <button class="modal-save-btn" onclick="doChangePIN()">変更する</button>`;
+  document.getElementById('modalBg').style.display='flex';
+}
+function doChangePIN(){
+  const old=document.getElementById('pinOld')?.value;
+  const n1=document.getElementById('pinNew')?.value;
+  const n2=document.getElementById('pinNew2')?.value;
+  if(old!==getDbPin()){alert('現在のPINが違います');return;}
+  if(n1.length!==4){alert('新しいPINは4桁の数字にしてください');return;}
+  if(n1!==n2){alert('新しいPINが一致しません');return;}
+  lss(DB_PIN_KEY,n1);
+  closeModal();
+  dbLog('PIN変更完了');
+  alert('PINを変更しました');
 }
 
 // ── 起動 ──────────────────────────────────────────
