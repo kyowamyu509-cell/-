@@ -267,6 +267,30 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .discharged-log-detail-btn{border:1px solid #fca5a5;border-radius:7px;padding:4px 11px;font-size:11px;color:#dc2626;background:#fff;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;flex-shrink:0}
 .discharged-log-detail-btn:active{background:#fee2e2}
 .discharged-days-left{font-size:10px;background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:20px;font-weight:600;flex-shrink:0}
+
+/* ── 介助詳細セクション ── */
+.cn-toggle-btn{border:1px solid #6ee7b7;border-radius:8px;padding:4px 11px;font-size:11px;color:#059669;background:#f0fdf4;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500}
+.cn-toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
+.cn-section{border-top:2px dashed #6ee7b7;display:none}
+.cn-section.visible{display:block}
+.cn-header{padding:8px 12px;background:#f0fdf4;display:flex;align-items:center;gap:8px;border-bottom:1px solid #d1fae5;flex-wrap:wrap}
+.cn-badge{font-size:10px;font-weight:700;background:#059669;color:#fff;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.cn-saved{font-size:10px;color:#16a34a;opacity:0;transition:opacity 0.3s;margin-left:auto;flex-shrink:0}
+.cn-saved.show{opacity:1}
+.cn-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.cn-tab{padding:4px 10px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #d1fae5;border-radius:20px;background:#fff;color:#64748b;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
+.cn-tab.active{background:#059669;color:#fff;border-color:#059669}
+.cn-body{padding:10px 12px;background:#f9fffd}
+.cn-panel{display:none;flex-direction:column;gap:8px}
+.cn-panel.active{display:flex}
+.cn-label{font-size:10px;font-weight:500;color:#065f46;letter-spacing:0.04em;margin-bottom:2px}
+.cn-textarea{width:100%;padding:7px 9px;border-radius:8px;border:1px solid #d1fae5;font-size:13px;color:#1e293b;background:#fff;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:62px;line-height:1.7}
+.cn-textarea:focus{border-color:#6ee7b7;background:#f0fdf4}
+.cn-sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:4px}
+.cn-sel-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:4px}
+.cn-field{display:flex;flex-direction:column;gap:2px}
+.cn-select{width:100%;padding:5px 8px;border-radius:8px;border:1px solid #d1fae5;font-size:12px;color:#1e293b;background:#fff;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
+.cn-select.v-set{background-color:#f0fdf4;border-color:#6ee7b7;color:#065f46}
 </style>
 </head>
 <body>
@@ -654,6 +678,15 @@ ALL.forEach(r=>{SUB[r]={name:'',renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'
 let subVisible={};
 ALL.forEach(r=>{subVisible[r]=false;});
 
+// 介助詳細
+let careNotes={};
+function emptyCareNotes(){return{shintai:'',ido:'',shokuji:'',shokuji_keitai:'',shokuji_toro:'',haisetsu_note:'',omutsu:'',rehapan:'',pad:'',haisetsu_basho:'',haisetsu_freq:'',sonota:''};}
+ALL.forEach(r=>{careNotes[r]=emptyCareNotes();});
+let careNotesVisible={};
+ALL.forEach(r=>{careNotesVisible[r]=false;});
+let cnActiveTab={};
+ALL.forEach(r=>{cnActiveTab[r]='shintai';});
+
 let backups={};
 ALL.forEach(r=>{backups[r]=null;});
 let discharged={};
@@ -691,6 +724,55 @@ function lss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
 function loadSubVisible(){const s=ls('subVisible');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)subVisible[r]=true;});}}
 function saveSubVisible(){lss('subVisible',subVisible);}
+
+// 介助詳細 - ローカル＆Firebase保存
+function loadCareNotesVisible(){const s=ls('careNotesVisible');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)careNotesVisible[r]=true;});}}
+function saveCareNotesVisible(){lss('careNotesVisible',careNotesVisible);}
+async function loadCareNotesByName(name){
+  if(!name||!name.trim())return{};
+  const k=encKey(name.trim());
+  if(db){const d=await fbGet(`residents/${k}/careNotes`);if(d)return d;}
+  return ls('cn_'+name.trim())||{};
+}
+async function saveCareNotes(room){
+  const name=(S[room].name||'').trim();if(!name)return;
+  const data={...careNotes[room]};
+  lss('cn_'+name,data);
+  await fbSet(`residents/${encKey(name)}/careNotes`,data);
+  const el=document.getElementById('cn-saved-'+room);
+  if(el){el.className='cn-saved show';clearTimeout(el._t);el._t=setTimeout(()=>{el.className='cn-saved';},1600);}
+}
+async function loadCareNotesForRoom(room,name){
+  const data=await loadCareNotesByName(name);
+  careNotes[room]={...emptyCareNotes(),...data};
+}
+function toggleCareNotes(r){
+  careNotesVisible[r]=!careNotesVisible[r];
+  saveCareNotesVisible();
+  const sec=document.getElementById('cn-section-'+r);
+  const btn=document.getElementById('cn-toggle-'+r);
+  if(sec)sec.className='cn-section'+(careNotesVisible[r]?' visible':'');
+  if(btn){btn.className='cn-toggle-btn'+(careNotesVisible[r]?' active':'');btn.textContent=careNotesVisible[r]?'介助詳細 非表示':'介助詳細';}
+}
+function switchCnTab(r,tab){
+  cnActiveTab[r]=tab;
+  ['shintai','ido','shokuji','haisetsu','sonota'].forEach(t=>{
+    const p=document.getElementById('cn-panel-'+t+'-'+r);
+    const b=document.getElementById('cn-tab-'+t+'-'+r);
+    if(p)p.className='cn-panel'+(t===tab?' active':'');
+    if(b)b.className='cn-tab'+(t===tab?' active':'');
+  });
+}
+async function onCnTextChange(r,key,v){
+  careNotes[r][key]=v;
+  clearTimeout(careNotes[r]['_mt_'+key]);
+  careNotes[r]['_mt_'+key]=setTimeout(()=>saveCareNotes(r),700);
+}
+async function onCnSelChange(r,key,v,el){
+  careNotes[r][key]=v;
+  el.className='cn-select'+(v?' v-set':'');
+  await saveCareNotes(r);
+}
 const EXTRA_SEC=['tools','yaku','gaishu'];
 let extraSec={};
 ALL.forEach(r=>{extraSec[r]={tools:false,yaku:false,gaishu:false};});
@@ -923,6 +1005,7 @@ function listenResident(room,name){
 
 async function loadAll(){
   loadSubVisible();loadExtraSec();loadDischarged();await loadDischargedLog();
+  loadCareNotesVisible();
   await loadExtraLabel();await loadLinks();
   for(const r of ALL){
     let name=ls('rname_'+r)||'';
@@ -931,6 +1014,7 @@ async function loadAll(){
     let sname=ls('sub_rname_'+r)||'';
     const sfb=await fbGet('sub_rooms/'+r+'/name');if(sfb)sname=sfb;
     const sdata=await readSubByName(sname);SUB[r]={...SUB[r],...sdata,name:sname};
+    if(name)await loadCareNotesForRoom(r,name);
   }
   renderAll();
   ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
@@ -1021,9 +1105,10 @@ function onNameInput(r,v){S[r].name=v;const el=document.getElementById('name-'+r
 async function onNameBlur(r){
   const name=(S[r].name||'').trim();
   await saveRoomName(r,name);
-  if(!name){setTag(r,'');return;}
+  if(!name){setTag(r,'');careNotes[r]=emptyCareNotes();refreshCareNotesSection(r);return;}
   const data=await readByName(name);S[r]={...S[r],...data,name};
-  refreshCard(r);listenResident(r,name);
+  await loadCareNotesForRoom(r,name);
+  refreshCard(r);refreshCareNotesSection(r);listenResident(r,name);
   flash(r,data._tag==='today'?'✓今日':data._tag==='carried'?'↑引継':'✓新規');
 }
 async function onSel(r,k,v,el){
@@ -1303,6 +1388,74 @@ function refreshSubCard(r){
   const gn=document.getElementById('sub-input-'+r+'-gaishuNote');if(gn)gn.value=d.gaishuNote||'';
 }
 
+function buildCareNotesSection(r){
+  const cn=careNotes[r];
+  const vis=careNotesVisible[r];
+  const at=cnActiveTab[r]||'shintai';
+  const tabs=[{id:'shintai',lbl:'身体情報'},{id:'ido',lbl:'移動'},{id:'shokuji',lbl:'食事'},{id:'haisetsu',lbl:'排泄'},{id:'sonota',lbl:'その他'}];
+  const tabHtml=tabs.map(t=>`<button class="cn-tab${at===t.id?' active':''}" id="cn-tab-${t.id}-${r}" onclick="switchCnTab(${r},'${t.id}')">${t.lbl}</button>`).join('');
+
+  const mkTa=(key,ph,rows=3)=>`<textarea class="cn-textarea" rows="${rows}" placeholder="${ph}" oninput="onCnTextChange(${r},'${key}',this.value)">${cn[key]||''}</textarea>`;
+  const mkSel=(key,label,opts)=>{
+    const optsHtml=opts.map(o=>`<option value="${o}"${cn[key]===o?' selected':''}>${o||'未選択'}</option>`).join('');
+    return`<div class="cn-field"><div class="cn-label">${label}</div><select class="cn-select${cn[key]?' v-set':''}" onchange="onCnSelChange(${r},'${key}',this.value,this)"><option value="">未選択</option>${optsHtml}</select></div>`;
+  };
+
+  const panels={
+    shintai:`<div><div class="cn-label">身体情報・注意事項（アレルギー・既往歴・禁忌など）</div>${mkTa('shintai','例：○○アレルギー、高血圧・骨粗鬆症あり、右膝に人工関節',4)}</div>`,
+    ido:`<div><div class="cn-label">移動・移乗の介助方法</div>${mkTa('ido','例：歩行器使用・見守り、移乗は2名介助、左側麻痺に注意',4)}</div>`,
+    shokuji:`<div>
+      <div class="cn-sel-grid">
+        ${mkSel('shokuji_keitai','食形態',['常食','軟菜食','粗刻み','細刻み','ミキサー食','流動食','経管栄養'])}
+        ${mkSel('shokuji_toro','とろみ',['なし','薄いとろみ','中間とろみ','濃いとろみ'])}
+      </div>
+      <div class="cn-label">食事介助・注意事項</div>
+      ${mkTa('shokuji','例：全介助・スプーン使用、嚥下障害あり・姿勢に注意、義歯使用',3)}
+    </div>`,
+    haisetsu:`<div>
+      <div class="cn-sel-grid-3">
+        ${mkSel('omutsu','オムツ',['なし','テープ型S','テープ型M','テープ型L','テープ型LL','パンツ型S','パンツ型M','パンツ型L','パンツ型LL'])}
+        ${mkSel('rehapan','リハパン',['なし','S','M','L','LL'])}
+        ${mkSel('pad','パット',['なし','小','中','大','特大','尿取りパット'])}
+      </div>
+      <div class="cn-sel-grid">
+        ${mkSel('haisetsu_basho','排泄場所',['トイレ','ポータブルトイレ','床上（オムツ内）','尿道カテーテル'])}
+        ${mkSel('haisetsu_freq','交換頻度',['随時','2時間ごと','3時間ごと','4時間ごと','排泄時'])}
+      </div>
+      <div class="cn-label">排泄介助・注意事項</div>
+      ${mkTa('haisetsu_note','例：全介助・声かけ要、尿意あり呼ぼん使用、皮膚トラブルに注意',3)}
+    </div>`,
+    sonota:`<div><div class="cn-label">その他の注意点・特記事項</div>${mkTa('sonota','例：夜間の不穏あり、コミュニケーションは筆談、家族対応の注意事項など',4)}</div>`
+  };
+
+  const panelHtml=tabs.map(t=>`<div class="cn-panel${at===t.id?' active':''}" id="cn-panel-${t.id}-${r}">${panels[t.id]||''}</div>`).join('');
+
+  return`<div class="cn-section${vis?' visible':''}" id="cn-section-${r}">
+  <div class="cn-header">
+    <span class="cn-badge">介助詳細</span>
+    <div class="cn-tabs">${tabHtml}</div>
+    <span class="cn-saved" id="cn-saved-${r}">✓ 保存</span>
+  </div>
+  <div class="cn-body">${panelHtml}</div>
+</div>`;
+}
+
+function refreshCareNotesSection(r){
+  const sec=document.getElementById('cn-section-'+r);
+  if(!sec)return;
+  const cn=careNotes[r];
+  // refresh textareas
+  [['shintai','shintai'],['ido','ido'],['shokuji','shokuji'],['haisetsu_note','haisetsu_note'],['sonota','sonota']].forEach(([key])=>{
+    const el=sec.querySelector(`textarea[oninput*="'${key}'"]`);
+    if(el)el.value=cn[key]||'';
+  });
+  // refresh selects
+  ['shokuji_keitai','shokuji_toro','omutsu','rehapan','pad','haisetsu_basho','haisetsu_freq'].forEach(key=>{
+    const el=sec.querySelector(`select[onchange*="'${key}'"]`);
+    if(el){el.value=cn[key]||'';el.className='cn-select'+(cn[key]?' v-set':'');}
+  });
+}
+
 function buildYNSelects(r,prefix,data){
   return YN.map(f=>{const v=data[f.k]||'';return`<div class="field"><div class="flabel">${f.l}</div><select id="${prefix}sel-${r}-${f.k}" class="fsel${v==='有'?' v-ari':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'${f.k}',this.value,this)"><option value="">未選択</option><option${v==='有'?' selected':''}>有</option><option${v==='無'?' selected':''}>無</option></select></div>`;}).join('');
 }
@@ -1408,6 +1561,7 @@ function buildCard(r){
   <div style="display:flex;gap:5px;flex-wrap:wrap">
     <button class="sub-toggle-btn${vis?' active':''}" id="sub-toggle-${r}" onclick="toggleSub(${r})">${vis?'入替 非表示':'入替 表示'}</button>
     <button class="discharge-btn${discharged[r]?' on':''}" id="discharge-btn-${r}" onclick="toggleDischarge(${r})">${discharged[r]?'退所済':'退所'}</button>
+    <button class="cn-toggle-btn${careNotesVisible[r]?' active':''}" id="cn-toggle-${r}" onclick="toggleCareNotes(${r})">${careNotesVisible[r]?'介助詳細 非表示':'介助詳細'}</button>
   </div>
 </div>
 <div style="padding:5px 12px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
@@ -1443,6 +1597,7 @@ function buildCard(r){
     </div>
   </div>
 </div>
+${buildCareNotesSection(r)}
 </div>`;
 }
 
