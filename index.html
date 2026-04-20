@@ -680,7 +680,7 @@ ALL.forEach(r=>{subVisible[r]=false;});
 
 // 介助詳細
 let careNotes={};
-function emptyCareNotes(){return{shintai:'',ido:'',shokuji:'',shokuji_keitai:'',shokuji_toro:'',haisetsu_note:'',omutsu:'',rehapan:'',pad:'',haisetsu_basho:'',haisetsu_freq:'',sonota:''};}
+function emptyCareNotes(){return{shintai:'',ido:'',shokuji_shushoku:'',shokuji_fukushoku:'',shokuji_toro:'',shokuji_iero:false,shokuji_note:'',haisetsu_note:'',omutsu:'',rehapan:'',pad:'',haisetsu_basho:'',haisetsu_freq:'',sonota:''};}
 ALL.forEach(r=>{careNotes[r]=emptyCareNotes();});
 let careNotesVisible={};
 ALL.forEach(r=>{careNotesVisible[r]=false;});
@@ -771,6 +771,12 @@ async function onCnTextChange(r,key,v){
 async function onCnSelChange(r,key,v,el){
   careNotes[r][key]=v;
   el.className='cn-select'+(v?' v-set':'');
+  await saveCareNotes(r);
+}
+async function onCnCheckChange(r,key,checked){
+  careNotes[r][key]=checked;
+  const lbl=document.querySelector(`label[for="cn-iero-${r}"]`);
+  if(lbl)lbl.style.fontWeight=checked?'500':'400';
   await saveCareNotes(r);
 }
 const EXTRA_SEC=['tools','yaku','gaishu'];
@@ -1404,26 +1410,29 @@ function buildCareNotesSection(r){
   const panels={
     shintai:`<div><div class="cn-label">身体情報・注意事項（アレルギー・既往歴・禁忌など）</div>${mkTa('shintai','例：○○アレルギー、高血圧・骨粗鬆症あり、右膝に人工関節',4)}</div>`,
     ido:`<div><div class="cn-label">移動・移乗の介助方法</div>${mkTa('ido','例：歩行器使用・見守り、移乗は2名介助、左側麻痺に注意',4)}</div>`,
-    shokuji:`<div>
+    shokuji:`<div style="display:flex;flex-direction:column;gap:8px">
       <div class="cn-sel-grid">
-        ${mkSel('shokuji_keitai','食形態',['常食','軟菜食','粗刻み','細刻み','ミキサー食','流動食','経管栄養'])}
-        ${mkSel('shokuji_toro','とろみ',['なし','薄いとろみ','中間とろみ','濃いとろみ'])}
+        ${mkSel('shokuji_shushoku','主食',['常食','軟飯','お粥','ペースト'])}
+        ${mkSel('shokuji_fukushoku','副食',['常食','一口大','刻み','極刻み','ペースト'])}
       </div>
-      <div class="cn-label">食事介助・注意事項</div>
-      ${mkTa('shokuji','例：全介助・スプーン使用、嚥下障害あり・姿勢に注意、義歯使用',3)}
+      ${mkSel('shokuji_toro','とろみ',['なし','薄いとろみ','中間とろみ','濃いとろみ'])}
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:#fff;border:1px solid #d1fae5;border-radius:8px">
+        <input type="checkbox" id="cn-iero-${r}" ${cn.shokuji_iero?'checked':''} onchange="onCnCheckChange(${r},'shokuji_iero',this.checked)" style="width:16px;height:16px;accent-color:#059669;cursor:pointer;flex-shrink:0">
+        <label for="cn-iero-${r}" style="font-size:13px;color:#1e293b;cursor:pointer;font-weight:${cn.shokuji_iero?'500':'400'}">胃ろう使用</label>
+      </div>
+      <div><div class="cn-label">食事介助・注意事項</div>${mkTa('shokuji_note','例：全介助・スプーン使用、嚥下障害あり・姿勢に注意、義歯使用',3)}</div>
     </div>`,
-    haisetsu:`<div>
-      <div class="cn-sel-grid-3">
-        ${mkSel('omutsu','オムツ',['なし','テープ型S','テープ型M','テープ型L','テープ型LL','パンツ型S','パンツ型M','パンツ型L','パンツ型LL'])}
+    haisetsu:`<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cn-sel-grid">
+        ${mkSel('omutsu','オムツ（テープ型）',['なし','S','M','L','LL'])}
         ${mkSel('rehapan','リハパン',['なし','S','M','L','LL'])}
-        ${mkSel('pad','パット',['なし','小','中','大','特大','尿取りパット'])}
       </div>
+      ${mkSel('pad','パット',['なし','レギュラー','パワフル','ビッグ'])}
       <div class="cn-sel-grid">
         ${mkSel('haisetsu_basho','排泄場所',['トイレ','ポータブルトイレ','床上（オムツ内）','尿道カテーテル'])}
         ${mkSel('haisetsu_freq','交換頻度',['随時','2時間ごと','3時間ごと','4時間ごと','排泄時'])}
       </div>
-      <div class="cn-label">排泄介助・注意事項</div>
-      ${mkTa('haisetsu_note','例：全介助・声かけ要、尿意あり呼ぼん使用、皮膚トラブルに注意',3)}
+      <div><div class="cn-label">排泄介助・注意事項</div>${mkTa('haisetsu_note','例：全介助・声かけ要、尿意あり呼ぼん使用、皮膚トラブルに注意',3)}</div>
     </div>`,
     sonota:`<div><div class="cn-label">その他の注意点・特記事項</div>${mkTa('sonota','例：夜間の不穏あり、コミュニケーションは筆談、家族対応の注意事項など',4)}</div>`
   };
@@ -1444,16 +1453,19 @@ function refreshCareNotesSection(r){
   const sec=document.getElementById('cn-section-'+r);
   if(!sec)return;
   const cn=careNotes[r];
-  // refresh textareas
-  [['shintai','shintai'],['ido','ido'],['shokuji','shokuji'],['haisetsu_note','haisetsu_note'],['sonota','sonota']].forEach(([key])=>{
+  // テキストエリア
+  ['shintai','ido','shokuji_note','haisetsu_note','sonota'].forEach(key=>{
     const el=sec.querySelector(`textarea[oninput*="'${key}'"]`);
     if(el)el.value=cn[key]||'';
   });
-  // refresh selects
-  ['shokuji_keitai','shokuji_toro','omutsu','rehapan','pad','haisetsu_basho','haisetsu_freq'].forEach(key=>{
+  // セレクト
+  ['shokuji_shushoku','shokuji_fukushoku','shokuji_toro','omutsu','rehapan','pad','haisetsu_basho','haisetsu_freq'].forEach(key=>{
     const el=sec.querySelector(`select[onchange*="'${key}'"]`);
     if(el){el.value=cn[key]||'';el.className='cn-select'+(cn[key]?' v-set':'');}
   });
+  // チェックボックス（胃ろう）
+  const cb=document.getElementById('cn-iero-'+r);
+  if(cb){cb.checked=!!cn.shokuji_iero;const lbl=document.querySelector(`label[for="cn-iero-${r}"]`);if(lbl)lbl.style.fontWeight=cn.shokuji_iero?'500':'400';}
 }
 
 function buildYNSelects(r,prefix,data){
