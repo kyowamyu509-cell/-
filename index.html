@@ -483,6 +483,30 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
           <button class="db-btn db-btn-red" onclick="dbQuick('clearRoom')">特定部屋をクリア</button>
         </div>
       </div>
+      <div class="db-section">
+        <div class="db-section-title">✏️ 利用者名前変更 <span class="db-badge-tree" style="background:#fef9c3;color:#a16207">RENAME</span></div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px">誤字・改名などで名前を変更します。ケアデータ・介助詳細・体重記録がすべて新しい名前に引き継がれます。</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div style="font-size:12px;color:#64748b;width:60px;flex-shrink:0">部屋番号</div>
+            <select id="dbRenameRoom" class="db-path-input" style="max-width:140px;cursor:pointer">
+              <option value="">部屋を選択</option>
+            </select>
+            <button class="db-btn db-btn-gray" onclick="dbRenameLoadRooms()">🔄 更新</button>
+          </div>
+          <div id="dbRenameCurrentName" style="font-size:12px;color:#64748b;padding:6px 10px;background:#f8fafc;border-radius:6px;display:none">
+            現在の名前：<span id="dbRenameCurrentNameText" style="font-weight:700;color:#1e293b"></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div style="font-size:12px;color:#64748b;width:60px;flex-shrink:0">新しい名前</div>
+            <input class="db-path-input" id="dbRenameNewName" placeholder="例：山田　太郎" style="flex:1">
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="db-btn db-btn-green" onclick="dbRenameExecute()">✅ 名前変更を実行</button>
+          </div>
+          <div id="dbRenameResult" style="font-size:12px;color:#64748b;display:none;padding:8px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #86efac"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1732,6 +1756,7 @@ function dbPinInput(d){
       const m=document.getElementById('dbMainScreen');
       m.style.display='flex';
       dbLog('✅ 認証成功');
+      dbRenameLoadRooms();
     }else{
       dbLog('❌ PINが違います');
       setTimeout(()=>{dbPinBuf='';updatePinDots();},600);
@@ -1867,6 +1892,110 @@ function doChangePIN(){
   closeModal();
   dbLog('PIN変更完了');
   alert('PINを変更しました');
+}
+
+// ── 名前変更 ────────────────────────────────────────
+function dbRenameLoadRooms(){
+  const sel=document.getElementById('dbRenameRoom');
+  if(!sel)return;
+  // 現在の部屋＋名前一覧をセット
+  sel.innerHTML='<option value="">部屋を選択</option>';
+  ALL.forEach(r=>{
+    const name=S[r].name||'';
+    const opt=document.createElement('option');
+    opt.value=r;
+    opt.textContent=name?`${r}号室　${name}`:`${r}号室　（空室）`;
+    sel.appendChild(opt);
+  });
+  // 部屋選択時に現在の名前を表示
+  sel.onchange=function(){
+    const r=parseInt(this.value);
+    const nameDiv=document.getElementById('dbRenameCurrentName');
+    const nameText=document.getElementById('dbRenameCurrentNameText');
+    const newInput=document.getElementById('dbRenameNewName');
+    if(!r||!nameDiv||!nameText){return;}
+    const name=S[r]?.name||'';
+    nameText.textContent=name||'（名前なし）';
+    nameDiv.style.display='block';
+    if(newInput)newInput.value=name;// 現在名をデフォルト入力
+  };
+  dbLog('部屋一覧を更新');
+}
+
+async function dbRenameExecute(){
+  if(!dbUnlocked)return;
+  const sel=document.getElementById('dbRenameRoom');
+  const room=parseInt(sel?.value||'');
+  const newName=(document.getElementById('dbRenameNewName')?.value||'').trim();
+  const resultEl=document.getElementById('dbRenameResult');
+
+  if(!room||!ALL.includes(room)){
+    alert('部屋を選択してください');return;
+  }
+  if(!newName){alert('新しい名前を入力してください');return;}
+
+  const oldName=(S[room].name||'').trim();
+  if(!oldName){alert('この部屋には現在入居者がいません');return;}
+  if(oldName===newName){alert('名前が変わっていません');return;}
+
+  if(!confirm(`【${room}号室】\n「${oldName}」→「${newName}」に変更します。\nよろしいですか？`))return;
+
+  dbLog(`名前変更開始: ${oldName} → ${newName}`);
+  if(resultEl){resultEl.textContent='変更中...';resultEl.style.display='block';resultEl.style.background='#fffbeb';resultEl.style.borderColor='#fcd34d';}
+
+  try{
+    const oldKey=encKey(oldName);
+    const newKey=encKey(newName);
+
+    // ① residents/ のデータをコピー（dates, latest, careNotes）
+    const resData=await fbGet(`residents/${oldKey}`);
+    if(resData){
+      await fbSet(`residents/${newKey}`,resData);
+      await fbSet(`residents/${oldKey}`,null);
+      dbLog(`residents: ${oldKey} → ${newKey}`);
+    }
+
+    // ② wh（体重・身長）のコピー
+    const whData=await fbGet(`wh/${oldKey}`);
+    if(whData){
+      await fbSet(`wh/${newKey}`,whData);
+      await fbSet(`wh/${oldKey}`,null);
+      dbLog(`wh: ${oldKey} → ${newKey}`);
+    }
+
+    // ③ 部屋名を新しい名前で上書き
+    await saveRoomName(room,newName);
+
+    // ④ メモリ上のデータも更新
+    S[room].name=newName;
+    if(careNotes[room]){
+      // careNotesはresidentsに紐づいているので新キーで保存済みだが念のため
+      lss('cn_'+newName,careNotes[room]);
+    }
+    // localStorage の旧キーをクリア（ケアデータのoldキーは参照されなくなるのみ）
+
+    // ⑤ 画面リフレッシュ
+    refreshCard(room);
+    if(careNotes[room])refreshCareNotesSection(room);
+    renderDischargedLog();
+    dbLog(`✅ 名前変更完了: ${oldName} → ${newName}`);
+
+    if(resultEl){
+      resultEl.textContent=`✅ 完了：「${oldName}」→「${newName}」に変更しました。`;
+      resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';
+    }
+    // プルダウンも更新
+    dbRenameLoadRooms();
+    // 名前変更後に currentName欄リセット
+    const nameDiv=document.getElementById('dbRenameCurrentName');
+    const nameText=document.getElementById('dbRenameCurrentNameText');
+    if(nameText)nameText.textContent=newName;
+
+  }catch(e){
+    dbLog('❌ 名前変更エラー: '+e.message);
+    if(resultEl){resultEl.textContent='❌ エラー: '+e.message;resultEl.style.background='#fff5f5';resultEl.style.borderColor='#fca5a5';}
+    alert('エラーが発生しました: '+e.message);
+  }
 }
 
 document.getElementById('dateInput').value=getLocalDate();currentDate=getLocalDate();
