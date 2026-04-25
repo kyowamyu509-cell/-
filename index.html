@@ -64,6 +64,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .fsel{width:100%;padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
 .fsel.v-ari{background-color:#eff6ff;border-color:#93c5fd;color:#2563eb}
 .fsel.v-hb{background-color:#fff;border-color:#cbd5e1}
+/* 入浴チェックボックス */
+.bath-check-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;cursor:pointer;transition:all 0.15s}
+.bath-check-wrap.checked{background:#eff6ff;border-color:#93c5fd}
+.bath-check-wrap input[type=checkbox]{width:16px;height:16px;accent-color:#2563eb;cursor:pointer;flex-shrink:0}
+.bath-check-label{font-size:13px;font-weight:500;color:#64748b;cursor:pointer}
+.bath-check-wrap.checked .bath-check-label{color:#2563eb}
 .memo-section{display:flex;flex-direction:column;gap:4px;margin-top:3px}
 .memo-section-label{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em}
 .haiben-row{display:flex;align-items:center;gap:7px;background:#f8fafc;border:1px solid #e2e8f0;border-bottom:none;border-radius:8px 8px 0 0;padding:6px 9px}
@@ -220,10 +226,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .db-btn-green{background:#f0fdf4;color:#16a34a;border:1px solid #86efac}
 .db-btn-red{background:#fff5f5;color:#dc2626;border:1px solid #fca5a5}
 .db-btn-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
-.db-result{background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:320px;overflow-y:auto;line-height:1.9}
-.db-result .key{color:#2563eb;font-weight:600}
-.db-result .val-str{color:#059669;font-weight:500}
-.db-result .val-num{color:#b45309;font-weight:500}
+.db-result{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;line-height:1.7}
+.db-result .key{color:#93c5fd}
+.db-result .val-str{color:#86efac}
+.db-result .val-num{color:#fcd34d}
 .db-result .val-null{color:#94a3b8}
 .db-edit-area{width:100%;min-height:80px;padding:9px 11px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;font-family:monospace;color:#1e293b;background:#f8fafc;outline:none;resize:vertical;line-height:1.7}
 .db-edit-area:focus{border-color:#93c5fd;background:#fff}
@@ -349,14 +355,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 <div class="main-page" id="mainPage2">
   <div class="dashboard">
     <div class="stat-row">
-      <div class="stat-card"><div class="stat-label">本日の完了部屋</div><div class="stat-value" id="stat-done">0</div><div class="stat-sub">全20部屋中</div></div>
-      <div class="stat-card"><div class="stat-label">入力中（途中）</div><div class="stat-value" id="stat-partial">0</div><div class="stat-sub">項目あり</div></div>
-      <div class="stat-card"><div class="stat-label">未入力</div><div class="stat-value" id="stat-empty">20</div><div class="stat-sub">部屋</div></div>
-      <div class="stat-card"><div class="stat-label">連絡帳あり</div><div class="stat-value" id="stat-renrakucho">0</div><div class="stat-sub">名</div></div>
       <div class="stat-card"><div class="stat-label">薬変更あり</div><div class="stat-value" id="stat-yaku">0</div><div class="stat-sub">名</div></div>
       <div class="stat-card accent"><div class="stat-label accent" id="stat-extra-label">入浴あり</div><div class="stat-value" id="stat-extra">0</div><div class="stat-sub">名（入れ替え含む）</div></div>
     </div>
-    <div class="chart-card"><div class="chart-title">フロア別　入力状況</div><div class="chart-wrap"><canvas id="chartFloor"></canvas></div></div>
+
     <div class="chart-card">
       <div class="chart-title" id="bathListTitle">入浴者一覧</div>
       <div class="bath-list-section" id="bathList"></div>
@@ -400,6 +402,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 <!-- DB管理パネル（隠し） -->
 <div class="main-page" id="mainPage5">
   <div class="db-panel" id="dbPanelInner">
+    <!-- PIN認証画面 -->
     <div id="dbPinScreen" class="db-section">
       <div class="db-pin-wrap">
         <div class="db-pin-title">🔐 管理パネル</div>
@@ -426,7 +429,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <div style="font-size:11px;color:#94a3b8">※ PINは設定で変更できます</div>
       </div>
     </div>
+    <!-- 管理パネル本体（PIN認証後に表示） -->
     <div id="dbMainScreen" style="display:none;flex-direction:column;gap:12px">
+      <!-- ヘッダー -->
       <div class="db-section" style="padding:12px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div style="font-size:14px;font-weight:700;color:#1e293b">🔧 DB管理パネル</div>
@@ -437,6 +442,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         </div>
         <div class="db-log" id="dbLog" style="margin-top:8px">操作ログ</div>
       </div>
+
+      <!-- パス指定で読み取り -->
       <div class="db-section">
         <div class="db-section-title">📖 データ読み取り <span class="db-badge-tree">READ</span></div>
         <div class="db-path-row">
@@ -454,6 +461,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         </div>
         <div class="db-result" id="dbReadResult">ここに結果が表示されます</div>
       </div>
+
+      <!-- パス指定で書き込み -->
       <div class="db-section">
         <div class="db-section-title">✏️ データ書き込み <span class="db-badge-tree" style="background:#fef9c3;color:#a16207">WRITE</span></div>
         <div class="db-path-row">
@@ -465,6 +474,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
           <button class="db-btn db-btn-gray" onclick="dbWriteFromRead()">📋 読取結果を編集欄に展開</button>
         </div>
       </div>
+
+      <!-- パス指定で削除 -->
       <div class="db-section">
         <div class="db-section-title">🗑️ データ削除 <span class="db-badge-tree" style="background:#fff5f5;color:#dc2626">DELETE</span></div>
         <div class="db-path-row">
@@ -473,6 +484,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         </div>
         <div style="font-size:11px;color:#f59e0b;margin-top:4px">⚠️ 削除したデータは復元できません</div>
       </div>
+
+      <!-- よく使う操作 -->
       <div class="db-section">
         <div class="db-section-title">⚡ よく使う操作</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -481,55 +494,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
           <button class="db-btn db-btn-blue" onclick="dbQuick('dischargedLog')">退所者履歴</button>
           <button class="db-btn db-btn-blue" onclick="dbQuick('settings')">設定情報</button>
           <button class="db-btn db-btn-red" onclick="dbQuick('clearRoom')">特定部屋をクリア</button>
-        </div>
-      </div>
-      <div class="db-section">
-        <div class="db-section-title">✏️ 利用者名前変更・削除 <span class="db-badge-tree" style="background:#fef9c3;color:#a16207">RENAME</span></div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:10px">誤字・改名などで名前を変更します。ケアデータ・介助詳細・体重記録がすべて新しい名前に引き継がれます。</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-
-          <!-- 名前検索 -->
-          <div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:5px;font-weight:500">① データベースから名前を検索</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <input class="db-path-input" id="dbRenameSearch" placeholder="名前を入力して検索（例：山田）" style="flex:1" oninput="dbRenameSearchFilter()">
-              <button class="db-btn db-btn-gray" onclick="dbRenameLoadAll()">🔄 全員読み込み</button>
-            </div>
-            <div id="dbRenameSearchList" style="margin-top:6px;display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto"></div>
-          </div>
-
-          <!-- 選択中の名前 -->
-          <div id="dbRenameSelected" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:10px 12px">
-            <div style="font-size:11px;color:#2563eb;font-weight:600;margin-bottom:4px">選択中の利用者</div>
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-              <div>
-                <span id="dbRenameSelectedName" style="font-size:15px;font-weight:700;color:#1e293b"></span>
-                <span id="dbRenameSelectedRoom" style="font-size:11px;color:#64748b;margin-left:8px"></span>
-              </div>
-              <button class="db-btn" style="background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;font-size:11px;padding:4px 10px" onclick="dbRenameConfirmDelete()">🗑️ この名前を削除</button>
-            </div>
-          </div>
-
-          <!-- 削除確認バー（初期非表示） -->
-          <div id="dbRenameDeleteConfirm" style="display:none;background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px">
-            <div style="font-size:12px;color:#dc2626;font-weight:700;margin-bottom:8px">⚠️ 本当に削除しますか？</div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:10px">「<span id="dbRenameDeleteTargetName" style="font-weight:700;color:#1e293b"></span>」の部屋名紐づけを削除します。ケアデータ自体は残ります。</div>
-            <div style="display:flex;gap:8px">
-              <button class="db-btn db-btn-red" onclick="dbRenameDeleteExecute()">削除する</button>
-              <button class="db-btn db-btn-gray" onclick="document.getElementById('dbRenameDeleteConfirm').style.display='none'">キャンセル</button>
-            </div>
-          </div>
-
-          <!-- 新しい名前入力 -->
-          <div id="dbRenameNewRow" style="display:none">
-            <div style="font-size:12px;color:#64748b;margin-bottom:5px;font-weight:500">② 新しい名前を入力</div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <input class="db-path-input" id="dbRenameNewName" placeholder="新しい名前を入力" style="flex:1">
-              <button class="db-btn db-btn-green" onclick="dbRenameExecute()">✅ 変更を実行</button>
-            </div>
-          </div>
-
-          <div id="dbRenameResult" style="font-size:12px;display:none;padding:8px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #86efac;color:#065f46"></div>
         </div>
       </div>
     </div>
@@ -543,6 +507,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       <div class="manual-cover-title">📖　日常ケア記録アプリ　操作説明書</div>
       <div class="manual-cover-sub">はじめてでもわかる使い方ガイド　ver.2.0</div>
     </div>
+
     <div class="manual-toc">
       <div class="manual-toc-title">もくじ</div>
       <div class="manual-toc-list">
@@ -561,6 +526,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <a href="#m13">13. よくある質問</a>
       </div>
     </div>
+
+    <!-- 1 -->
     <div class="msec" id="m1">
       <div class="msec-title"><span class="msec-num">1</span>アプリの基本画面と構成</div>
       <div class="mssec">■ 画面上部のタブ（メニュー）</div>
@@ -575,126 +542,258 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       <div class="mssec">■ フロアの切り替え（1F / 2F）</div>
       <p class="mbody">「ケア記録」タブを開いたとき「1F 100番台」「2F 200番台」ボタンが表示されます。タップするとフロアが切り替わります。</p>
       <div class="mssec">■ 日付の変更</div>
-      <p class="mbody">画面右上の日付欄をタップすると日付を変更できます。過去の日付に戻すとその日の記録を確認できます。</p>
+      <p class="mbody">画面右上の日付欄をタップすると日付を変更できます。過去の日付に戻すとその日の記録を確認できます。退所ボタンを押した方が含まれていても、過去に戻す場合はデータが消えません。</p>
       <div class="mpoint">📅　日付を変えても名前は消えません。ケアデータだけが日付ごとに保存されています。</div>
       <div class="mssec">■ サマリーバーの色の意味</div>
       <table class="mtbl"><tr><th>色</th><th>意味</th></tr>
-        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力</td></tr>
+        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力（何も入力されていない）</td></tr>
         <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">黄色</span></td><td>入力中（一部の項目が入力済み）</td></tr>
         <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a">緑</span></td><td>完了（全6項目が入力済み）</td></tr>
       </table>
     </div>
+
+    <!-- 2 -->
     <div class="msec" id="m2">
       <div class="msec-title"><span class="msec-num">2</span>ケア記録の入力方法</div>
       <div class="mssec">■ 名前を入力してデータを呼び起こす</div>
-      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。</p>
+      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。新しい部屋で同じ名前を入力すればデータが引き継がれます。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>お名前欄をタップしてキーボードを表示します</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>利用者の名前を入力します（例：山田　太郎）</div></div>
         <div class="mstep"><div class="mstep-num">3</div><div>Enterキーを押すか、入力欄の外をタップします</div></div>
         <div class="mstep"><div class="mstep-num">4</div><div>過去のデータがあれば自動で読み込まれます</div></div>
       </div>
-      <table class="mtbl"><tr><th>タグ</th><th>意味</th></tr>
+      <table class="mtbl" style="margin-top:8px"><tr><th>タグ</th><th>意味</th></tr>
         <tr><td><span class="mbadge" style="background:#eff6ff;color:#2563eb">今日</span></td><td>今日すでに入力・保存されているデータ</td></tr>
-        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>前回の記録を引き継いで表示</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>今日はまだ入力がなく、前回の記録を引き継いで表示</td></tr>
         <tr><td><span class="mbadge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0">新規</span></td><td>初めて登録される利用者</td></tr>
       </table>
+      <div class="mssec" style="margin-top:10px">■ プルダウンで各項目を選択する</div>
+      <table class="mtbl"><tr><th>項目</th><th>選択肢</th></tr>
+        <tr><td>連絡帳・薬変更・目薬・軟膏処置</td><td>未選択 / 有 / 無</td></tr>
+        <tr><td>入浴</td><td>未選択 / 一般 / リフト浴 / 機械浴 / シャワー浴 / 清拭</td></tr>
+        <tr><td>最終排便</td><td>未選択 / 0日 / 不明 / -1〜-10日</td></tr>
+      </table>
+      <div class="mpoint">💡　「有」を選択すると欄が青くなります。また最終排便が -3日以下になると<span style="color:#dc2626;font-weight:700">赤文字</span>で警告表示されます。</div>
       <div class="mpoint mpoint-warn">⚠️　入浴は翌日には自動でクリアされます。毎日入力が必要です。</div>
     </div>
+
+    <!-- 3 -->
     <div class="msec" id="m3">
       <div class="msec-title"><span class="msec-num">3</span>申し送り内容・最終排便の記入</div>
+      <p class="mbody">各カードの下部に「申し送り内容」セクションがあります。最終排便・追加セクション・自由記入テキストで構成されています。</p>
       <div class="mssec">■ 最終排便</div>
       <table class="mtbl"><tr><th>選択肢</th><th>意味</th></tr>
         <tr><td>0日</td><td>本日排便あり</td></tr>
         <tr><td>不明</td><td>排便状況が把握できていない</td></tr>
-        <tr><td style="color:#dc2626;font-weight:700">-3〜-10</td><td><span style="color:#dc2626;font-weight:700">⚠ 赤文字警告表示</span></td></tr>
+        <tr><td style="color:#dc2626;font-weight:700">-3〜-10</td><td><span style="color:#dc2626;font-weight:700">⚠ 赤文字警告表示（3日以上排便なし）</span></td></tr>
       </table>
-      <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると、引継データの場合は自動で1日加算されます。</div>
+      <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると、引継データの場合は自動で1日加算されます（例：-3日→翌日-4日）。今日入力済みのデータには影響しません。</div>
+      <div class="mssec">■ 追加セクション（用具・設備 / 薬関連 / 外出）</div>
+      <p class="mbody">カード下部のボタンをタップするとセクションが展開されます。入替セクションにも同じボタンがあります。</p>
+      <table class="mtbl"><tr><th>ボタン</th><th>内容</th><th>引継ぎ</th></tr>
+        <tr><td>用具・設備</td><td>ラバー・ベッド下NC の有無（あり／なし）</td><td>翌日に引き継がれます</td></tr>
+        <tr><td>薬関連</td><td>薬の変更内容などを自由記入</td><td>翌日に引き継がれます</td></tr>
+        <tr><td>外出</td><td>外出の月日と要件を入力</td><td>翌日に引き継がれます</td></tr>
+      </table>
+      <div class="mpoint">💡　ボタンが青くなっているとき = セクションが表示中。再タップで非表示、セクション内の「非表示」でも閉じられます。表示状態はiPadごとに記憶されます。</div>
+      <div class="mssec">■ 申し送りテキストの操作ボタン</div>
+      <table class="mtbl"><tr><th>ボタン</th><th>機能</th></tr>
+        <tr><td>↩ 元に戻す</td><td>直前の入力状態に戻す（最大20段階）</td></tr>
+      </table>
+      <div class="mpoint">📌　入力した申し送りはダッシュボードの申し送り一覧にも表示されます。1Fは青、2Fは緑で色分けされています。</div>
     </div>
+
+    <!-- 5 -->
     <div class="msec" id="m4">
       <div class="msec-title"><span class="msec-num">4</span>入れ替え利用者の記録</div>
+      <p class="mbody">同じ部屋に一時的に別の方が入る場合（短期・一時入所など）に使います。メインの利用者とは完全に別のデータとして管理されます。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「入替 表示」ボタン（紫色）をタップ</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>入替の方のお名前を入力し、ケア項目を入力</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>カード下に紫色の「入替」セクションが表示されます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>入替の方のお名前を入力し、通常と同じ手順でケア項目を入力</div></div>
       </div>
-      <div class="mpoint mpoint-purple">💜　翌日の日付切替で入替の方が自動でメイン利用者に移行されます。</div>
+      <div class="mpoint mpoint-purple">💜　翌日の日付切替で入替の方が自動でメイン利用者に移行されます。入替欄は空になります。不要なときは「入替 非表示」で隠せます。</div>
     </div>
+
+    <!-- 6 -->
     <div class="msec" id="m5">
       <div class="msec-title"><span class="msec-num">5</span>退所ボタンの使い方・退所者履歴</div>
+      <div class="mssec">■ 退所ボタンの操作</div>
+      <p class="mbody">その日に退所した利用者の部屋に使います。翌日以降の日付に切り替えると、名前とすべてのデータが自動でクリアされ空室状態になります。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「退所」ボタンをタップ → カードが赤くなり「退所済」に変わる</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>翌日以降の日付に切り替えると自動でその部屋がクリアされます</div></div>
       </div>
       <div class="mpoint mpoint-warn">⚠️　間違えて押した場合は、もう一度「退所済」をタップすれば解除できます。</div>
-    </div>
-    <div class="msec" id="m6">
-      <div class="msec-title"><span class="msec-num">6</span>クリア・元に戻す（バックアップ）</div>
-      <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」ボタンをタップします</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>「元に戻す」を12秒以内にタップすると復元されます</div></div>
-      </div>
-    </div>
-    <div class="msec" id="m7">
-      <div class="msec-title"><span class="msec-num">7</span>ダッシュボードの見方</div>
-      <div class="mssec">■ 最終排便　日数分布の色</div>
-      <table class="mtbl"><tr><th>色</th><th>内容</th></tr>
-        <tr><td><span style="color:#16a34a;font-weight:700">緑</span></td><td>0〜-2日</td></tr>
-        <tr><td><span style="color:#b45309;font-weight:700">黄</span></td><td>-3〜-4日</td></tr>
-        <tr><td><span style="color:#dc2626;font-weight:700">赤</span></td><td>-5日以上</td></tr>
+      <div class="mpoint">🔍　退所ボタンを押した後に過去の日付に戻しても、その方のデータは消えません。退所処理は「前より新しい日付に進んだとき」だけ実行されます。</div>
+      <div class="mssec">■ 退所者履歴（7日間）</div>
+      <p class="mbody">退所処理が実行されると、その方の情報が「退所者履歴」に7日間保存されます。ケア記録画面の上部に赤いバーで表示されます。</p>
+      <table class="mtbl"><tr><th>操作</th><th>内容</th></tr>
+        <tr><td>バーをタップ</td><td>退所者一覧を開閉する</td></tr>
+        <tr><td>「記録を見る」</td><td>退所前7日分のケア記録（連絡帳・入浴・排便・申し送りなど）を確認</td></tr>
+        <tr><td>残り○日</td><td>履歴が自動削除されるまでの残日数</td></tr>
       </table>
     </div>
+
+    <!-- 7 -->
+    <div class="msec" id="m6">
+      <div class="msec-title"><span class="msec-num">6</span>クリア・元に戻す（バックアップ）</div>
+      <p class="mbody">入力を間違えたときに、その部屋の画面表示だけをリセットします。FirebaseにもlocalStorageにも書き込まれません。</p>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」ボタンをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>入力内容が消え、「元に戻す」ボタンが12秒間表示されます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>「元に戻す」を12秒以内にタップすると、クリア前の状態に復元されます</div></div>
+      </div>
+      <div class="mpoint mpoint-warn">⚠️　「元に戻す」が消えた後は復元できません。申し送りテキストには別途「↩ 元に戻す」ボタンがあり最大20段階戻れます。</div>
+    </div>
+
+    <!-- 8 -->
+    <div class="msec" id="m7">
+      <div class="msec-title"><span class="msec-num">7</span>ダッシュボードの見方</div>
+      <div class="mssec">■ 概要カード</div>
+      <table class="mtbl"><tr><th>カード名</th><th>内容</th></tr>
+        <tr><td>本日の完了部屋</td><td>全6項目が入力済みの部屋の数</td></tr>
+        <tr><td>入力中（途中）</td><td>一部だけ入力されている部屋の数</td></tr>
+        <tr><td>未入力</td><td>何も入力されていない部屋の数</td></tr>
+        <tr><td>連絡帳あり</td><td>「有」を選んだ利用者の数</td></tr>
+        <tr><td>薬変更あり</td><td>「有」を選んだ利用者の数</td></tr>
+        <tr><td style="background:#faf5ff">入浴あり（紫）</td><td>入浴種別を選んだ利用者の数（入れ替え含む）</td></tr>
+      </table>
+      <div class="mssec" style="margin-top:10px">■ 入浴者一覧</div>
+      <p class="mbody">入浴種別（一般・リフト浴・機械浴・シャワー浴・清拭）ごとにグループ分けして表示。入れ替えの方は「101(入替)」と区別されます。</p>
+      <div class="mssec">■ 最終排便　日数分布の色</div>
+      <table class="mtbl"><tr><th>色</th><th>内容</th></tr>
+        <tr><td><span style="color:#16a34a;font-weight:700">緑</span></td><td>0〜-2日（最近排便あり）</td></tr>
+        <tr><td><span style="color:#b45309;font-weight:700">黄</span></td><td>-3〜-4日（やや注意）</td></tr>
+        <tr><td><span style="color:#dc2626;font-weight:700">赤</span></td><td>-5日以上（要注意）</td></tr>
+      </table>
+      <div class="mssec">■ 申し送り一覧の操作</div>
+      <p class="mbody">各申し送りをタップすると、その方のケア項目を一覧で確認できるポップアップが開きます。右上の × で閉じます。</p>
+      <table class="mtbl"><tr><th>色</th><th>フロア・種別</th></tr>
+        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#93c5fd;border-radius:2px;vertical-align:middle"></span> 青</td><td>1F（100番台）</td></tr>
+        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#6ee7b7;border-radius:2px;vertical-align:middle"></span> 緑</td><td>2F（200番台）</td></tr>
+        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#c4b5fd;border-radius:2px;vertical-align:middle"></span> 紫</td><td>入替の方</td></tr>
+      </table>
+    </div>
+
+    <!-- 9 -->
     <div class="msec" id="m8">
       <div class="msec-title"><span class="msec-num">8</span>体重・身長の記録</div>
       <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>「体重・身長」タブをタップします</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>表示月を選択し、体重・身長を入力します</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>入力欄から外れると自動でBMIが計算・保存されます</div></div>
+        <div class="mstep"><div class="mstep-num">1</div><div>上部の「体重・身長」タブをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>「表示月」で記録したい月を選択します</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>一覧表の各行の「体重」「身長」欄に数字を入力します</div></div>
+        <div class="mstep"><div class="mstep-num">4</div><div>入力欄から外れると自動でBMIが計算・保存されます</div></div>
       </div>
+      <div class="mpoint">📊　一覧には現在入居中の方だけでなく、過去に体重・身長を記録したすべての方（退所済みを含む）が表示されます。「記録を見る」で過去24ヶ月分の推移グラフを確認できます。</div>
+      <table class="mtbl"><tr><th>BMI表示の色</th><th>判定</th></tr>
+        <tr><td><span class="mbadge" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5">低体重</span></td><td>BMI 18.5未満</td></tr>
+        <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac">普通</span></td><td>BMI 18.5〜25未満</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309;border:1px solid #fcd34d">過体重</span></td><td>BMI 25以上</td></tr>
+      </table>
     </div>
+
+    <!-- 10 -->
     <div class="msec" id="m9">
       <div class="msec-title"><span class="msec-num">9</span>リンクの登録と使い方</div>
       <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>プリセットボタンをタップするだけで追加できます</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>「＋ リンクを追加」から独自URLを登録できます</div></div>
+        <div class="mstep"><div class="mstep-num">1</div><div>「リンク」タブをタップします</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>プリセットボタン（Notion・Googleドライブなど）をタップするだけで追加できます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>独自のURLは「＋ リンクを追加」から名前・URL・絵文字を入力して登録します</div></div>
       </div>
+      <div class="mpoint">🔗　登録したリンクはFirebaseに保存されるため、2台のiPadで共有されます。リンクカード右上の × で削除できます。</div>
     </div>
+
+    <!-- 11 -->
     <div class="msec" id="m10">
       <div class="msec-title"><span class="msec-num">10</span>翌日への引き継ぎ・自動処理</div>
+      <p class="mbody">翌日以降の日付に切り替えたとき、以下の処理が<strong>自動で</strong>行われます。手動操作は不要です。</p>
       <table class="mtbl"><tr><th>状況</th><th>自動で行われること</th></tr>
-        <tr><td>通常の利用者（引継）</td><td>最終排便が1日加算。入浴はクリア</td></tr>
+        <tr><td>通常の利用者（引継）</td><td>最終排便が1日加算（-3→-4など）。入浴はクリア</td></tr>
         <tr><td>今日すでに入力した利用者</td><td>今日のデータがそのまま引き継がれる</td></tr>
-        <tr><td>退所ボタンを押した部屋</td><td>名前とデータが自動でクリアされ空室になる</td></tr>
+        <tr><td>退所ボタンを押した部屋</td><td>名前とデータが自動でクリアされ空室になる（退所者履歴に7日間保持）</td></tr>
         <tr><td>入替の方がいた部屋</td><td>入替の方が自動でメイン利用者に移行。入替欄は空になる</td></tr>
       </table>
+      <div class="mpoint mpoint-green">✅　過去の日付に戻した場合は退所処理・引継処理は実行されません。安心して過去の記録を確認できます。</div>
     </div>
+
+    <!-- 12 -->
     <div class="msec" id="m11">
       <div class="msec-title"><span class="msec-num">11</span>日付自動更新・アプリ化（PWA）</div>
+      <div class="mssec">■ 日付の自動更新</div>
+      <p class="mbody">以下のタイミングで自動的に今日の日付に切り替わります。手動で変更する必要はありません。</p>
       <table class="mtbl"><tr><th>タイミング</th><th>動作</th></tr>
-        <tr><td>深夜0時ちょうど</td><td>自動で翌日の日付に切り替わる</td></tr>
+        <tr><td>深夜0時ちょうど</td><td>自動で翌日の日付に切り替わる（画面下部にトースト通知）</td></tr>
         <tr><td>iPadのスリープ復帰時</td><td>日付が変わっていれば即座に切り替わる</td></tr>
+        <tr><td>別アプリから戻ったとき</td><td>同上</td></tr>
+        <tr><td>1分ごとのバックグラウンド確認</td><td>確実な切り替えのためのフォールバック</td></tr>
       </table>
+      <div class="mssec">■ ホーム画面へのアプリ追加（PWA）</div>
+      <p class="mbody">SafariからホームSafariに追加すると、アイコンからアプリのように起動できます。</p>
+      <div class="msteps">
+        <div class="mstep"><div class="mstep-num">1</div><div>SafariでアプリのURLを開く</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>画面下の共有ボタン（□↑）をタップ</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>「ホーム画面に追加」をタップ → 「追加」</div></div>
+      </div>
+      <div class="mpoint">📱　2本指でピンチイン・ピンチアウトして画面を拡大・縮小できます。</div>
     </div>
+
+    <!-- 13 -->
     <div class="msec" id="m12">
       <div class="msec-title"><span class="msec-num">12</span>2台のiPadで同期する</div>
-      <p class="mbody">両方のiPadが同じURLを開いていれば、入力内容がリアルタイムで自動同期されます。</p>
-      <div class="mpoint mpoint-warn">⚠️　日付切替は1台で操作してからもう1台を再読み込みすると、排便日数の不整合が起きにくくなります。</div>
+      <p class="mbody">両方のiPadが同じURLを開いていれば、入力内容がリアルタイムで自動同期されます。特別な操作は不要です。</p>
+      <table class="mtbl"><tr><th>同期される</th><th>同期されない（端末ごとの設定）</th></tr>
+        <tr><td>ケアデータ（各項目・申し送り）</td><td>入替セクションの表示/非表示</td></tr>
+        <tr><td>利用者の名前・部屋の紐付け</td><td>クリア前のバックアップデータ</td></tr>
+        <tr><td>体重・身長データ</td><td>退所フラグ（退所ボタンの状態）</td></tr>
+        <tr><td>退所者履歴・外部リンク</td><td></td></tr>
+      </table>
+      <p class="mbody" style="margin-top:8px">同期が止まったときはWi-Fi接続を確認し、Safariを再読み込みしてください。上部の同期バーが「🟢 Firebase リアルタイム同期中」になれば復旧しています。</p>
     </div>
+
+    <!-- 14 -->
     <div class="msec" id="m13">
       <div class="msec-title"><span class="msec-num">13</span>よくある質問</div>
-      <div class="mfaq"><div class="mfaq-q">Q. 翌日に切り替えたら名前が消えてしまいました</div><div class="mfaq-a">退所ボタンが押されていた可能性があります。退所者履歴から「記録を見る」で確認できます。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 入浴の選択が翌日に消えてしまいます</div><div class="mfaq-a">仕様です。入浴は毎日の記録なので引継時に自動クリアされます。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 入替の方が翌日に移行されませんでした</div><div class="mfaq-a">iPadが長時間スリープしていた場合に発生することがありました。最新版では修正済みです。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 排便日数が変わる人と変わらない人がいます</div><div class="mfaq-a">2台のiPadが同時に日付切替を行うと発生することがあります。1台で操作後にもう1台を再読み込みしてください。</div></div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 名前を間違えて入力してしまいました</div>
+        <div class="mfaq-a">名前欄をタップして正しい名前に修正し、Enterを押してください。新しい名前でデータを読み込み直します。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 申し送りを間違えて消してしまいました</div>
+        <div class="mfaq-a">申し送り欄の右上にある「↩ 元に戻す」ボタンをタップしてください。最大20段階まで戻れます。カード全体の「クリア」ボタンを押した場合は12秒以内の「元に戻す」で復元できます。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 入浴の選択が翌日に消えてしまいます</div>
+        <div class="mfaq-a">仕様です。入浴は毎日の記録なので引継時に自動クリアされます。毎日入力してください。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 申し送りがダッシュボードに表示されない</div>
+        <div class="mfaq-a">申し送りのテキスト欄に文字を入力した後、少し待つと自動保存されます。ダッシュボードをタップし直してみてください。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 翌日に切り替えたら名前が消えてしまいました</div>
+        <div class="mfaq-a">退所ボタンが押されていた可能性があります。退所者履歴（画面上部の赤いバー）から「記録を見る」で確認できます。前日の日付に戻してデータを確認し、名前を再入力してください。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 退所した方の記録を確認したい</div>
+        <div class="mfaq-a">退所後7日以内であれば、ケア記録画面上部の「🏠 退所者履歴」から「記録を見る」をタップしてください。退所前7日分のケア記録が確認できます。</div>
+      </div>
+      <div class="mfaq">
+        <div class="mfaq-q">Q. 同期がうまくいかない</div>
+        <div class="mfaq-a">両方のiPadが同じWi-Fiに接続されているか確認してください。Safariを再読み込みすると解決することが多いです。</div>
+      </div>
     </div>
+
   </div>
 </div>
-
 <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent"></div>
 </div>
 
 <script>
 // ================================================================
+
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyBCUKrjGlyOqigYrwySaqQjUYRsyXv-_Ys",
   authDomain:        "mousi-bab8c.firebaseapp.com",
@@ -715,6 +814,7 @@ const BATH_TYPES=['一般','リフト浴','機械浴','シャワー浴','清拭'
 const YN=[{k:'renrakucho',l:'連絡帳'},{k:'yakuhenkou',l:'薬変更'},{k:'megusuri',l:'目薬'},{k:'nankou',l:'軟膏処置'}];
 const PROG_MAX=6;
 
+// 日本時間でのローカル日付取得（toISOStringはUTCなので午前0〜9時に前日になるバグを防ぐ）
 function getLocalDate(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -727,67 +827,28 @@ ALL.forEach(r=>{SUB[r]={name:'',renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'
 let subVisible={};
 ALL.forEach(r=>{subVisible[r]=false;});
 
-// 介助詳細
+// ── バックアップ・退所 ──────────────────────────────
 let careNotes={};
-function emptyCareNotes(){return{shintai:'',ido:'',shokuji_shushoku:'',shokuji_fukushoku:'',shokuji_toro:'',shokuji_iero:false,shokuji_note:'',haisetsu_note:'',omutsu:'',rehapan:'',pad:'',haisetsu_basho:'',haisetsu_freq:'',sonota:''};}
+function emptyCareNotes(){return{shintai:'',ido:'',shokuji_shushoku:'',shokuji_fukushoku:'',shokuji_toro:'',shokuji_iero:false,shokuji_note:'',nyuyoku_houhou:'',nyuyoku_note:'',haisetsu_note:'',omutsu:'',rehapan:'',pad:'',haisetsu_basho:'',haisetsu_freq:'',sonota:''};};
 ALL.forEach(r=>{careNotes[r]=emptyCareNotes();});
 let careNotesVisible={};
 ALL.forEach(r=>{careNotesVisible[r]=false;});
 let cnActiveTab={};
 ALL.forEach(r=>{cnActiveTab[r]='shintai';});
 
-let backups={};
-ALL.forEach(r=>{backups[r]=null;});
-let discharged={};
-ALL.forEach(r=>{discharged[r]=false;});
-
-let extraLabel='入浴';
-let links=[];
-const memoHistory={};
-const subMemoHistory={};
-ALL.forEach(r=>{memoHistory[r]=[];subMemoHistory[r]=[];});
-function pushMemoHistory(r,val,isSub){
-  const h=isSub?subMemoHistory[r]:memoHistory[r];
-  if(h.length===0||h[h.length-1]!==val){h.push(val);if(h.length>20)h.shift();}
-  updateUndoBtn(r,isSub);
-}
-function undoMemo(r,isSub){
-  const h=isSub?subMemoHistory[r]:memoHistory[r];
-  if(h.length<=1){return;}
-  h.pop();
-  const prev=h[h.length-1]||'';
-  if(isSub){SUB[r].memo=prev;const ta=document.getElementById('sub-memo-'+r);if(ta)ta.value=prev;onSubMemoChange(r,prev);}
-  else{S[r].memo=prev;const ta=document.getElementById('memo-'+r);if(ta)ta.value=prev;onMemoChange(r,prev);}
-  updateUndoBtn(r,isSub);
-}
-function updateUndoBtn(r,isSub){
-  const id=(isSub?'sub-':'')+'memo-undo-'+r;
-  const btn=document.getElementById(id);
-  if(!btn)return;
-  const h=isSub?subMemoHistory[r]:memoHistory[r];
-  btn.disabled=h.length<=1;
-}
-
-function ls(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
-function lss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-
-function loadSubVisible(){const s=ls('subVisible');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)subVisible[r]=true;});}}
-function saveSubVisible(){lss('subVisible',subVisible);}
-
-// 介助詳細 - ローカル＆Firebase保存
 function loadCareNotesVisible(){const s=ls('careNotesVisible');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)careNotesVisible[r]=true;});}}
 function saveCareNotesVisible(){lss('careNotesVisible',careNotesVisible);}
 async function loadCareNotesByName(name){
   if(!name||!name.trim())return{};
   const k=encKey(name.trim());
-  if(db){const d=await fbGet(`residents/${k}/careNotes`);if(d)return d;}
+  if(db){const d=await fbGet('residents/'+k+'/careNotes');if(d)return d;}
   return ls('cn_'+name.trim())||{};
 }
 async function saveCareNotes(room){
   const name=(S[room].name||'').trim();if(!name)return;
   const data={...careNotes[room]};
   lss('cn_'+name,data);
-  await fbSet(`residents/${encKey(name)}/careNotes`,data);
+  await fbSet('residents/'+encKey(name)+'/careNotes',data);
   const el=document.getElementById('cn-saved-'+room);
   if(el){el.className='cn-saved show';clearTimeout(el._t);el._t=setTimeout(()=>{el.className='cn-saved';},1600);}
 }
@@ -805,7 +866,7 @@ function toggleCareNotes(r){
 }
 function switchCnTab(r,tab){
   cnActiveTab[r]=tab;
-  ['shintai','ido','shokuji','haisetsu','sonota'].forEach(t=>{
+  ['shintai','ido','shokuji','nyuyoku','haisetsu','sonota'].forEach(t=>{
     const p=document.getElementById('cn-panel-'+t+'-'+r);
     const b=document.getElementById('cn-tab-'+t+'-'+r);
     if(p)p.className='cn-panel'+(t===tab?' active':'');
@@ -824,10 +885,121 @@ async function onCnSelChange(r,key,v,el){
 }
 async function onCnCheckChange(r,key,checked){
   careNotes[r][key]=checked;
-  const lbl=document.querySelector(`label[for="cn-iero-${r}"]`);
+  const lbl=document.querySelector('label[for="cn-iero-'+r+'"]');
   if(lbl)lbl.style.fontWeight=checked?'500':'400';
   await saveCareNotes(r);
 }
+
+function buildCareNotesSection(r){
+  const cn=careNotes[r];
+  const vis=careNotesVisible[r];
+  const at=cnActiveTab[r]||'shintai';
+  const tabs=[{id:'shintai',lbl:'身体情報'},{id:'ido',lbl:'移動'},{id:'shokuji',lbl:'食事'},{id:'nyuyoku',lbl:'入浴'},{id:'haisetsu',lbl:'排泄'},{id:'sonota',lbl:'その他'}];
+  const tabHtml=tabs.map(t=>`<button class="cn-tab${at===t.id?' active':''}" id="cn-tab-${t.id}-${r}" onclick="switchCnTab(${r},'${t.id}')">${t.lbl}</button>`).join('');
+  const mkTa=(key,ph,rows=3)=>`<textarea class="cn-textarea" rows="${rows}" placeholder="${ph}" oninput="onCnTextChange(${r},'${key}',this.value)">${cn[key]||''}</textarea>`;
+  const mkSel=(key,label,opts)=>{
+    const optsHtml=opts.map(o=>`<option value="${o}"${cn[key]===o?' selected':''}>${o||'未選択'}</option>`).join('');
+    return`<div class="cn-field"><div class="cn-label">${label}</div><select class="cn-select${cn[key]?' v-set':''}" onchange="onCnSelChange(${r},'${key}',this.value,this)"><option value="">未選択</option>${optsHtml}</select></div>`;
+  };
+  const panels={
+    shintai:`<div><div class="cn-label">身体情報・注意事項（アレルギー・既往歴・禁忌など）</div>${mkTa('shintai','例：○○アレルギー、高血圧・骨粗鬆症あり、右膝に人工関節',4)}</div>`,
+    ido:`<div><div class="cn-label">移動・移乗の介助方法</div>${mkTa('ido','例：歩行器使用・見守り、移乗は2名介助、左側麻痺に注意',4)}</div>`,
+    shokuji:`<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cn-sel-grid">
+        ${mkSel('shokuji_shushoku','主食',['常食','軟飯','お粥','ペースト'])}
+        ${mkSel('shokuji_fukushoku','副食',['常食','一口大','刻み','極刻み','ペースト'])}
+      </div>
+      ${mkSel('shokuji_toro','とろみ',['なし','薄いとろみ','中間とろみ','濃いとろみ'])}
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:#fff;border:1px solid #d1fae5;border-radius:8px">
+        <input type="checkbox" id="cn-iero-${r}" ${cn.shokuji_iero?'checked':''} onchange="onCnCheckChange(${r},'shokuji_iero',this.checked)" style="width:16px;height:16px;accent-color:#059669;cursor:pointer;flex-shrink:0">
+        <label for="cn-iero-${r}" style="font-size:13px;color:#1e293b;cursor:pointer;font-weight:${cn.shokuji_iero?'500':'400'}">胃ろう使用</label>
+      </div>
+      <div><div class="cn-label">食事介助・注意事項</div>${mkTa('shokuji_note','例：全介助・スプーン使用、嚥下障害あり・姿勢に注意',3)}</div>
+    </div>`,
+    nyuyoku:`<div style="display:flex;flex-direction:column;gap:8px">
+      ${mkSel('nyuyoku_houhou','入浴方法',['一般','リフト浴','機械浴','シャワー浴','清拭'])}
+      <div><div class="cn-label">入浴介助・注意事項</div>${mkTa('nyuyoku_note','例：全介助・2名で対応、熱いお湯が苦手・40度以下、右肩に痛みあり注意',3)}</div>
+    </div>`,
+    haisetsu:`<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cn-sel-grid">
+        ${mkSel('omutsu','オムツ（テープ型）',['なし','S','M','L','LL'])}
+        ${mkSel('rehapan','リハパン',['なし','S','M','L','LL'])}
+      </div>
+      ${mkSel('pad','パット',['なし','レギュラー','パワフル','ビッグ'])}
+      <div class="cn-sel-grid">
+        ${mkSel('haisetsu_basho','排泄場所',['トイレ','ポータブルトイレ','床上（オムツ内）','尿道カテーテル'])}
+        ${mkSel('haisetsu_freq','交換頻度',['随時','2時間ごと','3時間ごと','4時間ごと','排泄時'])}
+      </div>
+      <div><div class="cn-label">排泄介助・注意事項</div>${mkTa('haisetsu_note','例：全介助・声かけ要、尿意あり呼ぼん使用、皮膚トラブルに注意',3)}</div>
+    </div>`,
+    sonota:`<div><div class="cn-label">その他の注意点・特記事項</div>${mkTa('sonota','例：夜間の不穏あり、コミュニケーションは筆談、家族対応の注意事項など',4)}</div>`
+  };
+  const panelHtml=tabs.map(t=>`<div class="cn-panel${at===t.id?' active':''}" id="cn-panel-${t.id}-${r}">${panels[t.id]||''}</div>`).join('');
+  return`<div class="cn-section${vis?' visible':''}" id="cn-section-${r}">
+  <div class="cn-header">
+    <span class="cn-badge">介助詳細</span>
+    <div class="cn-tabs">${tabHtml}</div>
+    <span class="cn-saved" id="cn-saved-${r}">✓ 保存</span>
+  </div>
+  <div class="cn-body">${panelHtml}</div>
+</div>`;
+}
+
+function refreshCareNotesSection(r){
+  const sec=document.getElementById('cn-section-'+r);
+  if(!sec)return;
+  const cn=careNotes[r];
+  ['shintai','ido','shokuji_note','nyuyoku_note','haisetsu_note','sonota'].forEach(key=>{
+    const el=sec.querySelector(`textarea[oninput*="'${key}'"]`);
+    if(el)el.value=cn[key]||'';
+  });
+  ['shokuji_shushoku','shokuji_fukushoku','shokuji_toro','nyuyoku_houhou','omutsu','rehapan','pad','haisetsu_basho','haisetsu_freq'].forEach(key=>{
+    const el=sec.querySelector(`select[onchange*="'${key}'"]`);
+    if(el){el.value=cn[key]||'';el.className='cn-select'+(cn[key]?' v-set':'');}
+  });
+  const cb=document.getElementById('cn-iero-'+r);
+  if(cb){cb.checked=!!cn.shokuji_iero;const lbl=document.querySelector('label[for="cn-iero-'+r+'"]');if(lbl)lbl.style.fontWeight=cn.shokuji_iero?'500':'400';}
+}
+let backups={};
+ALL.forEach(r=>{backups[r]=null;});
+let discharged={};
+ALL.forEach(r=>{discharged[r]=false;});
+
+let extraLabel='入浴';
+let links=[];
+// 申し送りアンドゥ履歴（部屋ごと最大20件、メイン・入替）
+const memoHistory={};
+const subMemoHistory={};
+ALL.forEach(r=>{memoHistory[r]=[];subMemoHistory[r]=[];});
+function pushMemoHistory(r,val,isSub){
+  const h=isSub?subMemoHistory[r]:memoHistory[r];
+  if(h.length===0||h[h.length-1]!==val){h.push(val);if(h.length>20)h.shift();}
+  updateUndoBtn(r,isSub);
+}
+function undoMemo(r,isSub){
+  const h=isSub?subMemoHistory[r]:memoHistory[r];
+  if(h.length<=1){return;}
+  h.pop();// 現在の状態を捨てる
+  const prev=h[h.length-1]||'';
+  if(isSub){SUB[r].memo=prev;const ta=document.getElementById('sub-memo-'+r);if(ta)ta.value=prev;onSubMemoChange(r,prev);}
+  else{S[r].memo=prev;const ta=document.getElementById('memo-'+r);if(ta)ta.value=prev;onMemoChange(r,prev);}
+  updateUndoBtn(r,isSub);
+}
+function updateUndoBtn(r,isSub){
+  const id=(isSub?'sub-':'')+'memo-undo-'+r;
+  const btn=document.getElementById(id);
+  if(!btn)return;
+  const h=isSub?subMemoHistory[r]:memoHistory[r];
+  btn.disabled=h.length<=1;
+}
+
+// ── ローカルストレージ helpers ─────────────────────
+function ls(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+function loadSubVisible(){const s=ls('subVisible');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)subVisible[r]=true;});}}
+function saveSubVisible(){lss('subVisible',subVisible);}
+// 追加セクション表示状態（端末ごと・3種×メイン/入替）
 const EXTRA_SEC=['tools','yaku','gaishu'];
 let extraSec={};
 ALL.forEach(r=>{extraSec[r]={tools:false,yaku:false,gaishu:false};});
@@ -860,10 +1032,13 @@ function hideExtraSec(r,key,isSub){
 function loadDischarged(){const s=ls('discharged');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)discharged[r]=true;});}}
 function saveDischarged(){lss('discharged',discharged);}
 
-let dischargedLog=[];
+// ── 退所者履歴ログ（7日間保持）─────────────────────────────
+let dischargedLog=[];// [{name, room, date}]
+
 async function loadDischargedLog(){
   const fb=await fbGet('settings/dischargedLog');
   const saved=fb||ls('dischargedLog')||[];
+  // 7日以上前のエントリを削除
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);
   const cy=cutoff.getFullYear(),cm=String(cutoff.getMonth()+1).padStart(2,'0'),cd=String(cutoff.getDate()).padStart(2,'0');
   const cutoffStr=cy+'-'+cm+'-'+cd;
@@ -876,6 +1051,7 @@ async function saveDischargedLog(){
 }
 async function addDischargedLog(name,room,date){
   if(!name||!name.trim())return;
+  // 重複防止
   dischargedLog=dischargedLog.filter(e=>!(e.name===name&&e.room===room));
   dischargedLog.push({name:name.trim(),room,date});
   await saveDischargedLog();
@@ -889,6 +1065,7 @@ function renderDischargedLog(){
   allPages.forEach(page=>{
     if(!page)return;
     let section=page.querySelector('.discharged-log-section');
+    // 7日以内の退所者だけ
     const recent=dischargedLog.filter(e=>daysLeft(e.date)>0);
     if(!recent.length){if(section)section.remove();return;}
     if(!section){
@@ -922,6 +1099,8 @@ async function showDischargedDetail(name,room,dischargeDate){
     <div style="font-size:11px;color:#64748b;margin-bottom:12px">退所日: ${dischargeDate}　※7日間参照可能</div>
     <div id="dischDetailBody"><div class="no-data">読み込み中...</div></div>`;
   document.getElementById('modalBg').style.display='flex';
+
+  // 過去7日分のデータを取得
   const rows=[];
   for(let i=0;i<7;i++){
     const d=new Date(dischargeDate+'T00:00:00');d.setDate(d.getDate()-i);
@@ -932,9 +1111,11 @@ async function showDischargedDetail(name,room,dischargeDate){
     if(!data)data=ls('care_'+name+'_'+dateStr);
     if(data)rows.push({date:dateStr,data});
   }
+
   const body=document.getElementById('dischDetailBody');
   if(!body)return;
   if(!rows.length){body.innerHTML='<div class="no-data">記録が見つかりません</div>';return;}
+
   body.innerHTML=rows.map(({date,data})=>{
     const hb=data.haiben||'未選択';
     const hn=parseInt(hb);
@@ -953,6 +1134,7 @@ async function showDischargedDetail(name,room,dischargeDate){
   }).join('');
 }
 
+// 最終排便を1日マイナス
 function decrementHaiben(val){
   if(!val||val==='不明')return val;
   const n=parseInt(val);
@@ -961,6 +1143,7 @@ function decrementHaiben(val){
   return String(n-1);
 }
 
+// ── Firebase ──────────────────────────────────────
 let db=null;
 try{
   firebase.initializeApp(FIREBASE_CONFIG);
@@ -980,11 +1163,10 @@ function emptyDaily(){return{renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',h
 async function fbGet(path){if(!db)return null;try{const s=await db.ref(path).get();return s.exists()?s.val():null;}catch(e){return null;}}
 async function fbSet(path,val){if(!db)return;try{await db.ref(path).set(val);}catch(e){setSyncStatus('warn','保存エラー');}}
 
-async function loadExtraLabel(){const s=await fbGet('settings/extraLabel')||ls('extraLabel');if(s)extraLabel=s;}
-async function saveExtraLabel(l){extraLabel=l;lss('extraLabel',l);await fbSet('settings/extraLabel',l);}
 async function loadLinks(){const s=await fbGet('settings/links')||ls('links');if(s)links=Array.isArray(s)?s:[];renderLinks();}
 async function saveLinks(){lss('links',links);await fbSet('settings/links',links);}
 
+// ── データ保存・読込 ──────────────────────────────
 async function saveRoomName(r,n){lss('rname_'+r,n);await fbSet('rooms/'+r+'/name',n);}
 async function saveDaily(room){
   const name=(S[room].name||'').trim();if(!name)return;
@@ -1037,10 +1219,12 @@ async function readSubByName(name){
   return{...emptyDaily(),_tag:'new'};
 }
 
+// ── 体重・身長 ────────────────────────────────────
 async function saveWH(name,month,weight,height){if(!name)return;const k=encKey(name.trim()),d={weight,height};lss('wh_'+name+'_'+month,d);await fbSet(`wh/${k}/${month.replace('-','_')}`,d);}
 async function loadWH(name,month){if(!name)return{weight:'',height:''};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}/${month.replace('-','_')}`);if(d)return d;}return ls('wh_'+name+'_'+month)||{weight:'',height:''};}
 async function loadWHHistory(name){if(!name)return{};const k=encKey(name.trim());if(db){const d=await fbGet(`wh/${k}`);if(d)return d;}const h={};for(let i=0;i<24;i++){const d=new Date();d.setMonth(d.getMonth()-i);const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const v=ls('wh_'+name+'_'+m);if(v)h[m.replace('-','_')]=v;}return h;}
 
+// ── Firebase リスナー ─────────────────────────────
 const listeners={};
 function listenResident(room,name){
   if(!db||!name)return;
@@ -1058,10 +1242,11 @@ function listenResident(room,name){
   listeners[room]=ref;
 }
 
+// ── 初期ロード ────────────────────────────────────
 async function loadAll(){
   loadSubVisible();loadExtraSec();loadDischarged();await loadDischargedLog();
   loadCareNotesVisible();
-  await loadExtraLabel();await loadLinks();
+  await loadLinks();
   for(const r of ALL){
     let name=ls('rname_'+r)||'';
     const fb=await fbGet('rooms/'+r+'/name');if(fb)name=fb;
@@ -1075,31 +1260,31 @@ async function loadAll(){
   ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
 }
 
-// ================================================================
-// ★ 修正箇所：isMovingForward の条件を >= 1 に変更
-//    変更前: const isMovingForward=(diffDaysMove===1);
-//    変更後: const isMovingForward=(diffDaysMove>=1);
-//    理由: iPadが2日以上スリープした場合でも入替移行・退所処理を正常に実行するため
-// ================================================================
+// ── 日付変更 ──────────────────────────────────────
 async function onDateChange(d){
   const prevDate=currentDate;
   currentDate=d;updateDateNote();
   Object.values(listeners).forEach(r=>r&&r.off&&r.off());
+  // 退所・入替移行は「ちょうど翌日」に進んだときのみ実行
+  // 手動で複数日ジャンプした場合や過去に戻した場合は実行しない
   const prevMs=new Date(prevDate+'T00:00:00').getTime();
   const newMs =new Date(d+'T00:00:00').getTime();
   const diffDaysMove=Math.round((newMs-prevMs)/(1000*60*60*24));
+  const isMovingForward=(diffDaysMove===1);
 
-  // ★ 修正: === 1 から >= 1 に変更（2日以上のスリープ後も移行・退所処理が動くように）
-  const isMovingForward=(diffDaysMove>=1);
+  // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
+  // 全部屋の名前を並列で読み込み（排便日数の処理を速くして競合を防ぐ）
+  const [_fbNames,_fbSubNames]=await Promise.all([
+    Promise.all(ALL.map(r=>fbGet('rooms/'+r+'/name'))),
+    Promise.all(ALL.map(r=>fbGet('sub_rooms/'+r+'/name')))
+  ]);
+  ALL.forEach((r,i)=>{
+    if(_fbNames[i]!=null)S[r].name=_fbNames[i];
+    if(_fbSubNames[i]!=null)SUB[r].name=_fbSubNames[i];
+  });
 
   for(const r of ALL){
-    const fbName=await fbGet('rooms/'+r+'/name');
-    if(fbName!=null) S[r].name=fbName;
-    const fbSubName=await fbGet('sub_rooms/'+r+'/name');
-    if(fbSubName!=null) SUB[r].name=fbSubName;
-  }
-
-  for(const r of ALL){
+    // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
     if(discharged[r]&&isMovingForward){
       const dName=(S[r].name||'').trim();
       if(dName) await addDischargedLog(dName,r,d);
@@ -1107,23 +1292,29 @@ async function onDateChange(d){
       await saveRoomName(r,'');
       discharged[r]=false;
     }
+    // ② 入替者がいればメインに移行（翌日以降に進んだときのみ）
     if(isMovingForward&&SUB[r].name&&SUB[r].name.trim()){
       const subName=SUB[r].name.trim();
+      // 入替データは sub_residents/ から読む
       const subData=await readSubByName(subName);
       if(subData._tag==='carried')subData.haiben=decrementHaiben(subData.haiben);
-      subData.extra='';
+      subData.extra=''; // 入浴は翌日クリア
       S[r]={...subData,name:subName};
       await saveRoomName(r,subName);
-      await saveDaily(r);
+      await saveDaily(r); // residents/ に書き込む
       SUB[r]={name:'',...emptyDaily(),_tag:''};
       await saveSubRoomName(r,'');
     } else if(!isMovingForward&&SUB[r].name&&SUB[r].name.trim()){
+      // 過去日付に戻した場合は入替データもそのまま読み込む
       const sdata=await readSubByName(SUB[r].name);
       SUB[r]={...SUB[r],...sdata};
     } else {
+      // ③ 通常引継（haiben デクリメント）
       const data=await readByName(S[r].name);
       if(data._tag==='carried'){
         data.haiben=decrementHaiben(data.haiben);
+        // ★ 引継データをデクリメントしたら即座に今日の日付で保存する
+        // これにより次回の日付切替で二重デクリメントが起きなくなる
         if(S[r].name&&S[r].name.trim()){
           S[r]={...S[r],...data,_tag:'today'};
           await saveDaily(r);
@@ -1133,6 +1324,7 @@ async function onDateChange(d){
       } else {
         S[r]={...S[r],...data};
       }
+      // ④ 入替側も引継（同様に即座に保存）
       if(SUB[r].name&&SUB[r].name.trim()){
         const sdata=await readSubByName(SUB[r].name);
         if(sdata._tag==='carried'){
@@ -1156,11 +1348,12 @@ function updateDateNote(){
   document.getElementById('dateNote').textContent=currentDate+'（'+w+'）の記録';
 }
 
+// ── メインハンドラー ──────────────────────────────
 function onNameInput(r,v){S[r].name=v;const el=document.getElementById('name-'+r);if(el)el.className='name-input';setTag(r,'');}
 async function onNameBlur(r){
   const name=(S[r].name||'').trim();
   await saveRoomName(r,name);
-  if(!name){setTag(r,'');careNotes[r]=emptyCareNotes();refreshCareNotesSection(r);return;}
+  if(!name){setTag(r,'');return;}
   const data=await readByName(name);S[r]={...S[r],...data,name};
   await loadCareNotesForRoom(r,name);
   refreshCard(r);refreshCareNotesSection(r);listenResident(r,name);
@@ -1188,6 +1381,18 @@ async function onMemoChange(r,v){
   if(document.getElementById('mainPage2').classList.contains('active'))refreshDashboardMemo();
 }
 
+// ── クリア＆バックアップ ──────────────────────────
+async function onExtraCheckChange(r,checked,isSub){
+  const val=checked?'済':'';
+  if(isSub){SUB[r].extra=val;SUB[r]._tag='today';await saveSubDaily(r);subFlash(r,'✓ 保存');}
+  else{S[r].extra=val;S[r]._tag='today';const p=prog(r);const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p);updateChip(r,p);await saveDaily(r);flash(r,'✓ 保存');}
+  // チェックボックスUIを更新
+  const wrap=document.getElementById((isSub?'sub-':'')+'extra-wrap-'+r);
+  const lbl=document.getElementById((isSub?'sub-':'')+'extra-lbl-'+r);
+  if(wrap)wrap.className='bath-check-wrap'+(checked?' checked':'');
+  if(lbl)lbl.textContent=checked?'入浴済み（当日）':'当日入浴なし';
+  if(document.getElementById('mainPage2').classList.contains('active'))renderDashboard();
+}
 async function onExtraSel(r,k,v,el,isSub){
   if(isSub){SUB[r][k]=v;SUB[r]._tag='today';await saveSubDaily(r);subFlash(r,'✓ 保存');}
   else{S[r][k]=v;S[r]._tag='today';await saveDaily(r);flash(r,'✓ 保存');}
@@ -1218,6 +1423,7 @@ function flashRestore(r){
   el._ft=setTimeout(()=>{el.className='flash';el.innerHTML='';},12000);
 }
 
+// ── 退所トグル ─────────────────────────────────────
 function toggleDischarge(r){
   discharged[r]=!discharged[r];
   saveDischarged();
@@ -1227,6 +1433,7 @@ function toggleDischarge(r){
   if(btn){btn.className='discharge-btn'+(discharged[r]?' on':'');btn.textContent=discharged[r]?'退所済':'退所';}
 }
 
+// ── 入替ハンドラー ─────────────────────────────────
 function onSubNameInput(r,v){SUB[r].name=v;const el=document.getElementById('sub-name-'+r);if(el)el.className='sub-name-input';setSubTag(r,'');}
 async function onSubNameBlur(r){
   const name=(SUB[r].name||'').trim();
@@ -1257,6 +1464,7 @@ async function onSubMemoChange(r,v){
 }
 function clearSubRoom(r){SUB[r]={...SUB[r],...emptyDaily(),_tag:SUB[r]._tag};refreshSubCard(r);subFlash(r,'クリア');}
 
+// ── 入替表示トグル ────────────────────────────────
 function toggleSub(r){
   subVisible[r]=!subVisible[r];
   saveSubVisible();
@@ -1266,21 +1474,16 @@ function toggleSub(r){
   if(btn){btn.className='sub-toggle-btn'+(subVisible[r]?' active':'');btn.textContent=subVisible[r]?'入替 非表示':'入替 表示';}
 }
 
-function openExtraLabelEdit(){
-  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">入浴フィールドの名前を変更</div><div class="modal-row"><span class="modal-label">ラベル名</span><input class="modal-input" id="exLblIn" value="${extraLabel}" placeholder="例：入浴"></div><button class="modal-save-btn" onclick="applyExtraLabel()">変更して保存</button>`;
-  document.getElementById('modalBg').style.display='flex';
-}
-async function applyExtraLabel(){
-  const v=document.getElementById('exLblIn').value.trim();if(!v)return;
-  await saveExtraLabel(v);closeModal();renderAll();
-  const el=document.getElementById('stat-extra-label');if(el)el.textContent=extraLabel+'あり';
-  const tl=document.getElementById('bathListTitle');if(tl)tl.textContent=extraLabel+'者一覧';
-}
+// ── ラベル編集 ────────────────────────────────────
 
+// ── 体重・身長テーブル ────────────────────────────
 const whCache={};
+// DB内のwh登録者名を全取得
 async function loadAllWHNames(){
   const names=new Set();
+  // ① 現在の部屋の入居者
   ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())names.add(S[r].name.trim());});
+  // ② Firebase residents/（ケア記録がある全員＝退所済み含む）
   if(db){
     try{
       const resSnap=await db.ref('residents').get();
@@ -1290,6 +1493,7 @@ async function loadAllWHNames(){
         });
       }
     }catch(e){}
+    // ③ Firebase wh/（体重記録がある全員）
     try{
       const whSnap=await db.ref('wh').get();
       if(whSnap.exists()){
@@ -1299,15 +1503,22 @@ async function loadAllWHNames(){
       }
     }catch(e){}
   }
+  // ④ localStorage内のケア記録名（care_ or wh_ プレフィックス）
   for(let i=0;i<localStorage.length;i++){
     const key=localStorage.key(i);
     if(!key)continue;
     if(key.startsWith('care_')){
+      // care_{name}_{date} 形式
       const withoutPrefix=key.slice(5);
-      const name=withoutPrefix.slice(0,withoutPrefix.length-11);
-      if(name&&name.trim())names.add(name.trim());
+      const parts=withoutPrefix.split('_');
+      if(parts.length>=2){
+        // 日付部分は YYYY-MM-DD なので末尾10文字を除く
+        const name=withoutPrefix.slice(0,withoutPrefix.length-11);
+        if(name&&name.trim())names.add(name.trim());
+      }
     } else if(key.startsWith('wh_')){
       const withoutPrefix=key.slice(3);
+      // wh_{name}_{YYYY-MM} 形式
       const name=withoutPrefix.slice(0,withoutPrefix.length-8);
       if(name&&name.trim())names.add(name.trim());
     }
@@ -1318,7 +1529,9 @@ async function renderWHTable(){
   const month=document.getElementById('whMonth').value||currentDate.slice(0,7);
   const tbody=document.getElementById('whTableBody');
   tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">読み込み中...</td></tr>`;
+  // DBに登録のある全利用者名を取得
   const allNames=await loadAllWHNames();
+  // 現在の部屋マッピング（名前→部屋番号）
   const nameToRoom={};
   ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())nameToRoom[S[r].name.trim()]=r;});
   const rows=[];
@@ -1327,6 +1540,8 @@ async function renderWHTable(){
     const wh=await loadWH(name,month);
     rows.push({r,name,wh});
   }
+  // 現在の部屋に名前がなくてもDB登録者はすべて表示済み
+  // 現在入力中（部屋あり・DB未登録）も追加
   ALL.forEach(r=>{
     const name=S[r].name||'';
     if(!name||allNames.includes(name))return;
@@ -1342,10 +1557,12 @@ async function renderWHTable(){
     const bmiCls=bmiVal==='—'?'':parseFloat(bmiVal)<18.5?'bmi-under':parseFloat(bmiVal)>=25?'bmi-over':'bmi-normal';
     const bmiHtml=bmiVal==='—'?'—':`<span class="bmi-badge ${bmiCls}">${bmiVal}</span>`;
     const roomBadge=r?`<span class="wh-room-badge">${r}</span>`:`<span style="font-size:10px;color:#94a3b8">退所・不在</span>`;
+    const nameKey=name+'__whrow';
     return`<tr><td>${roomBadge}</td><td style="font-size:13px">${name}</td><td><input class="wh-input" type="number" step="0.1" placeholder="—" value="${wh.weight||''}" onchange="onWHChangeByName('${name}',this.value,'weight','${month}')"></td><td><input class="wh-input" type="number" step="0.1" placeholder="—" value="${wh.height||''}" onchange="onWHChangeByName('${name}',this.value,'height','${month}')"></td><td>${bmiHtml}</td><td><button class="wh-history-btn" onclick="openWHHistoryByName('${name}')">履歴</button></td></tr>`;
   }).join('');
   renderWHCharts(rows);
 }
+// 名前ベースの保存（onWHChangeByName）
 async function onWHChangeByName(name,val,field,month){
   if(!name)return;
   const key='name_'+name+'_'+month;
@@ -1355,6 +1572,18 @@ async function onWHChangeByName(name,val,field,month){
   const el=document.getElementById('whSaved');if(el){el.style.opacity=1;clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity=0;},1500);}
 }
 async function openWHHistoryByName(name){
+  if(!name)return;
+  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">${name}　体重・身長履歴</div><div class="hist-chart-wrap"><canvas id="histChart"></canvas></div><div id="histTableWrap"><div class="no-data">読み込み中...</div></div>`;
+  document.getElementById('modalBg').style.display='flex';
+  const hist=await loadWHHistory(name);
+  const months=Object.keys(hist).sort().map(k=>k.replace('_','-'));
+  const weights=months.map(m=>parseFloat(hist[m.replace('-','_')]?.weight)||null);
+  const heights=months.map(m=>parseFloat(hist[m.replace('-','_')]?.height)||null);
+  document.getElementById('histTableWrap').innerHTML=`<table class="hist-table"><thead><tr><th>年月</th><th>体重(kg)</th><th>身長(cm)</th><th>BMI</th></tr></thead><tbody>${months.length?months.slice().reverse().map(m=>{const d=hist[m.replace('-','_')]||{};const w2=parseFloat(d.weight)||0,h2=parseFloat(d.height)||0;const b=h2>0?(w2/((h2/100)**2)).toFixed(1):'—';return`<tr><td>${m}</td><td>${d.weight||'—'}</td><td>${d.height||'—'}</td><td>${b}</td></tr>`;}).join(''):'<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">データなし</td></tr>'}</tbody></table>`;
+  if(months.length){setTimeout(()=>{new Chart(document.getElementById('histChart'),{type:'line',data:{labels:months,datasets:[{label:'体重(kg)',data:weights,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.3,fill:true,yAxisID:'y'},{label:'身長(cm)',data:heights,borderColor:'#10b981',tension:0.3,fill:false,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans JP',size:11},boxWidth:12}}},scales:{y:{position:'left',grid:{color:'#f1f5f9'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}});},80);}
+}
+
+async function openWHHistory(name,room){
   if(!name)return;
   document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">${name}　体重・身長履歴</div><div class="hist-chart-wrap"><canvas id="histChart"></canvas></div><div id="histTableWrap"><div class="no-data">読み込み中...</div></div>`;
   document.getElementById('modalBg').style.display='flex';
@@ -1375,6 +1604,7 @@ function renderWHCharts(rows){
   whCharts.b=new Chart(document.getElementById('chartBMI'),{type:'doughnut',data:{labels:Object.keys(bk),datasets:[{data:Object.values(bk),backgroundColor:['#fca5a5','#86efac','#fcd34d','#e2e8f0'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans JP',size:11},boxWidth:12}}}}});
 }
 
+// ── リンク ────────────────────────────────────────
 function renderLinks(){const g=document.getElementById('linkGrid');if(!links.length){g.innerHTML='<div class="no-data" style="grid-column:1/-1">リンクが追加されていません</div>';return;}g.innerHTML=links.map((l,i)=>`<div class="link-card"><button class="link-del-btn" onclick="deleteLink(${i})">×</button><div class="link-icon">${l.icon}</div><div class="link-name">${l.name}</div><div class="link-url-text">${l.url}</div><a class="link-open-btn" href="${l.url}" target="_blank" rel="noopener">開く →</a></div>`).join('');}
 function openAddLink(){document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">×</button><div class="modal-title">リンクを追加</div><div class="modal-row"><span class="modal-label">名前</span><input class="modal-input" id="li-name" placeholder="例：ケア日誌"></div><div class="modal-row"><span class="modal-label">URL</span><input class="modal-input" id="li-url" placeholder="https://..." type="url"></div><div class="modal-row"><span class="modal-label">アイコン</span><input class="modal-input" id="li-icon" value="🔗" maxlength="2" style="max-width:60px"></div><button class="modal-save-btn" onclick="saveNewLink()">追加する</button>`;document.getElementById('modalBg').style.display='flex';}
 async function saveNewLink(){const name=document.getElementById('li-name').value.trim(),url=document.getElementById('li-url').value.trim(),icon=document.getElementById('li-icon').value.trim()||'🔗';if(!name||!url){alert('名前とURLを入力してください');return;}links.push({name,url,icon});await saveLinks();renderLinks();closeModal();}
@@ -1383,10 +1613,12 @@ async function deleteLink(i){if(!confirm('このリンクを削除しますか�
 
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
+// ── 進捗 ──────────────────────────────────────────
 function prog(r){return[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben,S[r].extra].filter(v=>v).length;}
 function dotCol(p){return p===PROG_MAX?'#22c55e':p>0?'#f59e0b':'#cbd5e1';}
 function updateChip(r,p){const c=document.getElementById('chip-'+r);if(!c)return;c.className='chip'+(p===PROG_MAX?' done':p>0?' partial':'');c.querySelector('.chip-sub').textContent=p+'/'+PROG_MAX;}
 
+// ── UI 切替 ───────────────────────────────────────
 function switchMain(idx){
   [0,1,2,3,4,5].forEach(i=>{const t=document.getElementById('mainTab'+i);const p=document.getElementById('mainPage'+i);if(t)t.className='main-tab'+(i===idx?' active':'');if(p)p.className='main-page'+(i===idx?' active':'');});
   document.getElementById('floorTabRow').style.display=idx===0?'flex':'none';
@@ -1403,6 +1635,7 @@ function setSubTag(r,tag){const el=document.getElementById('sub-tag-'+r);if(!el)
 function flash(r,msg){const el=document.getElementById('flash-'+r);if(!el)return;if(typeof msg==='string'){el.textContent=msg;}el.className='flash show';clearTimeout(el._ft);el._ft=setTimeout(()=>{el.className='flash';el.textContent='';},1600);}
 function subFlash(r,msg){const el=document.getElementById('sub-flash-'+r);if(!el)return;el.textContent=msg;el.className='sub-flash show';clearTimeout(el._ft);el._ft=setTimeout(()=>{el.className='sub-flash';},1600);}
 
+// ── カード再描画 ──────────────────────────────────
 function refreshCard(r){
   const d=S[r];const p=prog(r);
   YN.forEach(f=>{const el=document.getElementById('sel-'+r+'-'+f.k);if(!el)return;el.value=d[f.k]||'';el.className='fsel'+(d[f.k]==='有'?' v-ari':'');});
@@ -1413,11 +1646,19 @@ function refreshCard(r){
     else if(d.haiben) hb.className='haiben-sel v-hb';
     else hb.className='haiben-sel';
   }
-  const ex=document.getElementById('sel-'+r+'-extra');if(ex){ex.value=d.extra||'';ex.className='fsel'+(d.extra?' v-ari':'');}
+  // 入浴チェックボックス更新
+  const _exChecked=d.extra==='済';
+  const _exWrap=document.getElementById('extra-wrap-'+r);
+  const _exLbl=document.getElementById('extra-lbl-'+r);
+  const _exCb=document.getElementById('extra-cb-'+r);
+  if(_exCb)_exCb.checked=_exChecked;
+  if(_exWrap)_exWrap.className='bath-check-wrap'+(_exChecked?' checked':'');
+  if(_exLbl)_exLbl.textContent=_exChecked?'入浴済み（当日）':'当日入浴なし';
   const memo=document.getElementById('memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('name-'+r);if(ni){ni.value=d.name||'';ni.className='name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
   const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p);
   setTag(r,d._tag);updateChip(r,p);
+  // 追加フィールド
   ['rubber','bedNC'].forEach(k=>{const el=document.getElementById('sel-'+r+'-'+k);if(el){el.value=d[k]||'';el.className='fsel'+(d[k]?' v-ari':'');}});
   const yn=document.getElementById('input-'+r+'-yakuNote');if(yn)yn.value=d.yakuNote||'';
   const gd=document.getElementById('input-'+r+'-gaishuDate');if(gd)gd.value=d.gaishuDate||'';
@@ -1433,7 +1674,14 @@ function refreshSubCard(r){
     else if(d.haiben) hb.className='haiben-sel v-hb';
     else hb.className='haiben-sel';
   }
-  const ex=document.getElementById('sub-sel-'+r+'-extra');if(ex){ex.value=d.extra||'';ex.className='fsel'+(d.extra?' v-ari':'');}
+  // 入替入浴チェックボックス更新
+  const _sExChecked=d.extra==='済';
+  const _sExWrap=document.getElementById('sub-extra-wrap-'+r);
+  const _sExLbl=document.getElementById('sub-extra-lbl-'+r);
+  const _sExCb=document.getElementById('sub-extra-cb-'+r);
+  if(_sExCb)_sExCb.checked=_sExChecked;
+  if(_sExWrap)_sExWrap.className='bath-check-wrap'+(_sExChecked?' checked':'');
+  if(_sExLbl)_sExLbl.textContent=_sExChecked?'入浴済み（当日）':'当日入浴なし';
   const memo=document.getElementById('sub-memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('sub-name-'+r);if(ni){ni.value=d.name||'';ni.className='sub-name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
   setSubTag(r,d._tag);
@@ -1443,88 +1691,23 @@ function refreshSubCard(r){
   const gn=document.getElementById('sub-input-'+r+'-gaishuNote');if(gn)gn.value=d.gaishuNote||'';
 }
 
-function buildCareNotesSection(r){
-  const cn=careNotes[r];
-  const vis=careNotesVisible[r];
-  const at=cnActiveTab[r]||'shintai';
-  const tabs=[{id:'shintai',lbl:'身体情報'},{id:'ido',lbl:'移動'},{id:'shokuji',lbl:'食事'},{id:'haisetsu',lbl:'排泄'},{id:'sonota',lbl:'その他'}];
-  const tabHtml=tabs.map(t=>`<button class="cn-tab${at===t.id?' active':''}" id="cn-tab-${t.id}-${r}" onclick="switchCnTab(${r},'${t.id}')">${t.lbl}</button>`).join('');
-
-  const mkTa=(key,ph,rows=3)=>`<textarea class="cn-textarea" rows="${rows}" placeholder="${ph}" oninput="onCnTextChange(${r},'${key}',this.value)">${cn[key]||''}</textarea>`;
-  const mkSel=(key,label,opts)=>{
-    const optsHtml=opts.map(o=>`<option value="${o}"${cn[key]===o?' selected':''}>${o||'未選択'}</option>`).join('');
-    return`<div class="cn-field"><div class="cn-label">${label}</div><select class="cn-select${cn[key]?' v-set':''}" onchange="onCnSelChange(${r},'${key}',this.value,this)"><option value="">未選択</option>${optsHtml}</select></div>`;
-  };
-
-  const panels={
-    shintai:`<div><div class="cn-label">身体情報・注意事項（アレルギー・既往歴・禁忌など）</div>${mkTa('shintai','例：○○アレルギー、高血圧・骨粗鬆症あり、右膝に人工関節',4)}</div>`,
-    ido:`<div><div class="cn-label">移動・移乗の介助方法</div>${mkTa('ido','例：歩行器使用・見守り、移乗は2名介助、左側麻痺に注意',4)}</div>`,
-    shokuji:`<div style="display:flex;flex-direction:column;gap:8px">
-      <div class="cn-sel-grid">
-        ${mkSel('shokuji_shushoku','主食',['常食','軟飯','お粥','ペースト'])}
-        ${mkSel('shokuji_fukushoku','副食',['常食','一口大','刻み','極刻み','ペースト'])}
-      </div>
-      ${mkSel('shokuji_toro','とろみ',['なし','薄いとろみ','中間とろみ','濃いとろみ'])}
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:#fff;border:1px solid #d1fae5;border-radius:8px">
-        <input type="checkbox" id="cn-iero-${r}" ${cn.shokuji_iero?'checked':''} onchange="onCnCheckChange(${r},'shokuji_iero',this.checked)" style="width:16px;height:16px;accent-color:#059669;cursor:pointer;flex-shrink:0">
-        <label for="cn-iero-${r}" style="font-size:13px;color:#1e293b;cursor:pointer;font-weight:${cn.shokuji_iero?'500':'400'}">胃ろう使用</label>
-      </div>
-      <div><div class="cn-label">食事介助・注意事項</div>${mkTa('shokuji_note','例：全介助・スプーン使用、嚥下障害あり・姿勢に注意、義歯使用',3)}</div>
-    </div>`,
-    haisetsu:`<div style="display:flex;flex-direction:column;gap:8px">
-      <div class="cn-sel-grid">
-        ${mkSel('omutsu','オムツ（テープ型）',['なし','S','M','L','LL'])}
-        ${mkSel('rehapan','リハパン',['なし','S','M','L','LL'])}
-      </div>
-      ${mkSel('pad','パット',['なし','レギュラー','パワフル','ビッグ'])}
-      <div class="cn-sel-grid">
-        ${mkSel('haisetsu_basho','排泄場所',['トイレ','ポータブルトイレ','床上（オムツ内）','尿道カテーテル'])}
-        ${mkSel('haisetsu_freq','交換頻度',['随時','2時間ごと','3時間ごと','4時間ごと','排泄時'])}
-      </div>
-      <div><div class="cn-label">排泄介助・注意事項</div>${mkTa('haisetsu_note','例：全介助・声かけ要、尿意あり呼ぼん使用、皮膚トラブルに注意',3)}</div>
-    </div>`,
-    sonota:`<div><div class="cn-label">その他の注意点・特記事項</div>${mkTa('sonota','例：夜間の不穏あり、コミュニケーションは筆談、家族対応の注意事項など',4)}</div>`
-  };
-
-  const panelHtml=tabs.map(t=>`<div class="cn-panel${at===t.id?' active':''}" id="cn-panel-${t.id}-${r}">${panels[t.id]||''}</div>`).join('');
-
-  return`<div class="cn-section${vis?' visible':''}" id="cn-section-${r}">
-  <div class="cn-header">
-    <span class="cn-badge">介助詳細</span>
-    <div class="cn-tabs">${tabHtml}</div>
-    <span class="cn-saved" id="cn-saved-${r}">✓ 保存</span>
-  </div>
-  <div class="cn-body">${panelHtml}</div>
-</div>`;
-}
-
-function refreshCareNotesSection(r){
-  const sec=document.getElementById('cn-section-'+r);
-  if(!sec)return;
-  const cn=careNotes[r];
-  // テキストエリア
-  ['shintai','ido','shokuji_note','haisetsu_note','sonota'].forEach(key=>{
-    const el=sec.querySelector(`textarea[oninput*="'${key}'"]`);
-    if(el)el.value=cn[key]||'';
-  });
-  // セレクト
-  ['shokuji_shushoku','shokuji_fukushoku','shokuji_toro','omutsu','rehapan','pad','haisetsu_basho','haisetsu_freq'].forEach(key=>{
-    const el=sec.querySelector(`select[onchange*="'${key}'"]`);
-    if(el){el.value=cn[key]||'';el.className='cn-select'+(cn[key]?' v-set':'');}
-  });
-  // チェックボックス（胃ろう）
-  const cb=document.getElementById('cn-iero-'+r);
-  if(cb){cb.checked=!!cn.shokuji_iero;const lbl=document.querySelector(`label[for="cn-iero-${r}"]`);if(lbl)lbl.style.fontWeight=cn.shokuji_iero?'500':'400';}
-}
-
+// ── カードHTML部品 ─────────────────────────────────
 function buildYNSelects(r,prefix,data){
   return YN.map(f=>{const v=data[f.k]||'';return`<div class="field"><div class="flabel">${f.l}</div><select id="${prefix}sel-${r}-${f.k}" class="fsel${v==='有'?' v-ari':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'${f.k}',this.value,this)"><option value="">未選択</option><option${v==='有'?' selected':''}>有</option><option${v==='無'?' selected':''}>無</option></select></div>`;}).join('');
 }
 function buildBathSelect(r,prefix,data){
-  const exV=data.extra||'';
-  const bathOpts=BATH_TYPES.map(t=>`<option value="${t}"${exV===t?' selected':''}>${t}</option>`).join('');
-  return`<div class="field"><div class="flabel"><span>${extraLabel}</span>${prefix===''?'<button class="flabel-edit" onclick="openExtraLabelEdit()">✎</button>':''}</div><select id="${prefix}sel-${r}-extra" class="fsel${exV?' v-ari':''}" onchange="on${prefix==='sub-'?'Sub':''}Sel(${r},'extra',this.value,this)"><option value="">未選択</option>${bathOpts}</select></div>`;
+  const checked=data.extra==='済';
+  const isSub=prefix==='sub-';
+  const cbId=prefix+'extra-cb-'+r;
+  return`<div class="field" style="grid-column:1/-1">
+    <div class="flabel"><span>${extraLabel}</span></div>
+    <label class="bath-check-wrap${checked?' checked':''}" id="${prefix}extra-wrap-${r}">
+      <input type="checkbox" id="${cbId}" ${checked?'checked':''} onchange="onExtraCheckChange(${r},this.checked,${isSub})">
+      <span class="bath-check-label" id="${prefix}extra-lbl-${r}">${checked?'入浴済み（当日）':'当日入浴なし'}</span>
+    </label>
+  </div>`;
 }
+// haiben クラス判定ヘルパー
 function haibenCls(val){
   const n=parseInt(val);
   if(val&&val!=='不明'&&!isNaN(n)&&n<=-3)return' v-hb-warn';
@@ -1545,6 +1728,7 @@ function buildHaibenMemo(r,prefix,data){
       <option value="">未選択</option>${hbOpts}
     </select>
   </div>
+
   <div class="extra-section${sec.tools?' visible':''}" id="${prefix}extra-sec-tools-${r}">
     <div class="extra-section-head">
       <span class="extra-section-label">用具・設備</span>
@@ -1561,6 +1745,7 @@ function buildHaibenMemo(r,prefix,data){
       </div>
     </div>
   </div>
+
   <div class="extra-section${sec.yaku?' visible':''}" id="${prefix}extra-sec-yaku-${r}">
     <div class="extra-section-head">
       <span class="extra-section-label">薬関連（変更内容）</span>
@@ -1570,6 +1755,7 @@ function buildHaibenMemo(r,prefix,data){
       <textarea id="${prefix}input-${r}-yakuNote" class="extra-input" rows="2" placeholder="変更内容を入力..." oninput="onExtraTextChange(${r},'yakuNote',this.value,${isSub})">${data.yakuNote||''}</textarea>
     </div>
   </div>
+
   <div class="extra-section${sec.gaishu?' visible':''}" id="${prefix}extra-sec-gaishu-${r}">
     <div class="extra-section-head">
       <span class="extra-section-label">外出</span>
@@ -1588,6 +1774,7 @@ function buildHaibenMemo(r,prefix,data){
       </div>
     </div>
   </div>
+
   <div class="memo-action-row">
     <button id="${prefix}memo-undo-${r}" class="memo-undo-btn" onclick="undoMemo(${r},${prefix==='sub-'?'true':'false'})" disabled title="一個前に戻す">↩ 元に戻す</button>
   </div>
@@ -1595,6 +1782,7 @@ function buildHaibenMemo(r,prefix,data){
 </div>`;
 }
 
+// ── カード組み立て ────────────────────────────────
 function buildCard(r){
   const d=S[r];const sd=SUB[r];const p=prog(r);const vis=subVisible[r];
   const niCls='name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');
@@ -1674,6 +1862,7 @@ function renderAll(){
   renderDischargedLog();
 }
 
+// ── 申し送り一覧（リアルタイム更新） ──────────────
 function refreshDashboardMemo(){
   const memoEl=document.getElementById('memoList');if(!memoEl)return;
   const items=[];
@@ -1693,40 +1882,43 @@ function refreshDashboardMemo(){
   memoEl.innerHTML=items.length?items.join(''):'<div class="no-data">申し送りはありません</div>';
 }
 
+// ── ダッシュボード ────────────────────────────────
 let dbCharts={};
 function ddc(id){if(dbCharts[id]){dbCharts[id].destroy();delete dbCharts[id];}}
 function renderDashboard(){
-  const done=ALL.filter(r=>prog(r)===PROG_MAX).length;
-  const partial=ALL.filter(r=>{const p=prog(r);return p>0&&p<PROG_MAX;}).length;
-  document.getElementById('stat-done').textContent=done;
-  document.getElementById('stat-partial').textContent=partial;
-  document.getElementById('stat-empty').textContent=ALL.length-done-partial;
-  document.getElementById('stat-renrakucho').textContent=ALL.filter(r=>S[r].renrakucho==='有').length;
   document.getElementById('stat-yaku').textContent=ALL.filter(r=>S[r].yakuhenkou==='有').length;
-  document.getElementById('stat-extra').textContent=ALL.filter(r=>S[r].extra).length+ALL.filter(r=>subVisible[r]&&SUB[r].extra).length;
+  document.getElementById('stat-extra').textContent=ALL.filter(r=>S[r].extra==='済').length+ALL.filter(r=>subVisible[r]&&SUB[r].extra==='済').length;
   document.getElementById('stat-extra-label').textContent=extraLabel+'あり';
-  ddc('floor');
-  const f1d=F1.filter(r=>prog(r)===PROG_MAX).length,f1p=F1.filter(r=>{const p=prog(r);return p>0&&p<PROG_MAX;}).length,f1e=F1.length-f1d-f1p;
-  const f2d=F2.filter(r=>prog(r)===PROG_MAX).length,f2p=F2.filter(r=>{const p=prog(r);return p>0&&p<PROG_MAX;}).length,f2e=F2.length-f2d-f2p;
-  dbCharts['floor']=new Chart(document.getElementById('chartFloor').getContext('2d'),{type:'bar',data:{labels:['1F（100番台）','2F（200番台）'],datasets:[{label:'完了',data:[f1d,f2d],backgroundColor:'#86efac',borderRadius:4},{label:'入力中',data:[f1p,f2p],backgroundColor:'#fcd34d',borderRadius:4},{label:'未入力',data:[f1e,f2e],backgroundColor:'#e2e8f0',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans JP',size:11},boxWidth:12}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,max:10,ticks:{stepSize:2},grid:{color:'#f1f5f9'}}}}});
-  const bathGroups={};BATH_TYPES.forEach(t=>{bathGroups[t]=[];});
+
+  // 当日入浴チェック済みの人を入浴方法でグループ化（careNotesから方法を取得）
+  const bathGroups={};BATH_TYPES.forEach(t=>{bathGroups[t]=[];});bathGroups['方法未設定']=[];
   ALL.forEach(r=>{
-    if(S[r].extra&&BATH_TYPES.includes(S[r].extra))bathGroups[S[r].extra].push({r,name:S[r].name||'未入力',isSub:false});
-    if(subVisible[r]&&SUB[r].extra&&BATH_TYPES.includes(SUB[r].extra))bathGroups[SUB[r].extra].push({r,name:SUB[r].name||'未入力',isSub:true});
+    if(S[r].extra==='済'){
+      const method=careNotes[r]?.nyuyoku_houhou||'方法未設定';
+      const key=BATH_TYPES.includes(method)?method:'方法未設定';
+      bathGroups[key].push({r,name:S[r].name||'未入力',isSub:false});
+    }
+    if(subVisible[r]&&SUB[r].extra==='済'){
+      bathGroups['方法未設定'].push({r,name:SUB[r].name||'未入力',isSub:true});
+    }
   });
   const tl=document.getElementById('bathListTitle');if(tl)tl.textContent=extraLabel+'者一覧';
   const bl=document.getElementById('bathList');
-  const anyBath=BATH_TYPES.some(t=>bathGroups[t].length>0);
-  bl.innerHTML=anyBath?BATH_TYPES.filter(t=>bathGroups[t].length>0).map(t=>`<div class="bath-group"><div class="bath-group-title">${t}<span class="cnt">${bathGroups[t].length}名</span></div><div class="bath-person-list">${bathGroups[t].map(p=>`<div class="bath-person${p.isSub?' is-sub':''}"><span class="room-no">${p.r}${p.isSub?'(入替)':''}</span>${p.name}</div>`).join('')}</div></div>`).join(''):'<div class="no-data">入浴の記録はありません</div>';
+  const allBathKeys=[...BATH_TYPES,'方法未設定'];
+  const anyBath=allBathKeys.some(t=>bathGroups[t]&&bathGroups[t].length>0);
+  bl.innerHTML=anyBath?allBathKeys.filter(t=>bathGroups[t]&&bathGroups[t].length>0).map(t=>`<div class="bath-group"><div class="bath-group-title">${t}<span class="cnt">${bathGroups[t].length}名</span></div><div class="bath-person-list">${bathGroups[t].map(p=>`<div class="bath-person${p.isSub?' is-sub':''}"><span class="room-no">${p.r}${p.isSub?'(入替)':''}</span>${p.name}</div>`).join('')}</div></div>`).join(''):'<div class="no-data">入浴の記録はありません</div>';
+
   ddc('haiben');
   const hbc={};HB.forEach(h=>{hbc[h]=0;});
   ALL.forEach(r=>{if(S[r].haiben)hbc[S[r].haiben]=(hbc[S[r].haiben]||0)+1;if(subVisible[r]&&SUB[r].haiben)hbc[SUB[r].haiben]=(hbc[SUB[r].haiben]||0)+1;});
   const hbl=HB.filter(h=>hbc[h]>0);
   const hbcol=hbl.map(h=>{if(h==='不明')return'#e2e8f0';const n=parseInt(h);return n>=0?'#86efac':n>=-4?'#fcd34d':'#fca5a5';});
   dbCharts['haiben']=new Chart(document.getElementById('chartHaiben').getContext('2d'),{type:'bar',data:{labels:hbl.length?hbl.map(h=>h+'日'):['データなし'],datasets:[{data:hbl.length?hbl.map(h=>hbc[h]):[0],backgroundColor:hbl.length?hbcol:['#e2e8f0'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'#f1f5f9'}}}}});
+
   refreshDashboardMemo();
 }
 
+// ── 申し送り詳細モーダル ──────────────────────────
 function openMemoDetail(r,isSub){
   const d=isSub?SUB[r]:S[r];
   const isF1=F1_SET.has(r);
@@ -1752,6 +1944,7 @@ function openMemoDetail(r,isSub){
   document.getElementById('modalBg').style.display='flex';
 }
 
+// ── DB管理パネル ─────────────────────────────────────────────
 const DB_PIN_KEY='dbAdminPIN';
 let dbPinBuf='';
 let dbUnlocked=false;
@@ -1770,6 +1963,7 @@ function onTitleTap(){
 }
 
 function getDbPin(){return ls(DB_PIN_KEY)||'1234';}
+
 function dbPinInput(d){
   if(dbPinBuf.length>=4)return;
   dbPinBuf+=d;
@@ -1781,7 +1975,6 @@ function dbPinInput(d){
       const m=document.getElementById('dbMainScreen');
       m.style.display='flex';
       dbLog('✅ 認証成功');
-      dbRenameLoadAll();
     }else{
       dbLog('❌ PINが違います');
       setTimeout(()=>{dbPinBuf='';updatePinDots();},600);
@@ -1809,6 +2002,7 @@ function dbLog(msg){
   el.textContent=t+' '+msg+'\n'+el.textContent;
 }
 function dbSetPath(p){const el=document.getElementById('dbReadPath');if(el)el.value=p;}
+
 async function dbRead(){
   const path=(document.getElementById('dbReadPath')?.value||'').trim();
   const el=document.getElementById('dbReadResult');
@@ -1820,6 +2014,7 @@ async function dbRead(){
     dbLog('READ: '+(path||'ルート'));
   }catch(e){el.textContent='エラー: '+e.message;dbLog('ERROR: '+e.message);}
 }
+
 async function dbWrite(){
   if(!dbUnlocked)return;
   const path=(document.getElementById('dbWritePath')?.value||'').trim();
@@ -1834,6 +2029,7 @@ async function dbWrite(){
     alert('書き込み完了: '+path);
   }catch(e){alert('エラー: '+e.message);dbLog('ERROR: '+e.message);}
 }
+
 function dbWriteFromRead(){
   const src=document.getElementById('dbReadResult')?.textContent||'';
   const dst=document.getElementById('dbWriteValue');
@@ -1844,6 +2040,7 @@ function dbWriteFromRead(){
     dbLog('編集欄に展開: '+pathSrc);
   }
 }
+
 async function dbDelete(){
   if(!dbUnlocked)return;
   const path=(document.getElementById('dbDeletePath')?.value||'').trim();
@@ -1855,6 +2052,7 @@ async function dbDelete(){
     alert('削除完了: '+path);
   }catch(e){alert('エラー: '+e.message);dbLog('ERROR: '+e.message);}
 }
+
 async function dbQuick(action){
   if(!dbUnlocked)return;
   const el=document.getElementById('dbReadResult');
@@ -1867,6 +2065,7 @@ async function dbQuick(action){
     if(pathEl)pathEl.value='';
     el.textContent='読み込み中...';
     try{
+      // 全部屋の今日のデータを集める
       const result={};
       for(const r of ALL){
         const name=S[r].name;if(!name)continue;
@@ -1896,6 +2095,7 @@ async function dbQuick(action){
     alert(room+'号室をクリアしました');
   }
 }
+
 function openChangePIN(){
   document.getElementById('modalContent').innerHTML=`
     <button class="modal-close" onclick="closeModal()">×</button>
@@ -1919,170 +2119,33 @@ function doChangePIN(){
   alert('PINを変更しました');
 }
 
-// ── 名前変更・削除 ────────────────────────────────────────
-let dbRenameAllNames=[];// {name, room} の配列
-let dbRenameSelectedData=null;// {name, room}
-
-async function dbRenameLoadAll(){
-  dbLog('利用者名一覧を読み込み中...');
-  dbRenameAllNames=[];
-  // 現在の部屋の利用者
-  const roomMap={};
-  ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())roomMap[S[r].name.trim()]=r;});
-  // Firebase residents/ から全キー取得
-  const names=new Set(Object.keys(roomMap));
-  if(db){
-    try{
-      const snap=await db.ref('residents').get();
-      if(snap.exists()){
-        Object.keys(snap.val()).forEach(k=>{
-          try{names.add(decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']')));}catch(e){}
-        });
-      }
-    }catch(e){}
-  }
-  names.forEach(n=>{
-    if(n&&n.trim())dbRenameAllNames.push({name:n.trim(),room:roomMap[n.trim()]||null});
-  });
-  dbRenameAllNames.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-  dbRenameRenderList(dbRenameAllNames);
-  dbLog(`利用者 ${dbRenameAllNames.length}名 を読み込みました`);
-}
-
-function dbRenameSearchFilter(){
-  const q=(document.getElementById('dbRenameSearch')?.value||'').trim();
-  if(!q){dbRenameRenderList(dbRenameAllNames);return;}
-  const filtered=dbRenameAllNames.filter(d=>d.name.includes(q));
-  dbRenameRenderList(filtered);
-}
-
-function dbRenameRenderList(list){
-  const el=document.getElementById('dbRenameSearchList');
-  if(!el)return;
-  if(!list.length){
-    el.innerHTML='<div style="font-size:12px;color:#94a3b8;padding:8px 0">該当する名前がありません</div>';return;
-  }
-  el.innerHTML=list.map(d=>{
-    const roomLabel=d.room?`<span style="font-size:10px;background:#eff6ff;color:#2563eb;padding:2px 7px;border-radius:20px;margin-left:6px">${d.room}号室</span>`:`<span style="font-size:10px;background:#f1f5f9;color:#94a3b8;padding:2px 7px;border-radius:20px;margin-left:6px">退所・不在</span>`;
-    return`<div onclick="dbRenameSelectPerson('${d.name.replace(/'/g,"\\'")}',${d.room||'null'})" style="display:flex;align-items:center;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-      <span style="font-size:13px;font-weight:500;color:#1e293b">${d.name}</span>${roomLabel}
-    </div>`;
-  }).join('');
-}
-
-function dbRenameSelectPerson(name,room){
-  dbRenameSelectedData={name,room};
-  // 選択表示
-  const sel=document.getElementById('dbRenameSelected');
-  const selName=document.getElementById('dbRenameSelectedName');
-  const selRoom=document.getElementById('dbRenameSelectedRoom');
-  const newRow=document.getElementById('dbRenameNewRow');
-  const newInput=document.getElementById('dbRenameNewName');
-  const delConfirm=document.getElementById('dbRenameDeleteConfirm');
-  const resultEl=document.getElementById('dbRenameResult');
-  if(sel)sel.style.display='block';
-  if(selName)selName.textContent=name;
-  if(selRoom)selRoom.textContent=room?`（${room}号室）`:'（退所・不在）';
-  if(newRow)newRow.style.display='block';
-  if(newInput)newInput.value=name;
-  if(delConfirm)delConfirm.style.display='none';
-  if(resultEl)resultEl.style.display='none';
-}
-
-function dbRenameConfirmDelete(){
-  if(!dbRenameSelectedData)return;
-  const el=document.getElementById('dbRenameDeleteConfirm');
-  const nameEl=document.getElementById('dbRenameDeleteTargetName');
-  if(nameEl)nameEl.textContent=dbRenameSelectedData.name;
-  if(el)el.style.display='block';
-}
-
-async function dbRenameDeleteExecute(){
-  if(!dbUnlocked||!dbRenameSelectedData)return;
-  const {name,room}=dbRenameSelectedData;
-  const resultEl=document.getElementById('dbRenameResult');
-  document.getElementById('dbRenameDeleteConfirm').style.display='none';
-  dbLog(`名前削除: ${name}`);
-  try{
-    // 部屋の名前紐づけを削除
-    if(room&&ALL.includes(room)){
-      await saveRoomName(room,'');
-      S[room]={name:'',...emptyDaily(),_tag:''};
-      careNotes[room]=emptyCareNotes();
-      refreshCard(room);
-    }
-    // residents最新から削除（データは残す）
-    dbLog(`✅ 削除完了: ${name}`);
-    if(resultEl){resultEl.textContent=`✅ 「${name}」の部屋紐づけを削除しました。ケアデータは保持されています。`;resultEl.style.display='block';resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';resultEl.style.color='#065f46';}
-    // リセット
-    dbRenameSelectedData=null;
-    document.getElementById('dbRenameSelected').style.display='none';
-    document.getElementById('dbRenameNewRow').style.display='none';
-    await dbRenameLoadAll();
-  }catch(e){
-    dbLog('❌ 削除エラー: '+e.message);
-    if(resultEl){resultEl.textContent='❌ エラー: '+e.message;resultEl.style.display='block';resultEl.style.background='#fff5f5';resultEl.style.borderColor='#fca5a5';resultEl.style.color='#dc2626';}
-  }
-}
-
-async function dbRenameExecute(){
-  if(!dbUnlocked||!dbRenameSelectedData)return;
-  const {name:oldName,room}=dbRenameSelectedData;
-  const newName=(document.getElementById('dbRenameNewName')?.value||'').trim();
-  const resultEl=document.getElementById('dbRenameResult');
-  if(!newName){alert('新しい名前を入力してください');return;}
-  if(oldName===newName){alert('名前が変わっていません');return;}
-  if(!confirm(`「${oldName}」→「${newName}」に変更します。\nよろしいですか？`))return;
-  dbLog(`名前変更開始: ${oldName} → ${newName}`);
-  if(resultEl){resultEl.textContent='変更中...';resultEl.style.display='block';resultEl.style.background='#fffbeb';resultEl.style.borderColor='#fcd34d';resultEl.style.color='#b45309';}
-  try{
-    const oldKey=encKey(oldName),newKey=encKey(newName);
-    // residents コピー
-    const resData=await fbGet(`residents/${oldKey}`);
-    if(resData){await fbSet(`residents/${newKey}`,resData);await fbSet(`residents/${oldKey}`,null);}
-    // wh コピー
-    const whData=await fbGet(`wh/${oldKey}`);
-    if(whData){await fbSet(`wh/${newKey}`,whData);await fbSet(`wh/${oldKey}`,null);}
-    // 部屋名更新
-    if(room&&ALL.includes(room)){
-      await saveRoomName(room,newName);
-      S[room].name=newName;
-      refreshCard(room);
-    }
-    dbLog(`✅ 名前変更完了: ${oldName} → ${newName}`);
-    if(resultEl){resultEl.textContent=`✅ 完了：「${oldName}」→「${newName}」に変更しました。`;resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';resultEl.style.color='#065f46';}
-    // リセット
-    dbRenameSelectedData=null;
-    document.getElementById('dbRenameSelected').style.display='none';
-    document.getElementById('dbRenameNewRow').style.display='none';
-    document.getElementById('dbRenameDeleteConfirm').style.display='none';
-    await dbRenameLoadAll();
-  }catch(e){
-    dbLog('❌ 名前変更エラー: '+e.message);
-    if(resultEl){resultEl.textContent='❌ エラー: '+e.message;resultEl.style.background='#fff5f5';resultEl.style.borderColor='#fca5a5';resultEl.style.color='#dc2626';}
-  }
-}
-
-// 旧関数（互換のため残す）
-function dbRenameLoadRooms(){dbRenameLoadAll();}
-
+// ── 起動 ──────────────────────────────────────────
 document.getElementById('dateInput').value=getLocalDate();currentDate=getLocalDate();
 document.getElementById('whMonth').value=currentDate.slice(0,7);
 document.getElementById('whMonth').onchange=()=>renderWHTable();
 updateDateNote();
 loadAll();
 
+// ── 日付自動更新 ─────────────────────────────────────────────
+// ① 日付チェック共通関数
 function checkDateAutoUpdate(){
   const today=getLocalDate();
-  if(today===currentDate) return;
+  if(today===currentDate) return; // 既に今日なら何もしない
+  // 現在表示中の日付が「昨日より前」の場合は手動で過去を見ている可能性があるため
+  // 自動更新は「昨日→今日（1日差）のみ」に限定する
+  // ただし2日以上ずれている場合（長期スリープなど）は強制更新
   const diffMs=new Date(today+'T00:00:00')-new Date(currentDate+'T00:00:00');
   const diffDays=Math.round(diffMs/(1000*60*60*24));
   if(diffDays===1||diffDays>=2){
+    // 1日進んだ（深夜0時超え）または2日以上ずれた（長期スリープ）→ 自動更新
     document.getElementById('dateInput').value=today;
     onDateChange(today);
     showDateChangedToast(today);
   }
+  // diffDaysが負（今日より未来の日付を手動設定中）→ 触らない
 }
+
+// ② 画面通知トースト（日付が変わったことを画面上で知らせる）
 function showDateChangedToast(newDate){
   let toast=document.getElementById('date-toast');
   if(!toast){
@@ -2101,8 +2164,11 @@ function showDateChangedToast(newDate){
   clearTimeout(toast._t);
   toast._t=setTimeout(()=>{toast.style.opacity='0';},5000);
 }
+
+// ③ 深夜0時ちょうどに実行するタイマー（精度優先）
 function scheduleMidnightUpdate(){
   const now=new Date();
+  // getHours/getMinutes/getSeconds はローカル時刻を返すので日本時間で正確に動く
   const msUntilMidnight=
     (24*60*60*1000)
     -(now.getHours()*60*60*1000)
@@ -2112,15 +2178,21 @@ function scheduleMidnightUpdate(){
     +500;
   setTimeout(()=>{
     checkDateAutoUpdate();
-    scheduleMidnightUpdate();
+    scheduleMidnightUpdate(); // 翌日の深夜0時用に再スケジュール
   }, msUntilMidnight);
 }
+
+// ④ 画面が再びアクティブになったとき（スリープ復帰・タブ切替）
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible') checkDateAutoUpdate();
 });
-setInterval(checkDateAutoUpdate, 60000);
-scheduleMidnightUpdate();
 
+// ⑤ 念のため1分ごとにもチェック（確実なフォールバック）
+setInterval(checkDateAutoUpdate, 60000);
+
+// ⑥ 起動時に深夜タイマーをセット
+scheduleMidnightUpdate();
+// ── PWA Service Worker登録 ─────────────────────────
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js')
