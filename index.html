@@ -505,7 +505,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   <div class="manual-page">
     <div class="manual-cover">
       <div class="manual-cover-title">📖　日常ケア記録アプリ　操作説明書</div>
-      <div class="manual-cover-sub">はじめてでもわかる使い方ガイド　ver.2.0</div>
+      <div class="manual-cover-sub">はじめてでもわかる使い方ガイド　ver.3.0</div>
     </div>
 
     <div class="manual-toc">
@@ -514,16 +514,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <a href="#m1">1. アプリの基本画面と構成</a>
         <a href="#m2">2. ケア記録の入力方法</a>
         <a href="#m3">3. 申し送り内容・最終排便の記入</a>
-        <a href="#m4">4. 入れ替え利用者の記録</a>
-        <a href="#m5">5. 退所ボタンの使い方・退所者履歴</a>
-        <a href="#m6">6. クリア・元に戻す（バックアップ）</a>
-        <a href="#m7">7. ダッシュボードの見方</a>
-        <a href="#m8">8. 体重・身長の記録</a>
-        <a href="#m9">9. リンクの登録と使い方</a>
-        <a href="#m10">10. 翌日への引き継ぎ・自動処理</a>
-        <a href="#m11">11. 日付自動更新・アプリ化（PWA）</a>
-        <a href="#m12">12. 2台のiPadで同期する</a>
-        <a href="#m13">13. よくある質問</a>
+        <a href="#m4">4. 介助詳細の入力</a>
+        <a href="#m5">5. 入れ替え利用者の記録</a>
+        <a href="#m6">6. 退所ボタンの使い方・退所者履歴</a>
+        <a href="#m7">7. クリア・元に戻す</a>
+        <a href="#m8">8. ダッシュボードの見方</a>
+        <a href="#m9">9. 体重・身長の記録</a>
+        <a href="#m10">10. リンクの登録と使い方</a>
+        <a href="#m11">11. 翌日への引き継ぎ・自動処理</a>
+        <a href="#m12">12. 日付自動更新・アプリ化（PWA）</a>
+        <a href="#m13">13. 2台のiPadで同期する</a>
+        <a href="#m14">14. よくある質問</a>
       </div>
     </div>
 
@@ -535,7 +536,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       <table class="mtbl"><tr><th>タブ名</th><th>できること</th></tr>
         <tr><td>ケア記録</td><td>各部屋の連絡帳・薬変更・入浴・最終排便・申し送りを入力する（メイン画面）</td></tr>
         <tr><td>体重・身長</td><td>月ごとの体重・身長・BMIを記録・確認する</td></tr>
-        <tr><td>ダッシュボード</td><td>全体の入力状況・入浴者一覧・申し送り一覧をまとめて確認する</td></tr>
+        <tr><td>ダッシュボード</td><td>入浴者一覧・申し送り一覧・薬変更者をまとめて確認する</td></tr>
         <tr><td>リンク</td><td>NotionやGoogleドライブなど外部サービスへのリンクを管理する</td></tr>
         <tr><td>📖 説明書</td><td>この操作説明書（今見ているページ）</td></tr>
       </table>
@@ -546,130 +547,142 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
       <div class="mpoint">📅　日付を変えても名前は消えません。ケアデータだけが日付ごとに保存されています。</div>
       <div class="mssec">■ サマリーバーの色の意味</div>
       <table class="mtbl"><tr><th>色</th><th>意味</th></tr>
-        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力（何も入力されていない）</td></tr>
+        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力</td></tr>
         <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">黄色</span></td><td>入力中（一部の項目が入力済み）</td></tr>
         <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a">緑</span></td><td>完了（全6項目が入力済み）</td></tr>
       </table>
+      <p class="mbody">部屋番号をタップすると、その部屋のカードまで自動でスクロールします。</p>
     </div>
 
     <!-- 2 -->
     <div class="msec" id="m2">
       <div class="msec-title"><span class="msec-num">2</span>ケア記録の入力方法</div>
       <div class="mssec">■ 名前を入力してデータを呼び起こす</div>
-      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。新しい部屋で同じ名前を入力すればデータが引き継がれます。</p>
+      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。新しい部屋で同じ名前を入力すれば過去のデータが引き継がれます。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>お名前欄をタップしてキーボードを表示します</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>利用者の名前を入力します（例：山田　太郎）</div></div>
         <div class="mstep"><div class="mstep-num">3</div><div>Enterキーを押すか、入力欄の外をタップします</div></div>
         <div class="mstep"><div class="mstep-num">4</div><div>過去のデータがあれば自動で読み込まれます</div></div>
       </div>
-      <table class="mtbl" style="margin-top:8px"><tr><th>タグ</th><th>意味</th></tr>
+      <table class="mtbl"><tr><th>タグ</th><th>意味</th></tr>
         <tr><td><span class="mbadge" style="background:#eff6ff;color:#2563eb">今日</span></td><td>今日すでに入力・保存されているデータ</td></tr>
-        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>今日はまだ入力がなく、前回の記録を引き継いで表示</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>前回の記録を引き継いで表示（今日はまだ未保存）</td></tr>
         <tr><td><span class="mbadge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0">新規</span></td><td>初めて登録される利用者</td></tr>
       </table>
-      <div class="mssec" style="margin-top:10px">■ プルダウンで各項目を選択する</div>
+      <div class="mssec">■ 各項目の選択肢</div>
       <table class="mtbl"><tr><th>項目</th><th>選択肢</th></tr>
         <tr><td>連絡帳・薬変更・目薬・軟膏処置</td><td>未選択 / 有 / 無</td></tr>
-        <tr><td>入浴</td><td>未選択 / 一般 / リフト浴 / 機械浴 / シャワー浴 / 清拭</td></tr>
+        <tr><td>入浴（当日）</td><td>チェックボックス（オン＝入浴済み）</td></tr>
         <tr><td>最終排便</td><td>未選択 / 0日 / 不明 / -1〜-10日</td></tr>
       </table>
-      <div class="mpoint">💡　「有」を選択すると欄が青くなります。また最終排便が -3日以下になると<span style="color:#dc2626;font-weight:700">赤文字</span>で警告表示されます。</div>
-      <div class="mpoint mpoint-warn">⚠️　入浴は翌日には自動でクリアされます。毎日入力が必要です。</div>
+      <div class="mpoint">💡　入浴は毎日チェックする形式です。翌日には自動でリセットされます。入浴方法（一般・リフト浴など）は介助詳細の「入浴」タブに入力します。</div>
+      <div class="mpoint mpoint-warn">⚠️　最終排便が -3日以下になると赤文字で警告表示されます。</div>
+      <div class="mssec">■ 追加セクション（用具・設備 / 薬関連 / 外出）</div>
+      <p class="mbody">カード下部のボタンをタップするとセクションが展開されます。</p>
+      <table class="mtbl"><tr><th>ボタン</th><th>内容</th><th>翌日引継</th></tr>
+        <tr><td>用具・設備</td><td>ラバー・ベッド下NCの有無（あり／なし）</td><td>引き継がれます</td></tr>
+        <tr><td>薬関連</td><td>薬の変更内容などを自由記入</td><td>引き継がれます</td></tr>
+        <tr><td>外出</td><td>月日と要件を入力（例：4/20・通院）</td><td>引き継がれます</td></tr>
+      </table>
+      <div class="mpoint">💡　ボタンが青いとき＝セクション表示中。再タップまたはセクション内の「非表示」で閉じます。表示状態はiPadごとに記憶されます。</div>
     </div>
 
     <!-- 3 -->
     <div class="msec" id="m3">
       <div class="msec-title"><span class="msec-num">3</span>申し送り内容・最終排便の記入</div>
-      <p class="mbody">各カードの下部に「申し送り内容」セクションがあります。最終排便・追加セクション・自由記入テキストで構成されています。</p>
+      <p class="mbody">各カードの下部に「申し送り内容」セクションがあります。最終排便のプルダウンと自由記入テキスト欄で構成されています。</p>
       <div class="mssec">■ 最終排便</div>
       <table class="mtbl"><tr><th>選択肢</th><th>意味</th></tr>
         <tr><td>0日</td><td>本日排便あり</td></tr>
         <tr><td>不明</td><td>排便状況が把握できていない</td></tr>
-        <tr><td style="color:#dc2626;font-weight:700">-3〜-10</td><td><span style="color:#dc2626;font-weight:700">⚠ 赤文字警告表示（3日以上排便なし）</span></td></tr>
+        <tr><td style="color:#dc2626;font-weight:700">-3〜-10</td><td><span style="color:#dc2626;font-weight:700">⚠ 赤文字で警告表示（3日以上排便なし）</span></td></tr>
       </table>
       <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると、引継データの場合は自動で1日加算されます（例：-3日→翌日-4日）。今日入力済みのデータには影響しません。</div>
-      <div class="mssec">■ 追加セクション（用具・設備 / 薬関連 / 外出）</div>
-      <p class="mbody">カード下部のボタンをタップするとセクションが展開されます。入替セクションにも同じボタンがあります。</p>
-      <table class="mtbl"><tr><th>ボタン</th><th>内容</th><th>引継ぎ</th></tr>
-        <tr><td>用具・設備</td><td>ラバー・ベッド下NC の有無（あり／なし）</td><td>翌日に引き継がれます</td></tr>
-        <tr><td>薬関連</td><td>薬の変更内容などを自由記入</td><td>翌日に引き継がれます</td></tr>
-        <tr><td>外出</td><td>外出の月日と要件を入力</td><td>翌日に引き継がれます</td></tr>
-      </table>
-      <div class="mpoint">💡　ボタンが青くなっているとき = セクションが表示中。再タップで非表示、セクション内の「非表示」でも閉じられます。表示状態はiPadごとに記憶されます。</div>
-      <div class="mssec">■ 申し送りテキストの操作ボタン</div>
-      <table class="mtbl"><tr><th>ボタン</th><th>機能</th></tr>
-        <tr><td>↩ 元に戻す</td><td>直前の入力状態に戻す（最大20段階）</td></tr>
-      </table>
+      <div class="mssec">■ 申し送りテキスト</div>
+      <p class="mbody">自由にテキストを入力できます。入力が止まると0.7秒後に自動保存されます。</p>
+      <div class="mpoint">↩　テキスト欄右上の「元に戻す」ボタンで、直前の状態に戻せます（最大20段階）。</div>
       <div class="mpoint">📌　入力した申し送りはダッシュボードの申し送り一覧にも表示されます。1Fは青、2Fは緑で色分けされています。</div>
     </div>
 
-    <!-- 5 -->
+    <!-- 4 -->
     <div class="msec" id="m4">
-      <div class="msec-title"><span class="msec-num">4</span>入れ替え利用者の記録</div>
+      <div class="msec-title"><span class="msec-num">4</span>介助詳細の入力</div>
+      <p class="mbody">カード下部の「介助詳細」ボタン（緑色）をタップするとセクションが展開されます。6つのタブで情報を管理します。</p>
+      <table class="mtbl"><tr><th>タブ</th><th>入力できる内容</th></tr>
+        <tr><td>身体情報</td><td>アレルギー・既往歴・禁忌事項などの注意点</td></tr>
+        <tr><td>移動</td><td>移動・移乗の介助方法（歩行器・車椅子・移乗方法など）</td></tr>
+        <tr><td>食事</td><td>主食・副食の形態、とろみ、胃ろうの有無、食事介助の注意事項</td></tr>
+        <tr><td>入浴</td><td>入浴方法（一般・リフト浴・機械浴・シャワー浴・清拭）と注意事項</td></tr>
+        <tr><td>排泄</td><td>オムツ・リハパン・パッドのサイズ、排泄場所・頻度・注意事項</td></tr>
+        <tr><td>その他</td><td>夜間対応・コミュニケーション・家族対応など特記事項</td></tr>
+      </table>
+      <div class="mpoint mpoint-green">✅　介助詳細は利用者名に紐付いてFirebaseに保存されます。2台のiPadで共有されます。入力が止まると0.7秒後に自動保存されます。</div>
+      <div class="mpoint">💡　ダッシュボードの入浴者一覧には、入浴チェックが入っている方の「介助詳細→入浴」に設定した入浴方法でグループ分けして表示されます。</div>
+    </div>
+
+    <!-- 5 -->
+    <div class="msec" id="m5">
+      <div class="msec-title"><span class="msec-num">5</span>入れ替え利用者の記録</div>
       <p class="mbody">同じ部屋に一時的に別の方が入る場合（短期・一時入所など）に使います。メインの利用者とは完全に別のデータとして管理されます。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「入替 表示」ボタン（紫色）をタップ</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>カード下に紫色の「入替」セクションが表示されます</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>紫色の入替セクションが表示されます</div></div>
         <div class="mstep"><div class="mstep-num">3</div><div>入替の方のお名前を入力し、通常と同じ手順でケア項目を入力</div></div>
       </div>
       <div class="mpoint mpoint-purple">💜　翌日の日付切替で入替の方が自動でメイン利用者に移行されます。入替欄は空になります。不要なときは「入替 非表示」で隠せます。</div>
+      <div class="mpoint">💡　入替セクションにも用具・設備・薬関連・外出のボタンがあります。</div>
     </div>
 
     <!-- 6 -->
-    <div class="msec" id="m5">
-      <div class="msec-title"><span class="msec-num">5</span>退所ボタンの使い方・退所者履歴</div>
+    <div class="msec" id="m6">
+      <div class="msec-title"><span class="msec-num">6</span>退所ボタンの使い方・退所者履歴</div>
       <div class="mssec">■ 退所ボタンの操作</div>
-      <p class="mbody">その日に退所した利用者の部屋に使います。翌日以降の日付に切り替えると、名前とすべてのデータが自動でクリアされ空室状態になります。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「退所」ボタンをタップ → カードが赤くなり「退所済」に変わる</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>翌日以降の日付に切り替えると自動でその部屋がクリアされます</div></div>
       </div>
       <div class="mpoint mpoint-warn">⚠️　間違えて押した場合は、もう一度「退所済」をタップすれば解除できます。</div>
-      <div class="mpoint">🔍　退所ボタンを押した後に過去の日付に戻しても、その方のデータは消えません。退所処理は「前より新しい日付に進んだとき」だけ実行されます。</div>
+      <div class="mpoint">🔍　退所ボタンを押した後に過去の日付に戻しても、データは消えません。退所処理は「前より新しい日付に進んだとき」だけ実行されます。</div>
       <div class="mssec">■ 退所者履歴（7日間）</div>
-      <p class="mbody">退所処理が実行されると、その方の情報が「退所者履歴」に7日間保存されます。ケア記録画面の上部に赤いバーで表示されます。</p>
+      <p class="mbody">退所処理が実行されると、ケア記録画面の上部に赤いバーで退所者履歴が表示されます。</p>
       <table class="mtbl"><tr><th>操作</th><th>内容</th></tr>
         <tr><td>バーをタップ</td><td>退所者一覧を開閉する</td></tr>
-        <tr><td>「記録を見る」</td><td>退所前7日分のケア記録（連絡帳・入浴・排便・申し送りなど）を確認</td></tr>
+        <tr><td>「記録を見る」</td><td>退所前7日分のケア記録を確認</td></tr>
         <tr><td>残り○日</td><td>履歴が自動削除されるまでの残日数</td></tr>
       </table>
     </div>
 
     <!-- 7 -->
-    <div class="msec" id="m6">
-      <div class="msec-title"><span class="msec-num">6</span>クリア・元に戻す（バックアップ）</div>
-      <p class="mbody">入力を間違えたときに、その部屋の画面表示だけをリセットします。FirebaseにもlocalStorageにも書き込まれません。</p>
+    <div class="msec" id="m7">
+      <div class="msec-title"><span class="msec-num">7</span>クリア・元に戻す</div>
+      <p class="mbody">入力を間違えたときに、その部屋の画面表示だけをリセットします。Firebaseには書き込まれません。</p>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」ボタンをタップします</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>入力内容が消え、「元に戻す」ボタンが12秒間表示されます</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>「元に戻す」を12秒以内にタップすると、クリア前の状態に復元されます</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>「元に戻す」を12秒以内にタップするとクリア前の状態に復元されます</div></div>
       </div>
-      <div class="mpoint mpoint-warn">⚠️　「元に戻す」が消えた後は復元できません。申し送りテキストには別途「↩ 元に戻す」ボタンがあり最大20段階戻れます。</div>
+      <div class="mpoint mpoint-warn">⚠️　「元に戻す」が消えた後は復元できません。申し送りテキストには別途「↩ 元に戻す」ボタンがあり、最大20段階まで戻れます。</div>
     </div>
 
     <!-- 8 -->
-    <div class="msec" id="m7">
-      <div class="msec-title"><span class="msec-num">7</span>ダッシュボードの見方</div>
-      <div class="mssec">■ 概要カード</div>
+    <div class="msec" id="m8">
+      <div class="msec-title"><span class="msec-num">8</span>ダッシュボードの見方</div>
+      <div class="mssec">■ 統計カード</div>
       <table class="mtbl"><tr><th>カード名</th><th>内容</th></tr>
-        <tr><td>本日の完了部屋</td><td>全6項目が入力済みの部屋の数</td></tr>
-        <tr><td>入力中（途中）</td><td>一部だけ入力されている部屋の数</td></tr>
-        <tr><td>未入力</td><td>何も入力されていない部屋の数</td></tr>
-        <tr><td>連絡帳あり</td><td>「有」を選んだ利用者の数</td></tr>
         <tr><td>薬変更あり</td><td>「有」を選んだ利用者の数</td></tr>
-        <tr><td style="background:#faf5ff">入浴あり（紫）</td><td>入浴種別を選んだ利用者の数（入れ替え含む）</td></tr>
+        <tr><td>入浴あり（紫）</td><td>当日入浴にチェックが入っている利用者の数（入替含む）</td></tr>
       </table>
-      <div class="mssec" style="margin-top:10px">■ 入浴者一覧</div>
-      <p class="mbody">入浴種別（一般・リフト浴・機械浴・シャワー浴・清拭）ごとにグループ分けして表示。入れ替えの方は「101(入替)」と区別されます。</p>
+      <div class="mssec">■ 入浴者一覧</div>
+      <p class="mbody">当日入浴にチェックが入っている方を、介助詳細に設定した入浴方法（一般・リフト浴・機械浴・シャワー浴・清拭）でグループ分けして表示します。入浴方法が未設定の場合は「方法未設定」グループに表示されます。</p>
       <div class="mssec">■ 最終排便　日数分布の色</div>
       <table class="mtbl"><tr><th>色</th><th>内容</th></tr>
         <tr><td><span style="color:#16a34a;font-weight:700">緑</span></td><td>0〜-2日（最近排便あり）</td></tr>
         <tr><td><span style="color:#b45309;font-weight:700">黄</span></td><td>-3〜-4日（やや注意）</td></tr>
         <tr><td><span style="color:#dc2626;font-weight:700">赤</span></td><td>-5日以上（要注意）</td></tr>
       </table>
-      <div class="mssec">■ 申し送り一覧の操作</div>
-      <p class="mbody">各申し送りをタップすると、その方のケア項目を一覧で確認できるポップアップが開きます。右上の × で閉じます。</p>
+      <div class="mssec">■ 申し送り一覧</div>
+      <p class="mbody">各申し送りをタップすると、その方のケア項目を確認できるポップアップが開きます。右上の × で閉じます。</p>
       <table class="mtbl"><tr><th>色</th><th>フロア・種別</th></tr>
         <tr><td><span style="display:inline-block;width:12px;height:12px;background:#93c5fd;border-radius:2px;vertical-align:middle"></span> 青</td><td>1F（100番台）</td></tr>
         <tr><td><span style="display:inline-block;width:12px;height:12px;background:#6ee7b7;border-radius:2px;vertical-align:middle"></span> 緑</td><td>2F（200番台）</td></tr>
@@ -678,25 +691,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 9 -->
-    <div class="msec" id="m8">
-      <div class="msec-title"><span class="msec-num">8</span>体重・身長の記録</div>
+    <div class="msec" id="m9">
+      <div class="msec-title"><span class="msec-num">9</span>体重・身長の記録</div>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>上部の「体重・身長」タブをタップします</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>「表示月」で記録したい月を選択します</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>一覧表の各行の「体重」「身長」欄に数字を入力します</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>体重・身長欄に数字を入力します</div></div>
         <div class="mstep"><div class="mstep-num">4</div><div>入力欄から外れると自動でBMIが計算・保存されます</div></div>
       </div>
-      <div class="mpoint">📊　一覧には現在入居中の方だけでなく、過去に体重・身長を記録したすべての方（退所済みを含む）が表示されます。「記録を見る」で過去24ヶ月分の推移グラフを確認できます。</div>
-      <table class="mtbl"><tr><th>BMI表示の色</th><th>判定</th></tr>
-        <tr><td><span class="mbadge" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5">低体重</span></td><td>BMI 18.5未満</td></tr>
-        <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac">普通</span></td><td>BMI 18.5〜25未満</td></tr>
-        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309;border:1px solid #fcd34d">過体重</span></td><td>BMI 25以上</td></tr>
-      </table>
+      <div class="mpoint">📊　一覧には現在の入居者だけでなく、過去にケア記録や体重記録があった方（退所済みを含む全員）が表示されます。「履歴」ボタンで過去24ヶ月分の推移グラフを確認できます。</div>
     </div>
 
     <!-- 10 -->
-    <div class="msec" id="m9">
-      <div class="msec-title"><span class="msec-num">9</span>リンクの登録と使い方</div>
+    <div class="msec" id="m10">
+      <div class="msec-title"><span class="msec-num">10</span>リンクの登録と使い方</div>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>「リンク」タブをタップします</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>プリセットボタン（Notion・Googleドライブなど）をタップするだけで追加できます</div></div>
@@ -706,11 +714,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 11 -->
-    <div class="msec" id="m10">
-      <div class="msec-title"><span class="msec-num">10</span>翌日への引き継ぎ・自動処理</div>
-      <p class="mbody">翌日以降の日付に切り替えたとき、以下の処理が<strong>自動で</strong>行われます。手動操作は不要です。</p>
+    <div class="msec" id="m11">
+      <div class="msec-title"><span class="msec-num">11</span>翌日への引き継ぎ・自動処理</div>
+      <p class="mbody">翌日以降の日付に切り替えたとき、以下の処理が自動で行われます。手動操作は不要です。</p>
       <table class="mtbl"><tr><th>状況</th><th>自動で行われること</th></tr>
-        <tr><td>通常の利用者（引継）</td><td>最終排便が1日加算（-3→-4など）。入浴はクリア</td></tr>
+        <tr><td>通常の利用者（引継）</td><td>最終排便が1日加算。入浴チェックはリセット</td></tr>
         <tr><td>今日すでに入力した利用者</td><td>今日のデータがそのまま引き継がれる</td></tr>
         <tr><td>退所ボタンを押した部屋</td><td>名前とデータが自動でクリアされ空室になる（退所者履歴に7日間保持）</td></tr>
         <tr><td>入替の方がいた部屋</td><td>入替の方が自動でメイン利用者に移行。入替欄は空になる</td></tr>
@@ -719,70 +727,47 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     </div>
 
     <!-- 12 -->
-    <div class="msec" id="m11">
-      <div class="msec-title"><span class="msec-num">11</span>日付自動更新・アプリ化（PWA）</div>
+    <div class="msec" id="m12">
+      <div class="msec-title"><span class="msec-num">12</span>日付自動更新・アプリ化（PWA）</div>
       <div class="mssec">■ 日付の自動更新</div>
-      <p class="mbody">以下のタイミングで自動的に今日の日付に切り替わります。手動で変更する必要はありません。</p>
       <table class="mtbl"><tr><th>タイミング</th><th>動作</th></tr>
-        <tr><td>深夜0時ちょうど</td><td>自動で翌日の日付に切り替わる（画面下部にトースト通知）</td></tr>
+        <tr><td>深夜0時ちょうど</td><td>自動で翌日の日付に切り替わる（画面下にトースト通知）</td></tr>
         <tr><td>iPadのスリープ復帰時</td><td>日付が変わっていれば即座に切り替わる</td></tr>
-        <tr><td>別アプリから戻ったとき</td><td>同上</td></tr>
         <tr><td>1分ごとのバックグラウンド確認</td><td>確実な切り替えのためのフォールバック</td></tr>
       </table>
-      <div class="mssec">■ ホーム画面へのアプリ追加（PWA）</div>
-      <p class="mbody">SafariからホームSafariに追加すると、アイコンからアプリのように起動できます。</p>
+      <div class="mssec">■ ホーム画面へのアプリ追加</div>
       <div class="msteps">
         <div class="mstep"><div class="mstep-num">1</div><div>SafariでアプリのURLを開く</div></div>
         <div class="mstep"><div class="mstep-num">2</div><div>画面下の共有ボタン（□↑）をタップ</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>「ホーム画面に追加」をタップ → 「追加」</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>「ホーム画面に追加」→「追加」をタップ</div></div>
       </div>
       <div class="mpoint">📱　2本指でピンチイン・ピンチアウトして画面を拡大・縮小できます。</div>
     </div>
 
     <!-- 13 -->
-    <div class="msec" id="m12">
-      <div class="msec-title"><span class="msec-num">12</span>2台のiPadで同期する</div>
+    <div class="msec" id="m13">
+      <div class="msec-title"><span class="msec-num">13</span>2台のiPadで同期する</div>
       <p class="mbody">両方のiPadが同じURLを開いていれば、入力内容がリアルタイムで自動同期されます。特別な操作は不要です。</p>
       <table class="mtbl"><tr><th>同期される</th><th>同期されない（端末ごとの設定）</th></tr>
         <tr><td>ケアデータ（各項目・申し送り）</td><td>入替セクションの表示/非表示</td></tr>
-        <tr><td>利用者の名前・部屋の紐付け</td><td>クリア前のバックアップデータ</td></tr>
+        <tr><td>介助詳細データ</td><td>追加セクションの表示/非表示</td></tr>
+        <tr><td>退所者履歴・外部リンク</td><td>クリア前のバックアップデータ</td></tr>
         <tr><td>体重・身長データ</td><td>退所フラグ（退所ボタンの状態）</td></tr>
-        <tr><td>退所者履歴・外部リンク</td><td></td></tr>
       </table>
-      <p class="mbody" style="margin-top:8px">同期が止まったときはWi-Fi接続を確認し、Safariを再読み込みしてください。上部の同期バーが「🟢 Firebase リアルタイム同期中」になれば復旧しています。</p>
+      <div class="mpoint mpoint-warn">⚠️　日付切替は1台で操作してからもう1台を再読み込みすると、排便日数の不整合が起きにくくなります。</div>
     </div>
 
     <!-- 14 -->
-    <div class="msec" id="m13">
-      <div class="msec-title"><span class="msec-num">13</span>よくある質問</div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 名前を間違えて入力してしまいました</div>
-        <div class="mfaq-a">名前欄をタップして正しい名前に修正し、Enterを押してください。新しい名前でデータを読み込み直します。</div>
-      </div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 申し送りを間違えて消してしまいました</div>
-        <div class="mfaq-a">申し送り欄の右上にある「↩ 元に戻す」ボタンをタップしてください。最大20段階まで戻れます。カード全体の「クリア」ボタンを押した場合は12秒以内の「元に戻す」で復元できます。</div>
-      </div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 入浴の選択が翌日に消えてしまいます</div>
-        <div class="mfaq-a">仕様です。入浴は毎日の記録なので引継時に自動クリアされます。毎日入力してください。</div>
-      </div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 申し送りがダッシュボードに表示されない</div>
-        <div class="mfaq-a">申し送りのテキスト欄に文字を入力した後、少し待つと自動保存されます。ダッシュボードをタップし直してみてください。</div>
-      </div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 翌日に切り替えたら名前が消えてしまいました</div>
-        <div class="mfaq-a">退所ボタンが押されていた可能性があります。退所者履歴（画面上部の赤いバー）から「記録を見る」で確認できます。前日の日付に戻してデータを確認し、名前を再入力してください。</div>
-      </div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 退所した方の記録を確認したい</div>
-        <div class="mfaq-a">退所後7日以内であれば、ケア記録画面上部の「🏠 退所者履歴」から「記録を見る」をタップしてください。退所前7日分のケア記録が確認できます。</div>
-      </div>
-      <div class="mfaq">
-        <div class="mfaq-q">Q. 同期がうまくいかない</div>
-        <div class="mfaq-a">両方のiPadが同じWi-Fiに接続されているか確認してください。Safariを再読み込みすると解決することが多いです。</div>
-      </div>
+    <div class="msec" id="m14">
+      <div class="msec-title"><span class="msec-num">14</span>よくある質問</div>
+      <div class="mfaq"><div class="mfaq-q">Q. 名前を間違えて入力してしまいました</div><div class="mfaq-a">名前欄をタップして正しい名前に修正し、Enterを押してください。新しい名前でデータを読み込み直します。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 申し送りを間違えて消してしまいました</div><div class="mfaq-a">申し送り欄の「↩ 元に戻す」ボタンをタップしてください（最大20段階）。カード全体のクリアは12秒以内に「元に戻す」で復元できます。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 入浴チェックが翌日に消えてしまいます</div><div class="mfaq-a">仕様です。入浴は毎日の記録なので翌日は自動でリセットされます。入浴方法の設定は介助詳細の「入浴」タブに入力すると引き継がれます。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 申し送りがダッシュボードに表示されない</div><div class="mfaq-a">テキスト入力後に少し待つと自動保存されます。ダッシュボードをタップし直してみてください。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 翌日に切り替えたら名前が消えてしまいました</div><div class="mfaq-a">退所ボタンが押されていた可能性があります。退所者履歴（画面上部の赤いバー）から「記録を見る」で確認できます。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 退所した方の記録を確認したい</div><div class="mfaq-a">退所後7日以内であれば、ケア記録画面上部の「退所者履歴」から「記録を見る」をタップしてください。退所前7日分のケア記録が確認できます。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 同期がうまくいかない</div><div class="mfaq-a">両方のiPadが同じWi-Fiに接続されているか確認してください。Safariを再読み込みすると解決することが多いです。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 排便日数が変わる人と変わらない人がいます</div><div class="mfaq-a">2台のiPadが同時に日付切替を行うと発生することがあります。1台で操作後にもう1台を再読み込みしてください。</div></div>
     </div>
 
   </div>
