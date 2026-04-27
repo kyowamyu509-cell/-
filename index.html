@@ -261,6 +261,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .extra-input:focus{border-color:#93c5fd;background:#fff}
 .extra-row{display:flex;gap:6px;align-items:flex-start}
 .extra-date-input{width:80px;flex-shrink:0}
+/* コピーボタン */
+.copy-btn{border:1px solid #e2e8f0;border-radius:8px;padding:4px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500;display:flex;align-items:center;gap:4px}
+.copy-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
+.copy-btn.copied{background:#f0fdf4;color:#16a34a;border-color:#86efac}
 
 /* 退所者履歴 */
 .discharged-log-section{background:#fff;border-radius:12px;border:1px solid #fca5a5;padding:12px 14px;margin:0 12px 12px;max-width:1400px;width:calc(100% - 24px);margin-left:auto;margin-right:auto}
@@ -1596,6 +1600,97 @@ async function saveNewLink(){const name=document.getElementById('li-name').value
 async function addPreset(name,icon,url){links.push({name,url,icon});await saveLinks();renderLinks();}
 async function deleteLink(i){if(!confirm('このリンクを削除しますか？'))return;links.splice(i,1);await saveLinks();renderLinks();}
 
+// ── 利用者データコピー ─────────────────────────────────
+function copyResidentData(r,isSub){
+  const d=isSub?SUB[r]:S[r];
+  const cn=careNotes[r]||{};
+  const name=d.name||'（名前未入力）';
+  const floor=F1_SET.has(r)?'1F':'2F';
+  const label=isSub?'入替':'メイン';
+  const today=getLocalDate();
+
+  const lines=[
+    '═══════════════════════════════',
+    `【${r}号室 ${floor}】${name}　${label}`,
+    `記録日：${today}`,
+    '───────────────────────────────',
+    '■ ケア記録',
+    `　連絡帳：${d.renrakucho||'未選択'}`,
+    `　薬変更：${d.yakuhenkou||'未選択'}`,
+    `　目薬：${d.megusuri||'未選択'}`,
+    `　軟膏処置：${d.nankou||'未選択'}`,
+    `　入浴（当日）：${d.extra==='済'?'✓ 入浴済み':'なし'}`,
+    `　最終排便：${d.haiben||'未選択'}`,
+  ];
+
+  if(d.rubber||d.bedNC){
+    lines.push('■ 用具・設備');
+    if(d.rubber)lines.push(`　ラバー：${d.rubber}`);
+    if(d.bedNC)lines.push(`　ベッド下NC：${d.bedNC}`);
+  }
+  if(d.yakuNote){
+    lines.push('■ 薬関連（変更内容）');
+    lines.push(`　${d.yakuNote}`);
+  }
+  if(d.gaishuDate||d.gaishuNote){
+    lines.push('■ 外出');
+    lines.push(`　月日：${d.gaishuDate||''}　要件：${d.gaishuNote||''}`);
+  }
+  if(d.memo){
+    lines.push('■ 申し送り');
+    d.memo.split('\n').forEach(function(l){lines.push('\u3000'+l);});
+  }
+
+  // 介助詳細
+  const cnItems=[];
+  if(cn.shintai)cnItems.push(['身体情報',cn.shintai]);
+  if(cn.ido)cnItems.push(['移動',cn.ido]);
+  const shokuji=[];
+  if(cn.shokuji_shushoku)shokuji.push('主食:'+cn.shokuji_shushoku);
+  if(cn.shokuji_fukushoku)shokuji.push('副食:'+cn.shokuji_fukushoku);
+  if(cn.shokuji_toro)shokuji.push('とろみ:'+cn.shokuji_toro);
+  if(cn.shokuji_iero)shokuji.push('胃ろう使用');
+  if(cn.shokuji_note)shokuji.push(cn.shokuji_note);
+  if(shokuji.length)cnItems.push(['食事',shokuji.join('／')]);
+  if(cn.nyuyoku_houhou)cnItems.push(['入浴方法',cn.nyuyoku_houhou+(cn.nyuyoku_note?'　'+cn.nyuyoku_note:'')]);
+  const haisetsu=[];
+  if(cn.omutsu&&cn.omutsu!=='なし')haisetsu.push('オムツ:'+cn.omutsu);
+  if(cn.rehapan&&cn.rehapan!=='なし')haisetsu.push('リハパン:'+cn.rehapan);
+  if(cn.pad&&cn.pad!=='なし')haisetsu.push('パッド:'+cn.pad);
+  if(cn.haisetsu_basho)haisetsu.push('場所:'+cn.haisetsu_basho);
+  if(cn.haisetsu_freq)haisetsu.push('頻度:'+cn.haisetsu_freq);
+  if(cn.haisetsu_note)haisetsu.push(cn.haisetsu_note);
+  if(haisetsu.length)cnItems.push(['排泄',haisetsu.join('／')]);
+  if(cn.sonota)cnItems.push(['その他',cn.sonota]);
+
+  if(cnItems.length){
+    lines.push('■ 介助詳細');
+    cnItems.forEach(([label,val])=>{
+      lines.push(`　【${label}】`);
+      val.split('\n').forEach(function(l){lines.push('\u3000\u3000'+l);});
+    });
+  }
+
+  lines.push('═══════════════════════════════');
+  const text=lines.join('\n');
+
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('copy-btn-'+(isSub?'sub-':'')+r);
+    if(btn){
+      btn.className='copy-btn copied';
+      btn.textContent='✓ コピー完了';
+      setTimeout(()=>{btn.className='copy-btn';btn.textContent='📋 コピー';},2000);
+    }
+  }).catch(()=>{
+    // フォールバック
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('クリップボードにコピーしました');
+  });
+}
+
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
@@ -1803,6 +1898,7 @@ function buildCard(r){
     <button class="extra-toggle-btn${extraSec[r].tools?' active':''}" id="extra-btn-tools-${r}" onclick="toggleExtraSec(${r},'tools',false)">用具・設備</button>
     <button class="extra-toggle-btn${extraSec[r].yaku?' active':''}" id="extra-btn-yaku-${r}" onclick="toggleExtraSec(${r},'yaku',false)">薬関連</button>
     <button class="extra-toggle-btn${extraSec[r].gaishu?' active':''}" id="extra-btn-gaishu-${r}" onclick="toggleExtraSec(${r},'gaishu',false)">外出</button>
+    <button class="copy-btn" id="copy-btn-${r}" onclick="copyResidentData(${r},false)">📋 コピー</button>
   </div>
   <button class="clear-btn" onclick="clearRoom(${r})">クリア</button>
 </div>
@@ -1825,6 +1921,7 @@ function buildCard(r){
       <button class="extra-toggle-btn${subExtraSec[r].tools?' active':''}" id="sub-extra-btn-tools-${r}" onclick="toggleExtraSec(${r},'tools',true)">用具・設備</button>
       <button class="extra-toggle-btn${subExtraSec[r].yaku?' active':''}" id="sub-extra-btn-yaku-${r}" onclick="toggleExtraSec(${r},'yaku',true)">薬関連</button>
       <button class="extra-toggle-btn${subExtraSec[r].gaishu?' active':''}" id="sub-extra-btn-gaishu-${r}" onclick="toggleExtraSec(${r},'gaishu',true)">外出</button>
+      <button class="copy-btn" id="copy-btn-sub-${r}" onclick="copyResidentData(${r},true)">📋 コピー</button>
     </div>
     <div style="display:flex;justify-content:flex-end">
       <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
