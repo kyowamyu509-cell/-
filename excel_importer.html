@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CS式アセス → ケア記録 インポートツール</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;color:#1e293b;font-size:15px;padding:20px}
+h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.sub{font-size:12px;color:#64748b;margin-bottom:20px}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px 20px;margin-bottom:14px;max-width:820px}
+.card-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.badge{font-size:10px;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:20px;font-weight:500}
+.drop-zone{border:2px dashed #93c5fd;border-radius:10px;padding:30px;text-align:center;cursor:pointer;background:#f8fafc;transition:all 0.2s}
+.drop-zone:hover,.drop-zone.drag{border-color:#2563eb;background:#eff6ff}
+.drop-zone input{display:none}
+.drop-icon{font-size:36px;margin-bottom:10px}
+.drop-text{font-size:13px;color:#64748b;margin-bottom:8px}
+.drop-hint{font-size:11px;color:#94a3b8}
+.field-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.field-label{font-size:12px;font-weight:500;color:#64748b;min-width:130px;padding-top:7px;flex-shrink:0}
+.field-val{flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;min-width:0;font-family:inherit}
+.field-val:focus{border-color:#93c5fd;background:#fff}
+textarea.field-val{resize:vertical;min-height:60px;line-height:1.7}
+select.field-val{cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:24px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.room-sel-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.room-sel-row label{font-size:12px;font-weight:500;color:#64748b;min-width:24px}
+.room-grid{display:flex;flex-wrap:wrap;gap:6px}
+.room-btn{padding:6px 12px;font-size:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;font-family:inherit;color:#64748b}
+.room-btn.selected{background:#2563eb;color:#fff;border-color:#2563eb}
+.btn{padding:10px 22px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-primary:disabled{background:#cbd5e1;cursor:not-allowed}
+.btn-gray{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}
+.status{font-size:12px;padding:9px 13px;border-radius:8px;margin-top:10px;display:none}
+.status.ok{background:#f0fdf4;color:#16a34a;border:1px solid #86efac;display:block}
+.status.err{background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;display:block}
+.status.info{background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;display:block}
+.section-divider{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;margin:16px 0 8px;border-top:1px solid #f1f5f9;padding-top:12px}
+</style>
+</head>
+<body>
+<h1>📥 CS式アセス → ケア記録 インポートツール</h1>
+<p class="sub">CS式アセスメントシートのExcelファイルを読み込んで、ケア記録アプリに取り込みます。</p>
+
+<div class="card">
+  <div class="card-title">🔥 Firebase接続 <span class="badge">自動</span></div>
+  <div id="fbStatus" class="status info">接続中...</div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 Excelファイルを選択</div>
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+    <div class="drop-icon">📊</div>
+    <div class="drop-text">CS式アセス_最新.xlsmをここにドロップ<br>またはクリックして選択</div>
+    <div class="drop-hint">対応形式: .xlsm .xlsx</div>
+    <input type="file" id="fileInput" accept=".xlsm,.xlsx" onchange="readExcel(this.files[0])">
+  </div>
+  <div id="fileStatus" class="status"></div>
+</div>
+
+<div class="card" id="previewCard" style="display:none">
+  <div class="card-title">👁️ 読み込み内容の確認・編集 <span class="badge">必要であれば修正してください</span></div>
+
+  <div class="section-divider">▌ 基本情報</div>
+  <div class="field-row">
+    <div class="field-label">氏名 *（利用者）</div>
+    <input class="field-val" id="f_name" placeholder="山田 太郎">
+  </div>
+  <div class="field-row">
+    <div class="field-label">性別</div>
+    <select class="field-val" id="f_gender">
+      <option value="">未設定</option>
+      <option value="男性">男性</option>
+      <option value="女性">女性</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">生年月日・年齢</div>
+    <input class="field-val" id="f_birth" placeholder="例: 昭和30年1月1日（70歳）">
+  </div>
+  <div class="field-row">
+    <div class="field-label">要介護度</div>
+    <select class="field-val" id="f_kaigo">
+      <option value="">未設定</option>
+      <option>要支援1</option><option>要支援2</option>
+      <option>要介護1</option><option>要介護2</option>
+      <option>要介護3</option><option>要介護4</option><option>要介護5</option>
+    </select>
+  </div>
+
+  <div class="section-divider">▌ 緊急連絡先（家族）</div>
+  <div class="field-row">
+    <div class="field-label">緊急連絡①</div>
+    <input class="field-val" id="f_emg1" placeholder="氏名　続柄　連絡先">
+  </div>
+  <div class="field-row">
+    <div class="field-label">緊急連絡②</div>
+    <input class="field-val" id="f_emg2" placeholder="氏名　続柄　連絡先">
+  </div>
+
+  <div class="section-divider">▌ 身体・介助情報</div>
+  <div class="field-row">
+    <div class="field-label">身長 (cm)</div>
+    <input class="field-val" id="f_height" type="number" step="0.1" placeholder="165.0" style="max-width:130px">
+  </div>
+  <div class="field-row">
+    <div class="field-label">体重 (kg)</div>
+    <input class="field-val" id="f_weight" type="number" step="0.1" placeholder="60.0" style="max-width:130px">
+  </div>
+  <div class="field-row">
+    <div class="field-label">身体情報・注意点</div>
+    <textarea class="field-val" id="f_shintai" placeholder="性別・要介護度・既往歴・アレルギーなど（自動生成）"></textarea>
+  </div>
+  <div class="field-row">
+    <div class="field-label">介護上の注意点</div>
+    <textarea class="field-val" id="f_kaigonote" placeholder="介護上の注意事項"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 食事</div>
+  <div class="field-row">
+    <div class="field-label">主食</div>
+    <select class="field-val" id="f_shushoku">
+      <option value="">未設定</option>
+      <option>常食</option><option>軟飯</option><option>お粥</option><option>ペースト</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">副食</div>
+    <select class="field-val" id="f_fukushoku">
+      <option value="">未設定</option>
+      <option>常食</option><option>一口大</option><option>刻み</option><option>極刻み</option><option>ペースト</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">食事備考</div>
+    <textarea class="field-val" id="f_shokuji_note" placeholder="食事介助・嚥下・注意事項" rows="2"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 薬情報</div>
+  <div class="field-row">
+    <div class="field-label">薬の詳細</div>
+    <textarea class="field-val" id="f_yaku" placeholder="薬名・服用時間・注意事項など" rows="3"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 生活歴・その他</div>
+  <div class="field-row">
+    <div class="field-label">生活歴</div>
+    <textarea class="field-val" id="f_seikatsu" rows="2"></textarea>
+  </div>
+  <div class="field-row">
+    <div class="field-label">その他・緊急連絡</div>
+    <textarea class="field-val" id="f_sonota" rows="3" placeholder="緊急連絡先など（介助詳細→その他に保存）"></textarea>
+  </div>
+</div>
+
+<div class="card" id="importCard" style="display:none">
+  <div class="card-title">🏠 インポート先の部屋を選択</div>
+  <div class="room-sel-row">
+    <label>1F</label>
+    <div class="room-grid" id="roomGrid1"></div>
+  </div>
+  <div class="room-sel-row">
+    <label>2F</label>
+    <div class="room-grid" id="roomGrid2"></div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-primary" id="importBtn" onclick="doImport()" disabled>🚀 この部屋にインポート</button>
+    <button class="btn btn-gray" onclick="copyAllText()">📋 テキストでコピー</button>
+  </div>
+  <div id="importStatus" class="status"></div>
+</div>
+
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyBCUKrjGlyOqigYrwySaqQjUYRsyXv-_Ys",authDomain:"mousi-bab8c.firebaseapp.com",databaseURL:"https://mousi-bab8c-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"mousi-bab8c",storageBucket:"mousi-bab8c.firebasestorage.app",messagingSenderId:"560482916279",appId:"1:560482916279:web:153f51a24929f3dbc5ba32"};
+let db=null;
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db=firebase.database();
+  db.ref('.info/connected').on('value',s=>{
+    const el=document.getElementById('fbStatus');
+    if(s.val()){el.className='status ok';el.textContent='✅ Firebase接続完了';}
+    else{el.className='status err';el.textContent='⚠️ Firebase未接続';}
+  });
+}catch(e){document.getElementById('fbStatus').className='status err';document.getElementById('fbStatus').textContent='❌ 接続エラー: '+e.message;}
+
+function encKey(n){return encodeURIComponent(n.trim()).replace(/\./g,'%2E').replace(/#/g,'%23').replace(/\$/g,'%24').replace(/\[/g,'%5B').replace(/\]/g,'%5D');}
+
+const F1=[101,102,103,105,106,107,108,110,111,112];
+const F2=[201,202,203,205,206,207,208,210,211,212];
+let selectedRoom=null;
+
+['roomGrid1','roomGrid2'].forEach((id,fi)=>{
+  const rooms=fi===0?F1:F2;
+  document.getElementById(id).innerHTML=rooms.map(r=>`<button class="room-btn" id="rbtn-${r}" onclick="selectRoom(${r})">${r}</button>`).join('');
+});
+function selectRoom(r){
+  if(selectedRoom)document.getElementById('rbtn-'+selectedRoom).className='room-btn';
+  selectedRoom=r;
+  document.getElementById('rbtn-'+r).className='room-btn selected';
+  document.getElementById('importBtn').disabled=false;
+}
+
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').className='drop-zone drag';}
+function onDragLeave(){document.getElementById('dropZone').className='drop-zone';}
+function onDrop(e){e.preventDefault();onDragLeave();const f=e.dataTransfer.files[0];if(f)readExcel(f);}
+
+// セル取得ヘルパー（0-indexed row/col）
+function cv(rows,r,c){return rows[r]&&rows[r][c]!=null?String(rows[r][c]).trim():'';}
+function nz(v){return v&&v!=='0'&&v!=='None'?v:'';}
+
+function readExcel(file){
+  if(!file)return;
+  const el=document.getElementById('fileStatus');
+  el.className='status info';el.textContent='読み込み中...';
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+
+      // シート取得
+      const wsBasic=wb.Sheets['基本情報'];
+      const wsDetail=wb.Sheets['詳細情報（初回）']||wb.Sheets[wb.SheetNames.find(s=>s.includes('詳細'))||''];
+
+      const toRows=ws=>{
+        if(!ws)return[];
+        const ref=ws['!ref']||'A1:A1';
+        const range=XLSX.utils.decode_range(ref);
+        const rows=[];
+        for(let r=range.s.r;r<=range.e.r;r++){
+          const row=[];
+          for(let c=range.s.c;c<=range.e.c;c++){
+            const cell=ws[XLSX.utils.encode_cell({r,c})];
+            row.push(cell!=null?String(cell.v||'').trim():'');
+          }
+          rows.push(row);
+        }
+        return rows;
+      };
+
+      const bRows=toRows(wsBasic);
+      const dRows=toRows(wsDetail);
+      const data={};
+
+      // ── 基本情報シート（行番号は1-indexed → 0-indexed）──
+      // 行2（idx=1）: ヘッダー行 → 氏名=C(2), 性別=G(6), 生年月日=H(7), 年齢=K(10), 要介護度=M(12)
+      // 行3（idx=2）: 利用者データ行
+      if(bRows.length>=3){
+        data.name   = nz(cv(bRows,2,2));  // 行3 C列 = 利用者氏名
+        data.gender = nz(cv(bRows,2,6));  // 行3 G列 = 性別
+        data.birth  = nz(cv(bRows,2,7));  // 行3 H列 = 生年月日
+        data.age    = nz(cv(bRows,2,10)); // 行3 K列 = 年齢
+        data.kaigo  = nz(cv(bRows,2,12)); // 行3 M列 = 要介護度
+      }
+
+      // 行8（idx=7）: 緊急連絡ヘッダー → 氏名=C(2), 続柄=G(6), 住所=H(8), 連絡先=O(14)
+      // 行9（idx=8）: 緊急①データ行
+      // 行10（idx=9）: 緊急②データ行
+      if(bRows.length>=10){
+        const e1parts=[];
+        const e1name  =nz(cv(bRows,8,3));  // D列（①の右）
+        const e1zoku  =nz(cv(bRows,8,6));  // G列 続柄
+        const e1tel   =nz(cv(bRows,8,14)); // O列 連絡先
+        if(e1name)e1parts.push(e1name);
+        if(e1zoku)e1parts.push(e1zoku);
+        if(e1tel) e1parts.push(e1tel);
+        data.emg1=e1parts.join('　');
+
+        const e2parts=[];
+        const e2name  =nz(cv(bRows,9,3));
+        const e2zoku  =nz(cv(bRows,9,6));
+        const e2tel   =nz(cv(bRows,9,14));
+        if(e2name)e2parts.push(e2name);
+        if(e2zoku)e2parts.push(e2zoku);
+        if(e2tel) e2parts.push(e2tel);
+        data.emg2=e2parts.join('　');
+      }
+
+      // 介護上の注意点（行17付近を探す）
+      for(let ri=13;ri<Math.min(25,bRows.length);ri++){
+        const row=bRows[ri];
+        if(row[0]==='介護上の注意点'&&bRows[ri+1]){
+          data.kaigonote=bRows[ri+1].filter(v=>v&&v!=='0').join(' ');break;
+        }
+      }
+
+      // 生活歴
+      for(let ri=13;ri<Math.min(25,bRows.length);ri++){
+        if(bRows[ri][0]==='生活歴'&&bRows[ri+1]){
+          data.seikatsu=bRows[ri+1].filter(v=>v&&v!=='0').join(' ');break;
+        }
+      }
+
+      // 薬情報（薬名 ヘッダー行を探して次の行群）
+      const yakuLines=[];
+      for(let ri=0;ri<bRows.length;ri++){
+        const row=bRows[ri];
+        if(row.includes('薬名')&&row.includes('服用時間')){
+          // ヘッダー行の次から薬データ行
+          for(let k=ri+2;k<Math.min(ri+20,bRows.length);k++){
+            const yakuRow=bRows[k];
+            const yakuName=nz(yakuRow[1]||yakuRow[2]||'');
+            if(yakuName&&yakuName!=='薬名'){
+              const times=[];
+              // 朝昼夕起床眠前の列を探す（大体col 4-9）
+              [4,5,6,7,8].forEach(ci=>{if(nz(yakuRow[ci])&&yakuRow[ci]!=='0')times.push(['朝','昼','夕','起床','眠前'][ci-4]+':'+yakuRow[ci]);});
+              yakuLines.push(yakuName+(times.length?'（'+times.join(' ')+'）':''));
+            }
+          }
+          break;
+        }
+      }
+      if(yakuLines.length)data.yaku=yakuLines.join('\n');
+
+      // 既往歴
+      const kiouVals=[];
+      for(let ri=0;ri<bRows.length;ri++){
+        if(bRows[ri][0]==='既往歴'){
+          for(let k=ri+1;k<Math.min(ri+6,bRows.length);k++){
+            const v=bRows[k].filter(x=>nz(x)&&x!=='既往歴').join(' / ');
+            if(v)kiouVals.push(v);
+          }
+          break;
+        }
+      }
+      if(kiouVals.length)data.kiou=kiouVals.join('　');
+
+      // 食事歴（主食・副食）
+      for(let ri=0;ri<bRows.length;ri++){
+        if(bRows[ri][0]==='食事歴'){
+          for(let k=ri+1;k<Math.min(ri+8,bRows.length);k++){
+            const row=bRows[k];
+            if(row[1]==='主食'){
+              const v=row.slice(3).find(x=>nz(x));
+              if(v&&!data.shushoku)data.shushoku=v;
+            }
+            if(row[1]==='副食'){
+              const v=row.slice(3).find(x=>nz(x));
+              if(v&&!data.fukushoku)data.fukushoku=v;
+            }
+          }
+          break;
+        }
+      }
+
+      // 詳細情報から身長・体重
+      for(let ri=0;ri<dRows.length;ri++){
+        const row=dRows[ri];
+        for(let ci=0;ci<row.length;ci++){
+          if(row[ci]==='身長'&&nz(row[ci+1])&&parseFloat(row[ci+1])>0)data.height=row[ci+1];
+          if(row[ci]==='体重'&&nz(row[ci+1])&&parseFloat(row[ci+1])>0)data.weight=row[ci+1];
+          if(row[ci]==='主食'&&!data.shushoku&&dRows[ri+1]&&nz(dRows[ri+1][ci]))data.shushoku=dRows[ri+1][ci];
+          if(row[ci]==='副食'&&!data.fukushoku&&dRows[ri+1]&&nz(dRows[ri+1][ci]))data.fukushoku=dRows[ri+1][ci];
+        }
+      }
+
+      // ── フォームに反映 ──
+      setField('f_name',   data.name||'');
+      setField('f_gender', data.gender||'');
+      setField('f_birth',  [data.birth,data.age?(data.age+'歳'):''].filter(Boolean).join('　'));
+      setField('f_kaigo',  data.kaigo||'');
+      setField('f_emg1',   data.emg1||'');
+      setField('f_emg2',   data.emg2||'');
+      setField('f_height', data.height||'');
+      setField('f_weight', data.weight||'');
+      setField('f_shushoku', data.shushoku||'');
+      setField('f_fukushoku',data.fukushoku||'');
+      setField('f_yaku',   data.yaku||'');
+      setField('f_seikatsu',data.seikatsu||'');
+
+      // 身体情報（介助詳細→身体情報タブに入る情報を合成）
+      const shintaiParts=[];
+      if(data.gender)  shintaiParts.push('性別: '+data.gender);
+      if(data.birth)   shintaiParts.push('生年月日: '+data.birth+(data.age?' ('+data.age+'歳)':''));
+      if(data.kaigo)   shintaiParts.push('要介護度: '+data.kaigo);
+      if(data.kiou)    shintaiParts.push('既往歴: '+data.kiou);
+      if(data.kaigonote)shintaiParts.push('介護注意: '+data.kaigonote);
+      setField('f_shintai',shintaiParts.join('\n'));
+
+      // その他（緊急連絡先）
+      const sonotaParts=[];
+      if(data.emg1)sonotaParts.push('【緊急連絡①】'+data.emg1);
+      if(data.emg2)sonotaParts.push('【緊急連絡②】'+data.emg2);
+      setField('f_sonota',sonotaParts.join('\n'));
+
+      el.className='status ok';
+      el.textContent='✅ 読み込み完了！内容を確認してからインポートしてください。';
+      document.getElementById('previewCard').style.display='block';
+      document.getElementById('importCard').style.display='block';
+
+    }catch(err){
+      el.className='status err';
+      el.textContent='❌ 読み込みエラー: '+err.message;
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function setField(id,val){
+  const el=document.getElementById(id);if(!el)return;
+  if(el.tagName==='SELECT'){
+    for(const opt of el.options){if(opt.value&&val&&val.includes(opt.value)){el.value=opt.value;return;}}
+    el.value='';
+  }else{el.value=val||'';}
+}
+
+async function doImport(){
+  if(!selectedRoom){alert('部屋を選択してください');return;}
+  const name=document.getElementById('f_name').value.trim();
+  if(!name){alert('氏名（利用者名）は必須です');return;}
+
+  const btn=document.getElementById('importBtn');
+  const st=document.getElementById('importStatus');
+  btn.disabled=true;btn.textContent='インポート中...';
+  st.className='status info';st.textContent='Firebaseに書き込み中...';
+
+  try{
+    const k=encKey(name);
+
+    // 1. 部屋名を設定
+    await db.ref('rooms/'+selectedRoom+'/name').set(name);
+
+    // 2. 介助詳細（careNotes）
+    const careNotes={
+      shintai:   document.getElementById('f_shintai').value,
+      ido:       '',
+      shokuji_shushoku: document.getElementById('f_shushoku').value,
+      shokuji_fukushoku:document.getElementById('f_fukushoku').value,
+      shokuji_toro:'',shokuji_iero:false,
+      shokuji_note:document.getElementById('f_shokuji_note').value,
+      nyuyoku_houhou:'',nyuyoku_note:'',
+      haisetsu_note:'',omutsu:'',rehapan:'',pad:'',
+      haisetsu_basho:'',haisetsu_freq:'',
+      sonota:document.getElementById('f_sonota').value
+    };
+    await db.ref('residents/'+k+'/careNotes').set(careNotes);
+
+    // 3. 薬関連メモを latest に書き込み
+    const yakuNote=document.getElementById('f_yaku').value;
+    const latestData={renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:yakuNote||'',gaishuDate:'',gaishuNote:''};
+    await db.ref('residents/'+k+'/latest').set(latestData);
+
+    // 4. 体重・身長（今月分）
+    const h=document.getElementById('f_height').value;
+    const w=document.getElementById('f_weight').value;
+    if(h||w){
+      const now=new Date();
+      const monthKey=now.getFullYear()+'_'+String(now.getMonth()+1).padStart(2,'0');
+      await db.ref('wh/'+k+'/'+monthKey).set({weight:w||'',height:h||''});
+    }
+
+    st.className='status ok';
+    st.innerHTML=`✅ インポート完了！<br>${selectedRoom}号室に「${name}」さんのデータを書き込みました。<br>ケア記録アプリを<strong>再読み込み</strong>すると反映されます。`;
+    btn.textContent='✅ 完了';
+
+  }catch(e){
+    st.className='status err';st.textContent='❌ エラー: '+e.message;
+    btn.disabled=false;btn.textContent='🚀 この部屋にインポート';
+  }
+}
+
+function copyAllText(){
+  const ids=['f_name','f_gender','f_birth','f_kaigo','f_emg1','f_emg2','f_height','f_weight','f_shushoku','f_fukushoku','f_shokuji_note','f_yaku','f_seikatsu','f_shintai','f_sonota'];
+  const labels={'f_name':'氏名','f_gender':'性別','f_birth':'生年月日','f_kaigo':'要介護度','f_emg1':'緊急連絡①','f_emg2':'緊急連絡②','f_height':'身長(cm)','f_weight':'体重(kg)','f_shushoku':'主食','f_fukushoku':'副食','f_shokuji_note':'食事備考','f_yaku':'薬情報','f_seikatsu':'生活歴','f_shintai':'身体情報','f_sonota':'その他'};
+  const lines=['【CS式アセスメント 読み込みデータ】'];
+  ids.forEach(id=>{const v=document.getElementById(id).value;if(v)lines.push(labels[id]+': '+v);});
+  const text=lines.join('\n');
+  navigator.clipboard.writeText(text).then(()=>alert('クリップボードにコピーしました！')).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('コピーしました');});
+}
+</script>
+</body>
+</html>
