@@ -500,6 +500,48 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
           <button class="db-btn db-btn-red" onclick="dbQuick('clearRoom')">特定部屋をクリア</button>
         </div>
       </div>
+
+      <!-- 利用者名前変更・削除 -->
+      <div class="db-section">
+        <div class="db-section-title">✏️ 利用者名前変更・削除 <span class="db-badge-tree" style="background:#fef9c3;color:#a16207">RENAME</span></div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px">誤字・改名などで名前を変更します。ケアデータ・介助詳細・体重記録がすべて新しい名前に引き継がれます。</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:5px;font-weight:500">① データベースから名前を検索</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input class="db-path-input" id="dbRenameSearch" placeholder="名前を入力して検索（例：山田）" style="flex:1" oninput="dbRenameSearchFilter()">
+              <button class="db-btn db-btn-gray" onclick="dbRenameLoadAll()">🔄 全員読み込み</button>
+            </div>
+            <div id="dbRenameSearchList" style="margin-top:6px;display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto"></div>
+          </div>
+          <div id="dbRenameSelected" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:10px 12px">
+            <div style="font-size:11px;color:#2563eb;font-weight:600;margin-bottom:4px">選択中の利用者</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+              <div>
+                <span id="dbRenameSelectedName" style="font-size:15px;font-weight:700;color:#1e293b"></span>
+                <span id="dbRenameSelectedRoom" style="font-size:11px;color:#64748b;margin-left:8px"></span>
+              </div>
+              <button class="db-btn" style="background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;font-size:11px;padding:4px 10px" onclick="dbRenameConfirmDelete()">🗑️ この名前を削除</button>
+            </div>
+          </div>
+          <div id="dbRenameDeleteConfirm" style="display:none;background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px">
+            <div style="font-size:12px;color:#dc2626;font-weight:700;margin-bottom:8px">⚠️ 本当に削除しますか？</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:10px">「<span id="dbRenameDeleteTargetName" style="font-weight:700;color:#1e293b"></span>」の部屋名紐づけを削除します。ケアデータ自体は残ります。</div>
+            <div style="display:flex;gap:8px">
+              <button class="db-btn db-btn-red" onclick="dbRenameDeleteExecute()">削除する</button>
+              <button class="db-btn db-btn-gray" onclick="document.getElementById('dbRenameDeleteConfirm').style.display='none'">キャンセル</button>
+            </div>
+          </div>
+          <div id="dbRenameNewRow" style="display:none">
+            <div style="font-size:12px;color:#64748b;margin-bottom:5px;font-weight:500">② 新しい名前を入力</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input class="db-path-input" id="dbRenameNewName" placeholder="新しい名前を入力" style="flex:1">
+              <button class="db-btn db-btn-green" onclick="dbRenameExecute()">✅ 変更を実行</button>
+            </div>
+          </div>
+          <div id="dbRenameResult" style="font-size:12px;display:none;padding:8px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #86efac;color:#065f46"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1147,7 +1189,9 @@ function setSyncStatus(t,txt){
   d.className='sync-dot'+(t?' '+t:'');l.textContent=txt;
   l.style.color=t==='ok'?'#16a34a':t==='warn'?'#b45309':'#64748b';
 }
-function encKey(n){return encodeURIComponent(n.trim()).replace(/\./g,'%2E').replace(/#/g,'%23').replace(/\$/g,'%24').replace(/\[/g,'%5B').replace(/\]/g,'%5D');}
+// スペース（全角・半角）を除去してからエンコード → 「山田 太郎」と「山田太郎」を同一キーとして扱う
+function normName(n){return(n||'').trim().replace(/[\s\u3000]+/g,'');}
+function encKey(n){const norm=normName(n);return encodeURIComponent(norm).replace(/\./g,'%2E').replace(/#/g,'%23').replace(/\$/g,'%24').replace(/\[/g,'%5B').replace(/\]/g,'%5D');}
 function emptyDaily(){return{renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:'',gaishuDate:'',gaishuNote:''};}
 async function fbGet(path){if(!db)return null;try{const s=await db.ref(path).get();return s.exists()?s.val():null;}catch(e){return null;}}
 async function fbSet(path,val){if(!db)return;try{await db.ref(path).set(val);}catch(e){setSyncStatus('warn','保存エラー');}}
@@ -2175,6 +2219,133 @@ async function dbQuick(action){
     renderAll();
     dbLog('CLEAR ROOM: '+room);
     alert(room+'号室をクリアしました');
+  }
+}
+
+// ── 名前変更・削除 ────────────────────────────────────────
+let dbRenameAllNames=[];
+let dbRenameSelectedData=null;
+
+async function dbRenameLoadAll(){
+  dbLog('利用者名一覧を読み込み中...');
+  dbRenameAllNames=[];
+  const roomMap={};
+  ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())roomMap[S[r].name.trim()]=r;});
+  const names=new Set(Object.keys(roomMap));
+  if(db){
+    try{
+      const snap=await db.ref('residents').get();
+      if(snap.exists()){
+        Object.keys(snap.val()).forEach(k=>{
+          try{names.add(decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']')));}catch(e){}
+        });
+      }
+    }catch(e){}
+  }
+  names.forEach(n=>{if(n&&n.trim())dbRenameAllNames.push({name:n.trim(),room:roomMap[n.trim()]||null});});
+  dbRenameAllNames.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+  dbRenameRenderList(dbRenameAllNames);
+  dbLog('利用者 '+dbRenameAllNames.length+'名 を読み込みました');
+}
+
+function dbRenameSearchFilter(){
+  const q=(document.getElementById('dbRenameSearch')?.value||'').trim();
+  if(!q){dbRenameRenderList(dbRenameAllNames);return;}
+  dbRenameRenderList(dbRenameAllNames.filter(d=>d.name.includes(q)));
+}
+
+function dbRenameRenderList(list){
+  const el=document.getElementById('dbRenameSearchList');if(!el)return;
+  if(!list.length){el.innerHTML='<div style="font-size:12px;color:#94a3b8;padding:8px 0">該当する名前がありません</div>';return;}
+  el.innerHTML=list.map(d=>{
+    const roomLabel=d.room?'<span style="font-size:10px;background:#eff6ff;color:#2563eb;padding:2px 7px;border-radius:20px;margin-left:6px">'+d.room+'号室</span>':'<span style="font-size:10px;background:#f1f5f9;color:#94a3b8;padding:2px 7px;border-radius:20px;margin-left:6px">退所・不在</span>';
+    return'<div onclick="dbRenameSelectPerson(this)" data-name="'+d.name.replace(/"/g,'&quot;')+'" data-room="'+(d.room||'')+'" style="display:flex;align-items:center;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'#f8fafc\'"><span style="font-size:13px;font-weight:500;color:#1e293b">'+d.name+'</span>'+roomLabel+'</div>';
+  }).join('');
+}
+
+function dbRenameSelectPerson(el){
+  const name=el.dataset.name;const room=el.dataset.room?parseInt(el.dataset.room):null;
+  dbRenameSelectedData={name,room};
+  const sel=document.getElementById('dbRenameSelected');
+  const selName=document.getElementById('dbRenameSelectedName');
+  const selRoom=document.getElementById('dbRenameSelectedRoom');
+  const newRow=document.getElementById('dbRenameNewRow');
+  const newInput=document.getElementById('dbRenameNewName');
+  const delConfirm=document.getElementById('dbRenameDeleteConfirm');
+  const resultEl=document.getElementById('dbRenameResult');
+  if(sel)sel.style.display='block';
+  if(selName)selName.textContent=name;
+  if(selRoom)selRoom.textContent=room?'（'+room+'号室）':'（退所・不在）';
+  if(newRow)newRow.style.display='block';
+  if(newInput)newInput.value=name;
+  if(delConfirm)delConfirm.style.display='none';
+  if(resultEl)resultEl.style.display='none';
+}
+
+function dbRenameConfirmDelete(){
+  if(!dbRenameSelectedData)return;
+  const el=document.getElementById('dbRenameDeleteConfirm');
+  const nameEl=document.getElementById('dbRenameDeleteTargetName');
+  if(nameEl)nameEl.textContent=dbRenameSelectedData.name;
+  if(el)el.style.display='block';
+}
+
+async function dbRenameDeleteExecute(){
+  if(!dbUnlocked||!dbRenameSelectedData)return;
+  const {name,room}=dbRenameSelectedData;
+  const resultEl=document.getElementById('dbRenameResult');
+  document.getElementById('dbRenameDeleteConfirm').style.display='none';
+  dbLog('名前削除: '+name);
+  try{
+    if(room&&ALL.includes(room)){
+      await fbSet('rooms/'+room+'/name','');
+      S[room]={name:'',...emptyDaily(),_tag:''};
+      careNotes[room]=emptyCareNotes();
+      refreshCard(room);
+    }
+    dbLog('✅ 削除完了: '+name);
+    if(resultEl){resultEl.textContent='✅ 「'+name+'」の部屋紐づけを削除しました。ケアデータは保持されています。';resultEl.style.display='block';resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';resultEl.style.color='#065f46';}
+    dbRenameSelectedData=null;
+    document.getElementById('dbRenameSelected').style.display='none';
+    document.getElementById('dbRenameNewRow').style.display='none';
+    await dbRenameLoadAll();
+  }catch(e){
+    dbLog('❌ 削除エラー: '+e.message);
+    if(resultEl){resultEl.textContent='❌ エラー: '+e.message;resultEl.style.display='block';resultEl.style.background='#fff5f5';resultEl.style.borderColor='#fca5a5';resultEl.style.color='#dc2626';}
+  }
+}
+
+async function dbRenameExecute(){
+  if(!dbUnlocked||!dbRenameSelectedData)return;
+  const {name:oldName,room}=dbRenameSelectedData;
+  const newName=(document.getElementById('dbRenameNewName')?.value||'').trim();
+  const resultEl=document.getElementById('dbRenameResult');
+  if(!newName){alert('新しい名前を入力してください');return;}
+  if(oldName===newName){alert('名前が変わっていません');return;}
+  if(!confirm('「'+oldName+'」→「'+newName+'」に変更します。よろしいですか？'))return;
+  dbLog('名前変更開始: '+oldName+' → '+newName);
+  if(resultEl){resultEl.textContent='変更中...';resultEl.style.display='block';resultEl.style.background='#fffbeb';resultEl.style.borderColor='#fcd34d';resultEl.style.color='#b45309';}
+  try{
+    const oldKey=encKey(oldName),newKey=encKey(newName);
+    const resData=await fbGet('residents/'+oldKey);
+    if(resData){await fbSet('residents/'+newKey,resData);await fbSet('residents/'+oldKey,null);}
+    const whData=await fbGet('wh/'+oldKey);
+    if(whData){await fbSet('wh/'+newKey,whData);await fbSet('wh/'+oldKey,null);}
+    if(room&&ALL.includes(room)){
+      await fbSet('rooms/'+room+'/name',newName);
+      S[room].name=newName;
+      refreshCard(room);
+    }
+    dbLog('✅ 名前変更完了: '+oldName+' → '+newName);
+    if(resultEl){resultEl.textContent='✅ 完了：「'+oldName+'」→「'+newName+'」に変更しました。';resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';resultEl.style.color='#065f46';}
+    dbRenameSelectedData=null;
+    document.getElementById('dbRenameSelected').style.display='none';
+    document.getElementById('dbRenameNewRow').style.display='none';
+    document.getElementById('dbRenameDeleteConfirm').style.display='none';
+    await dbRenameLoadAll();
+  }catch(e){
+    dbLog('❌ 名前変更エラー: '+e.message);
+    if(resultEl){resultEl.textContent='❌ エラー: '+e.message;resultEl.style.background='#fff5f5';resultEl.style.borderColor='#fca5a5';resultEl.style.color='#dc2626';}
   }
 }
 
