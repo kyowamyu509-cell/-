@@ -1200,7 +1200,20 @@ async function loadLinks(){const s=await fbGet('settings/links')||ls('links');if
 async function saveLinks(){lss('links',links);await fbSet('settings/links',links);}
 
 // ── データ保存・読込 ──────────────────────────────
-async function saveRoomName(r,n){lss('rname_'+r,n);await fbSet('rooms/'+r+'/name',n);}
+async function saveRoomName(r,n){
+  lss('rname_'+r,n);
+  // 旧: rooms/r/name への書き込みを廃止
+  // 新: 名前側に部屋番号を紐付け（名前がキー）
+  if(n&&n.trim()){
+    await fbSet('residents/'+encKey(n)+'/room',r);
+  }
+  // 以前その部屋にいた別の人の room を解除
+  const prevName=S[r].name&&S[r].name.trim()!==n.trim()?S[r].name.trim():null;
+  if(prevName){
+    const prevData=await fbGet('residents/'+encKey(prevName)+'/room');
+    if(prevData===r) await fbSet('residents/'+encKey(prevName)+'/room',null);
+  }
+}
 async function saveDaily(room){
   const name=(S[room].name||'').trim();if(!name)return;
   const {_tag,_mt,name:n,...data}=S[room];
@@ -1226,7 +1239,17 @@ async function readByName(name){
   return{...emptyDaily(),_tag:'new'};
 }
 
-async function saveSubRoomName(r,n){lss('sub_rname_'+r,n);await fbSet('sub_rooms/'+r+'/name',n);}
+async function saveSubRoomName(r,n){
+  lss('sub_rname_'+r,n);
+  if(n&&n.trim()){
+    await fbSet('residents/'+encKey(n)+'/sub_room',r);
+  }
+  const prevSubName=SUB[r].name&&SUB[r].name.trim()!==n.trim()?SUB[r].name.trim():null;
+  if(prevSubName){
+    const prevSubData=await fbGet('residents/'+encKey(prevSubName)+'/sub_room');
+    if(prevSubData===r) await fbSet('residents/'+encKey(prevSubName)+'/sub_room',null);
+  }
+}
 async function saveSubDaily(room){
   const name=(SUB[room].name||'').trim();if(!name)return;
   const {_tag,_mt,name:n,...data}=SUB[room];
@@ -1280,12 +1303,43 @@ async function loadAll(){
   loadSubVisible();loadExtraSec();loadDischarged();await loadDischargedLog();
   loadCareNotesVisible();
   await loadLinks();
+  // 名前→部屋の逆引きマップを residents/ から構築
+  const roomNameMap={};   // {101: '山田太郎', ...}
+  const subRoomNameMap={};
+  if(db){
+    try{
+      const allRes=await fbGet('residents');
+      if(allRes){
+        Object.keys(allRes).forEach(k=>{
+          const res=allRes[k];
+          if(res&&res.room){
+            try{
+              const name=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
+              roomNameMap[res.room]=name;
+            }catch(e){}
+          }
+          if(res&&res.sub_room){
+            try{
+              const name=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
+              subRoomNameMap[res.sub_room]=name;
+            }catch(e){}
+          }
+        });
+      }
+    }catch(e){}
+  }
+  // フォールバック: localStorageからも読む
+  ALL.forEach(r=>{
+    if(!roomNameMap[r]){const n=ls('rname_'+r);if(n)roomNameMap[r]=n;}
+    if(!subRoomNameMap[r]){const n=ls('sub_rname_'+r);if(n)subRoomNameMap[r]=n;}
+  });
+
   for(const r of ALL){
-    let name=ls('rname_'+r)||'';
-    const fb=await fbGet('rooms/'+r+'/name');if(fb)name=fb;
+    const name=roomNameMap[r]||'';
+    lss('rname_'+r,name);
     const data=await readByName(name);S[r]={...S[r],...data,name};
-    let sname=ls('sub_rname_'+r)||'';
-    const sfb=await fbGet('sub_rooms/'+r+'/name');if(sfb)sname=sfb;
+    const sname=subRoomNameMap[r]||'';
+    lss('sub_rname_'+r,sname);
     const sdata=await readSubByName(sname);SUB[r]={...SUB[r],...sdata,name:sname};
     if(name)await loadCareNotesForRoom(r,name);
   }
@@ -1306,23 +1360,28 @@ async function onDateChange(d){
   const isMovingForward=(diffDaysMove===1);
 
   // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
-  // 全部屋の名前を並列で読み込み（排便日数の処理を速くして競合を防ぐ）
-  const [_fbNames,_fbSubNames]=await Promise.all([
-    Promise.all(ALL.map(r=>fbGet('rooms/'+r+'/name'))),
-    Promise.all(ALL.map(r=>fbGet('sub_rooms/'+r+'/name')))
-  ]);
-  ALL.forEach((r,i)=>{
-    if(_fbNames[i]!=null)S[r].name=_fbNames[i];
-    if(_fbSubNames[i]!=null)SUB[r].name=_fbSubNames[i];
-  });
+  // 名前→部屋マップを residents/ から並列で再構築
+  const _allRes=await fbGet('residents');
+  if(_allRes){
+    Object.keys(_allRes).forEach(k=>{
+      const res=_allRes[k];
+      try{
+        const nm=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
+        if(res&&res.room&&ALL.includes(res.room))S[res.room].name=nm;
+        if(res&&res.sub_room&&ALL.includes(res.sub_room))SUB[res.sub_room].name=nm;
+      }catch(e){}
+    });
+  }
 
   for(const r of ALL){
     // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
     if(discharged[r]&&isMovingForward){
       const dName=(S[r].name||'').trim();
       if(dName) await addDischargedLog(dName,r,d);
+      const _dName=(S[r].name||'').trim();
+      if(_dName) await fbSet('residents/'+encKey(_dName)+'/room',null);
+      lss('rname_'+r,'');
       S[r]={name:'',...emptyDaily(),_tag:''};
-      await saveRoomName(r,'');
       discharged[r]=false;
     }
     // ② 入替者がいればメインに移行（翌日以降に進んだときのみ）
@@ -2214,7 +2273,9 @@ async function dbQuick(action){
     const room=parseInt(r);
     if(!ALL.includes(room)){alert('無効な部屋番号です');return;}
     if(!confirm(room+'号室の名前と部屋データをクリアします。よろしいですか？'))return;
-    await saveRoomName(room,'');
+    const _clName=(S[room].name||'').trim();
+    if(_clName) await fbSet('residents/'+encKey(_clName)+'/room',null);
+    lss('rname_'+room,'');
     S[room]={name:'',...emptyDaily(),_tag:''};
     renderAll();
     dbLog('CLEAR ROOM: '+room);
@@ -2298,7 +2359,8 @@ async function dbRenameDeleteExecute(){
   dbLog('名前削除: '+name);
   try{
     if(room&&ALL.includes(room)){
-      await fbSet('rooms/'+room+'/name','');
+      await fbSet('residents/'+encKey(name)+'/room',null);
+      lss('rname_'+room,'');
       S[room]={name:'',...emptyDaily(),_tag:''};
       careNotes[room]=emptyCareNotes();
       refreshCard(room);
@@ -2332,7 +2394,8 @@ async function dbRenameExecute(){
     const whData=await fbGet('wh/'+oldKey);
     if(whData){await fbSet('wh/'+newKey,whData);await fbSet('wh/'+oldKey,null);}
     if(room&&ALL.includes(room)){
-      await fbSet('rooms/'+room+'/name',newName);
+      await fbSet('residents/'+newKey+'/room',room);
+      lss('rname_'+room,newName);
       S[room].name=newName;
       refreshCard(room);
     }
