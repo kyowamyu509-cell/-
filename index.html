@@ -1255,17 +1255,19 @@ async function saveSubDaily(room){
   const {_tag,_mt,name:n,...data}=SUB[room];
   lss('sub_care_'+name+'_'+currentDate,data);lss('sub_care_'+name+'_latest',data);
   const k=encKey(name);
-  await fbSet(`sub_residents/${k}/dates/${currentDate}`,data);
-  await fbSet(`sub_residents/${k}/latest`,data);
+  // residents/ 以下に sub_dates として保存（sub_residents/ は廃止）
+  await fbSet('residents/'+k+'/sub_dates/'+currentDate,data);
+  await fbSet('residents/'+k+'/sub_latest',data);
 }
 async function readSubByName(name){
   if(!name||!name.trim())return{...emptyDaily(),_tag:''};
   const n=name.trim(),k=encKey(n);
   if(db){
     try{
-      const td=await fbGet(`sub_residents/${k}/dates/${currentDate}`);
+      // residents/ 以下の sub_dates から読む
+      const td=await fbGet('residents/'+k+'/sub_dates/'+currentDate);
       if(td)return{...emptyDaily(),...td,_tag:'today'};
-      const lt=await fbGet(`sub_residents/${k}/latest`);
+      const lt=await fbGet('residents/'+k+'/sub_latest');
       if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
       return{...emptyDaily(),_tag:'new'};
     }catch(e){}
@@ -1282,10 +1284,11 @@ async function loadWHHistory(name){if(!name)return{};const k=encKey(name.trim())
 
 // ── Firebase リスナー ─────────────────────────────
 const listeners={};
+const subListeners={};
 function listenResident(room,name){
   if(!db||!name)return;
   if(listeners[room])listeners[room].off();
-  const ref=db.ref(`residents/${encKey(name)}/dates/${currentDate}`);
+  const ref=db.ref('residents/'+encKey(name)+'/dates/'+currentDate);
   ref.on('value',snap=>{
     if(!snap.exists())return;
     const data=snap.val();const cur=S[room];
@@ -1296,6 +1299,21 @@ function listenResident(room,name){
     }
   });
   listeners[room]=ref;
+}
+function listenSubResident(room,name){
+  if(!db||!name)return;
+  if(subListeners[room])subListeners[room].off();
+  const ref=db.ref('residents/'+encKey(name)+'/sub_dates/'+currentDate);
+  ref.on('value',snap=>{
+    if(!snap.exists())return;
+    const data=snap.val();const cur=SUB[room];
+    if(YN.some(f=>cur[f.k]!==data[f.k])||cur.haiben!==data.haiben||cur.extra!==data.extra||cur.memo!==data.memo){
+      SUB[room]={...SUB[room],...emptyDaily(),...data,_tag:'today'};
+      refreshSubCard(room);
+      if(document.getElementById('mainPage2').classList.contains('active'))refreshDashboardMemo();
+    }
+  });
+  subListeners[room]=ref;
 }
 
 // ── 初期ロード ────────────────────────────────────
@@ -1344,7 +1362,10 @@ async function loadAll(){
     if(name)await loadCareNotesForRoom(r,name);
   }
   renderAll();
-  ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
+  ALL.forEach(r=>{
+    if(S[r].name)listenResident(r,S[r].name);
+    if(SUB[r].name)listenSubResident(r,SUB[r].name);
+  });
 }
 
 // ── 日付変更 ──────────────────────────────────────
@@ -1431,7 +1452,10 @@ async function onDateChange(d){
   }
   saveDischarged();
   renderAll();
-  ALL.forEach(r=>{if(S[r].name)listenResident(r,S[r].name);});
+  ALL.forEach(r=>{
+    if(S[r].name)listenResident(r,S[r].name);
+    if(SUB[r].name)listenSubResident(r,SUB[r].name);
+  });
 }
 
 function updateDateNote(){
@@ -1533,6 +1557,7 @@ async function onSubNameBlur(r){
   if(!name){setSubTag(r,'');return;}
   const data=await readSubByName(name);SUB[r]={...SUB[r],...data,name};
   refreshSubCard(r);
+  listenSubResident(r,name);
   subFlash(r,data._tag==='today'?'✓今日':data._tag==='carried'?'↑引継':'✓新規');
 }
 async function onSubSel(r,k,v,el){
