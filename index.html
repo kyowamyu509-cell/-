@@ -1243,6 +1243,9 @@ async function saveSubRoomName(r,n){
   lss('sub_rname_'+r,n);
   if(n&&n.trim()){
     await fbSet('residents/'+encKey(n)+'/sub_room',r);
+    await fbSet('sub_rooms/'+r+'/name',n);
+  } else {
+    await fbSet('sub_rooms/'+r+'/name','');
   }
   const prevSubName=SUB[r].name&&SUB[r].name.trim()!==n.trim()?SUB[r].name.trim():null;
   if(prevSubName){
@@ -1346,7 +1349,15 @@ async function loadAll(){
       }
     }catch(e){}
   }
-  // フォールバック: localStorageからも読む
+  // フォールバック①: rooms/（旧方式・PC互換）からも読む
+  if(db){
+    try{
+      const [_fbR,_fbSR]=await Promise.all([fbGet('rooms'),fbGet('sub_rooms')]);
+      if(_fbR) ALL.forEach(r=>{if(!roomNameMap[r]&&_fbR[r]&&_fbR[r].name)roomNameMap[r]=_fbR[r].name;});
+      if(_fbSR) ALL.forEach(r=>{if(!subRoomNameMap[r]&&_fbSR[r]&&_fbSR[r].name)subRoomNameMap[r]=_fbSR[r].name;});
+    }catch(e){}
+  }
+  // フォールバック②: localStorageからも読む
   ALL.forEach(r=>{
     if(!roomNameMap[r]){const n=ls('rname_'+r);if(n)roomNameMap[r]=n;}
     if(!subRoomNameMap[r]){const n=ls('sub_rname_'+r);if(n)subRoomNameMap[r]=n;}
@@ -1381,8 +1392,10 @@ async function onDateChange(d){
   const isMovingForward=(diffDaysMove===1);
 
   // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
-  // 名前→部屋マップを residents/ から並列で再構築
-  const _allRes=await fbGet('residents');
+  // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
+  const [_allRes,_allRooms,_allSubRooms]=await Promise.all([
+    fbGet('residents'),fbGet('rooms'),fbGet('sub_rooms')
+  ]);
   if(_allRes){
     Object.keys(_allRes).forEach(k=>{
       const res=_allRes[k];
@@ -1393,6 +1406,9 @@ async function onDateChange(d){
       }catch(e){}
     });
   }
+  // rooms/ フォールバック（PC互換）
+  if(typeof _allRooms!=='undefined'&&_allRooms) ALL.forEach(r=>{if(!S[r].name&&_allRooms[r]&&_allRooms[r].name)S[r].name=_allRooms[r].name;});
+  if(typeof _allSubRooms!=='undefined'&&_allSubRooms) ALL.forEach(r=>{if(!SUB[r].name&&_allSubRooms[r]&&_allSubRooms[r].name)SUB[r].name=_allSubRooms[r].name;});
 
   for(const r of ALL){
     // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
@@ -2534,6 +2550,17 @@ setInterval(checkDateAutoUpdate, 60000);
 // ⑥ 起動時に深夜タイマーをセット
 scheduleMidnightUpdate();
 // ── PWA Service Worker登録 ─────────────────────────
+// PCのウィンドウフォーカス時にも同期チェック（別タブから戻ったとき）
+window.addEventListener('focus',()=>{
+  checkDateAutoUpdate();
+  if(db){
+    ALL.forEach(r=>{
+      if(S[r].name&&!listeners[r]) listenResident(r,S[r].name);
+      if(SUB[r].name&&!subListeners[r]) listenSubResident(r,SUB[r].name);
+    });
+  }
+});
+
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js')
