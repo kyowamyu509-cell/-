@@ -192,7 +192,8 @@ try{
   });
 }catch(e){document.getElementById('fbStatus').className='status err';document.getElementById('fbStatus').textContent='❌ 接続エラー: '+e.message;}
 
-function encKey(n){return encodeURIComponent(n.trim()).replace(/\./g,'%2E').replace(/#/g,'%23').replace(/\$/g,'%24').replace(/\[/g,'%5B').replace(/\]/g,'%5D');}
+function normName(n){return(n||'').trim().replace(/[\s\u3000]+/g,'');}
+function encKey(n){const norm=normName(n);return encodeURIComponent(norm).replace(/\./g,'%2E').replace(/#/g,'%23').replace(/\$/g,'%24').replace(/\[/g,'%5B').replace(/\]/g,'%5D');}
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
 const F2=[201,202,203,205,206,207,208,210,211,212];
@@ -427,7 +428,8 @@ async function doImport(){
   try{
     const k=encKey(name);
 
-    // 1. 部屋名を設定
+    // 1. 部屋名を設定（新方式: 名前→部屋の紐付け + 旧方式互換）
+    await db.ref('residents/'+k+'/room').set(selectedRoom);
     await db.ref('rooms/'+selectedRoom+'/name').set(name);
 
     // 2. 介助詳細（careNotes）
