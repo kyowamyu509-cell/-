@@ -1202,12 +1202,15 @@ async function saveLinks(){lss('links',links);await fbSet('settings/links',links
 // ── データ保存・読込 ──────────────────────────────
 async function saveRoomName(r,n){
   lss('rname_'+r,n);
-  // 旧: rooms/r/name への書き込みを廃止
+  lss('rname_'+r,n);
+  // 名前側に部屋番号を紐付け（新方式）＋rooms/（PC互換・旧方式）
   // 新: 名前側に部屋番号を紐付け（名前がキー）
   if(n&&n.trim()){
     await fbSet('residents/'+encKey(n)+'/room',r);
+    await fbSet('rooms/'+r+'/name',n);
+  } else {
+    await fbSet('rooms/'+r+'/name','');
   }
-  // 以前その部屋にいた別の人の room を解除
   const prevName=S[r].name&&S[r].name.trim()!==n.trim()?S[r].name.trim():null;
   if(prevName){
     const prevData=await fbGet('residents/'+encKey(prevName)+'/room');
@@ -1389,7 +1392,7 @@ async function onDateChange(d){
   const prevMs=new Date(prevDate+'T00:00:00').getTime();
   const newMs =new Date(d+'T00:00:00').getTime();
   const diffDaysMove=Math.round((newMs-prevMs)/(1000*60*60*24));
-  const isMovingForward=(diffDaysMove===1);
+  const isMovingForward=(diffDaysMove>=1); // 2日以上スリープ後も退所・入替移行を実行
 
   // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
   // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
@@ -1429,6 +1432,8 @@ async function onDateChange(d){
       if(subData._tag==='carried')subData.haiben=decrementHaiben(subData.haiben);
       subData.extra=''; // 入浴は翌日クリア
       S[r]={...subData,name:subName};
+      // 入替の方の careNotes をメインに引き継ぐ（同じ名前キーなので読み込むだけでOK）
+      await loadCareNotesForRoom(r,subName);
       await saveRoomName(r,subName);
       await saveDaily(r); // residents/ に書き込む
       SUB[r]={name:'',...emptyDaily(),_tag:''};
@@ -1486,6 +1491,19 @@ async function onNameBlur(r){
   const name=(S[r].name||'').trim();
   await saveRoomName(r,name);
   if(!name){setTag(r,'');return;}
+  // 同姓同名チェック（他の部屋・入替）
+  const sameRooms=ALL.filter(or=>or!==r&&normName(S[or].name)===normName(name)&&S[or].name.trim());
+  const sameSub=ALL.filter(or=>normName(SUB[or].name)===normName(name)&&SUB[or].name.trim());
+  if(sameRooms.length||sameSub.length){
+    const others=[...sameRooms.map(or=>or+'号室'),...sameSub.map(or=>or+'号室(入替)')].join('、');
+    const ok=confirm('⚠️ 同じ名前の方が'+others+'にもいます。同一人物の場合はOK（データが統合されます）。別の方の場合はキャンセルして末尾に「(2)」などを追加してください。');
+    if(!ok){
+      // キャンセル: 名前入力欄にフォーカスを戻す
+      const ni=document.getElementById('name-'+r);
+      if(ni){ni.value=name+'(2)';S[r].name=name+'(2)';ni.focus();ni.select();}
+      return;
+    }
+  }
   const data=await readByName(name);S[r]={...S[r],...data,name};
   await loadCareNotesForRoom(r,name);
   refreshCard(r);refreshCareNotesSection(r);listenResident(r,name);
@@ -1571,6 +1589,18 @@ async function onSubNameBlur(r){
   const name=(SUB[r].name||'').trim();
   await saveSubRoomName(r,name);
   if(!name){setSubTag(r,'');return;}
+  // 同姓同名チェック（他の部屋・メイン・他の入替）
+  const sameMain=ALL.filter(or=>normName(S[or].name)===normName(name)&&S[or].name.trim());
+  const sameSub2=ALL.filter(or=>or!==r&&normName(SUB[or].name)===normName(name)&&SUB[or].name.trim());
+  if(sameMain.length||sameSub2.length){
+    const others=[...sameMain.map(or=>or+'号室'),...sameSub2.map(or=>or+'号室(入替)')].join('、');
+    const ok=confirm('⚠️ 同じ名前の方が'+others+'にもいます。同一人物の場合はOK（データが統合されます）。別の方の場合はキャンセルして末尾に「(2)」などを追加してください。');
+    if(!ok){
+      const ni=document.getElementById('sub-name-'+r);
+      if(ni){ni.value=name+'(2)';SUB[r].name=name+'(2)';ni.focus();ni.select();}
+      return;
+    }
+  }
   const data=await readSubByName(name);SUB[r]={...SUB[r],...data,name};
   refreshSubCard(r);
   listenSubResident(r,name);
