@@ -542,6 +542,37 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
           <div id="dbRenameResult" style="font-size:12px;display:none;padding:8px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #86efac;color:#065f46"></div>
         </div>
       </div>
+
+      <!-- データ統合 -->
+      <div class="db-section">
+        <div class="db-section-title">🔗 データ統合 <span class="db-badge-tree" style="background:#f0fdf4;color:#059669">MERGE</span></div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px">スペースの違いなどで別々に保存された同一人物のデータを統合します。統合元のデータは統合先に移動されます。</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:5px;font-weight:500">① 統合元（消える側）</div>
+              <input class="db-path-input" id="dbMergeSrc" placeholder="例: 山田太郎" oninput="dbMergeFilter('src')">
+              <div id="dbMergeSrcList" style="margin-top:5px;display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto"></div>
+              <div id="dbMergeSrcSelected" style="display:none;margin-top:6px;background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:8px 10px">
+                <div style="font-size:10px;color:#dc2626;font-weight:600;margin-bottom:2px">統合元（削除される）</div>
+                <div id="dbMergeSrcName" style="font-size:14px;font-weight:700;color:#1e293b"></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:5px;font-weight:500">② 統合先（残る側）</div>
+              <input class="db-path-input" id="dbMergeDst" placeholder="例: 山田 太郎" oninput="dbMergeFilter('dst')">
+              <div id="dbMergeDstList" style="margin-top:5px;display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto"></div>
+              <div id="dbMergeDstSelected" style="display:none;margin-top:6px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 10px">
+                <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px">統合先（残る）</div>
+                <div id="dbMergeDstName" style="font-size:14px;font-weight:700;color:#1e293b"></div>
+              </div>
+            </div>
+          </div>
+          <div id="dbMergePreview" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e;line-height:1.8"></div>
+          <button class="db-btn db-btn-green" id="dbMergeBtn" onclick="dbMergeExecute()" disabled style="font-size:13px;padding:9px">🔗 統合を実行</button>
+          <div id="dbMergeResult" style="display:none;font-size:12px;padding:8px 10px;border-radius:6px"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1589,15 +1620,13 @@ async function onSubNameBlur(r){
   const name=(SUB[r].name||'').trim();
   await saveSubRoomName(r,name);
   if(!name){setSubTag(r,'');return;}
-  // 同姓同名チェック（他の部屋・メイン・他の入替）
-  const sameMain=ALL.filter(or=>normName(S[or].name)===normName(name)&&S[or].name.trim());
-  const sameSub2=ALL.filter(or=>or!==r&&normName(SUB[or].name)===normName(name)&&SUB[or].name.trim());
-  if(sameMain.length||sameSub2.length){
-    const others=[...sameMain.map(or=>or+'号室'),...sameSub2.map(or=>or+'号室(入替)')].join('、');
-    const ok=confirm('⚠️ 同じ名前の方が'+others+'にもいます。同一人物の場合はOK（データが統合されます）。別の方の場合はキャンセルして末尾に「(2)」などを追加してください。');
-    if(!ok){
+  // 同名チェック（スペース差・他の部屋・メイン・他の入替を含む）
+  const _sameMatch2=checkSameName(r,name,true);
+  if(_sameMatch2){
+    const go=await showSameNameModal(name,_sameMatch2);
+    if(!go){
       const ni=document.getElementById('sub-name-'+r);
-      if(ni){ni.value=name+'(2)';SUB[r].name=name+'(2)';ni.focus();ni.select();}
+      if(ni){const sug=name+'(2)';ni.value=sug;SUB[r].name=sug;ni.focus();ni.select();}
       return;
     }
   }
@@ -1774,6 +1803,70 @@ async function saveNewLink(){const name=document.getElementById('li-name').value
 async function addPreset(name,icon,url){links.push({name,url,icon});await saveLinks();renderLinks();}
 async function deleteLink(i){if(!confirm('このリンクを削除しますか？'))return;links.splice(i,1);await saveLinks();renderLinks();}
 
+// ── 同名チェック・確認モーダル ───────────────────────────
+// 同じ normName を持つ別の名前を検索（スペース差含む）
+function checkSameName(r, name, isSub){
+  if(!name)return null;
+  const norm=normName(name);
+  const matches=[];
+  ALL.forEach(or=>{
+    // メイン
+    if(S[or].name&&S[or].name.trim()){
+      if(isSub||or!==r){// メイン入力時は自分の部屋を除外
+        if(!isSub&&or===r)return;// skip self for main
+        if(normName(S[or].name)===norm)
+          matches.push({room:or,name:S[or].name,type:'メイン'});
+      }
+    }
+    // 入替
+    if(SUB[or].name&&SUB[or].name.trim()){
+      const skipSelf=isSub&&or===r;
+      if(!skipSelf&&normName(SUB[or].name)===norm)
+        matches.push({room:or,name:SUB[or].name,type:'入替'});
+    }
+  });
+  return matches.length?matches:null;
+}
+
+// モーダルで同名確認（同一人物 or 別人）
+function showSameNameModal(name,matches){
+  return new Promise(resolve=>{
+    const norm=normName(name);
+    // 表示名が完全一致かスペース差のみかで説明を変える
+    const hasSpaceDiff=matches.some(m=>normName(m.name)===norm&&m.name!==name);
+    const hasSameName=matches.some(m=>m.name===name);
+    let desc='';
+    if(hasSpaceDiff&&!hasSameName){
+      desc='<span style="color:#b45309;font-weight:500">スペースの有無だけが違う名前</span>が見つかりました。<br>同一人物の場合はデータが統合されます。';
+    } else {
+      desc='<span style="color:#b45309;font-weight:500">同じ名前</span>がすでに登録されています。';
+    }
+    const rows=matches.map(m=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;margin-bottom:5px">
+        <span style="font-size:11px;font-weight:700;background:#f59e0b;color:#fff;padding:1px 7px;border-radius:20px;flex-shrink:0">${m.room}号室 ${m.type}</span>
+        <span style="font-size:14px;font-weight:700;color:#1e293b">${m.name}</span>
+        ${m.name!==name?'<span style="font-size:10px;color:#64748b">← 入力: 「'+name+'」</span>':''}
+      </div>`).join('');
+    document.getElementById('modalContent').innerHTML=`
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px">⚠️ 同名の方が見つかりました</div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.7">${desc}</p>
+      <div style="margin-bottom:14px">${rows}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="document.getElementById('modalBg').style.display='none';window._sameNameResolve(true)"
+          style="padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ✅ 同一人物として統合する
+        </button>
+        <button onclick="document.getElementById('modalBg').style.display='none';window._sameNameResolve(false)"
+          style="padding:11px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ❌ 別人として扱う（名前に「(2)」を追加）
+        </button>
+      </div>`;
+    window._sameNameResolve=resolve;
+    document.getElementById('modalBg').style.display='flex';
+  });
+}
+
 // ── 利用者データコピー ─────────────────────────────────
 function copyResidentData(r,isSub){
   const d=isSub?SUB[r]:S[r];
@@ -1865,6 +1958,177 @@ function copyResidentData(r,isSub){
   });
 }
 
+
+// ── データ統合 ────────────────────────────────────────────
+let _dbMergeAllNames=[];
+let _dbMergeSrcSelected=null;
+let _dbMergeDstSelected=null;
+
+async function dbMergeInit(){
+  // dbRenameAllNames を再利用（既に読み込み済みなら使う）
+  if(dbRenameAllNames.length){_dbMergeAllNames=dbRenameAllNames;}
+  else{await dbRenameLoadAll();_dbMergeAllNames=dbRenameAllNames;}
+  dbMergeFilter('src');dbMergeFilter('dst');
+}
+
+function dbMergeFilter(side){
+  const inputId=side==='src'?'dbMergeSrc':'dbMergeDst';
+  const listId=side==='src'?'dbMergeSrcList':'dbMergeDstList';
+  const q=(document.getElementById(inputId)?.value||'').trim();
+  const list=_dbMergeAllNames.filter(d=>!q||d.name.includes(q));
+  const el=document.getElementById(listId);
+  if(!el)return;
+  if(!list.length){el.innerHTML='<div style="font-size:11px;color:#94a3b8;padding:4px 0">該当なし</div>';return;}
+  el.innerHTML=list.slice(0,30).map(d=>{
+    const roomLbl=d.room?`<span style="font-size:10px;background:#eff6ff;color:#2563eb;padding:1px 6px;border-radius:20px;margin-left:5px">${d.room}号室</span>`:'<span style="font-size:10px;background:#f1f5f9;color:#94a3b8;padding:1px 6px;border-radius:20px;margin-left:5px">退所</span>';
+    return`<div onclick="dbMergeSelect('${side}','${d.name.replace(/'/g,"\'")}')" style="display:flex;align-items:center;padding:6px 9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:12px" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+      <span style="color:#1e293b;font-weight:500">${d.name}</span>${roomLbl}
+    </div>`;
+  }).join('');
+}
+
+function dbMergeSelect(side,name){
+  if(side==='src'){
+    _dbMergeSrcSelected=name;
+    const el=document.getElementById('dbMergeSrcSelected');
+    const nm=document.getElementById('dbMergeSrcName');
+    if(el)el.style.display='block';
+    if(nm)nm.textContent=name;
+    document.getElementById('dbMergeSrcList').innerHTML='';
+    document.getElementById('dbMergeSrc').value=name;
+  } else {
+    _dbMergeDstSelected=name;
+    const el=document.getElementById('dbMergeDstSelected');
+    const nm=document.getElementById('dbMergeDstName');
+    if(el)el.style.display='block';
+    if(nm)nm.textContent=name;
+    document.getElementById('dbMergeDstList').innerHTML='';
+    document.getElementById('dbMergeDst').value=name;
+  }
+  dbMergeUpdatePreview();
+}
+
+function dbMergeUpdatePreview(){
+  const preview=document.getElementById('dbMergePreview');
+  const btn=document.getElementById('dbMergeBtn');
+  if(!_dbMergeSrcSelected||!_dbMergeDstSelected){
+    if(preview)preview.style.display='none';
+    if(btn)btn.disabled=true;
+    return;
+  }
+  if(_dbMergeSrcSelected===_dbMergeDstSelected){
+    if(preview){preview.style.display='block';preview.textContent='⚠️ 統合元と統合先が同じです。別々の名前を選択してください。';}
+    if(btn)btn.disabled=true;
+    return;
+  }
+  const srcNorm=normName(_dbMergeSrcSelected);
+  const dstNorm=normName(_dbMergeDstSelected);
+  const sameKey=srcNorm===dstNorm;
+  if(preview){
+    preview.style.display='block';
+    preview.innerHTML=`
+      <strong>統合内容の確認</strong><br>
+      ・「<strong>${_dbMergeSrcSelected}</strong>」のデータ（ケア記録・体重・介助詳細）を<br>
+      　「<strong>${_dbMergeDstSelected}</strong>」に統合します。<br>
+      ・統合元「${_dbMergeSrcSelected}」のFirebaseデータは削除されます。<br>
+      ${sameKey?'・<span style="color:#059669">✅ スペースの違いのみ（内部キーが同じ）→ 安全に統合できます</span>':'・<span style="color:#dc2626">⚠️ 名前が異なります → 本当に同一人物か確認してください</span>'}
+    `;
+  }
+  if(btn)btn.disabled=false;
+}
+
+async function dbMergeExecute(){
+  if(!dbUnlocked)return;
+  if(!_dbMergeSrcSelected||!_dbMergeDstSelected)return;
+  if(_dbMergeSrcSelected===_dbMergeDstSelected){alert('同じ名前が選択されています');return;}
+  if(!confirm(`「${_dbMergeSrcSelected}」→「${_dbMergeDstSelected}」に統合します。
+統合元のデータは削除されます。よろしいですか？`))return;
+
+  const result=document.getElementById('dbMergeResult');
+  result.style.display='none';
+  const btn=document.getElementById('dbMergeBtn');
+  btn.disabled=true;btn.textContent='統合中...';
+  dbLog('統合開始: '+_dbMergeSrcSelected+' → '+_dbMergeDstSelected);
+
+  try{
+    const srcKey=encKey(_dbMergeSrcSelected);
+    const dstKey=encKey(_dbMergeDstSelected);
+
+    // residents/ のデータをマージ
+    const [srcRes,dstRes]=await Promise.all([fbGet('residents/'+srcKey),fbGet('residents/'+dstKey)]);
+
+    if(srcRes){
+      // dates（ケアデータ）をマージ（統合先に同日がなければコピー）
+      if(srcRes.dates&&dstRes){
+        const dstDates=dstRes.dates||{};
+        for(const [date,data] of Object.entries(srcRes.dates)){
+          if(!dstDates[date])await fbSet('residents/'+dstKey+'/dates/'+date,data);
+        }
+      } else if(srcRes.dates){
+        await fbSet('residents/'+dstKey+'/dates',srcRes.dates);
+      }
+      // sub_dates もマージ
+      if(srcRes.sub_dates){
+        const dstSubDates=(dstRes&&dstRes.sub_dates)||{};
+        for(const [date,data] of Object.entries(srcRes.sub_dates)){
+          if(!dstSubDates[date])await fbSet('residents/'+dstKey+'/sub_dates/'+date,data);
+        }
+      }
+      // latest（最新）は統合先が空の場合だけ上書き
+      if(srcRes.latest&&!(dstRes&&dstRes.latest)){
+        await fbSet('residents/'+dstKey+'/latest',srcRes.latest);
+      }
+      // careNotes は統合先が空の場合だけ上書き
+      if(srcRes.careNotes&&!(dstRes&&dstRes.careNotes)){
+        await fbSet('residents/'+dstKey+'/careNotes',srcRes.careNotes);
+      }
+      // room紐付け（統合元が部屋に入っていれば統合先に引き継ぐ）
+      if(srcRes.room){
+        await fbSet('residents/'+dstKey+'/room',srcRes.room);
+        await fbSet('rooms/'+srcRes.room+'/name',_dbMergeDstSelected);
+        lss('rname_'+srcRes.room,_dbMergeDstSelected);
+        if(S[srcRes.room])S[srcRes.room].name=_dbMergeDstSelected;
+      }
+    }
+
+    // wh（体重身長）をマージ
+    const [srcWH,dstWH]=await Promise.all([fbGet('wh/'+srcKey),fbGet('wh/'+dstKey)]);
+    if(srcWH){
+      const dstWHData=dstWH||{};
+      for(const [month,data] of Object.entries(srcWH)){
+        if(!dstWHData[month])await fbSet('wh/'+dstKey+'/'+month,data);
+      }
+    }
+
+    // 統合元を削除
+    await fbSet('residents/'+srcKey,null);
+    if(srcWH)await fbSet('wh/'+srcKey,null);
+
+    // 画面を再描画
+    renderAll();
+    dbLog('✅ 統合完了: '+_dbMergeSrcSelected+' → '+_dbMergeDstSelected);
+
+    result.style.display='block';
+    result.style.background='#f0fdf4';result.style.border='1px solid #86efac';result.style.color='#065f46';
+    result.textContent='✅ 統合完了！「'+_dbMergeSrcSelected+'」→「'+_dbMergeDstSelected+'」に統合しました。';
+
+    // リセット
+    _dbMergeSrcSelected=null;_dbMergeDstSelected=null;
+    ['dbMergeSrc','dbMergeDst'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['dbMergeSrcSelected','dbMergeDstSelected','dbMergePreview'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    btn.disabled=true;btn.textContent='🔗 統合を実行';
+    await dbRenameLoadAll();
+    _dbMergeAllNames=dbRenameAllNames;
+    dbMergeFilter('src');dbMergeFilter('dst');
+
+  }catch(e){
+    dbLog('❌ 統合エラー: '+e.message);
+    result.style.display='block';
+    result.style.background='#fff5f5';result.style.border='1px solid #fca5a5';result.style.color='#dc2626';
+    result.textContent='❌ エラー: '+e.message;
+    btn.disabled=false;btn.textContent='🔗 統合を実行';
+  }
+}
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
