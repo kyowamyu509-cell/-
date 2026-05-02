@@ -415,10 +415,82 @@ function setField(id,val){
   }else{el.value=val||'';}
 }
 
+// Firebase上の全利用者名を取得
+async function loadAllResidentNames(){
+  const names=[];
+  if(!db)return names;
+  try{
+    const snap=await db.ref('residents').get();
+    if(snap.exists()){
+      Object.keys(snap.val()).forEach(k=>{
+        try{names.push(decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']')));}catch(e){}
+      });
+    }
+  }catch(e){}
+  return names;
+}
+
+// 同名チェックモーダル（Promise<'merge'|'new'|'cancel'>）
+function showImportSameNameModal(inputName, existing){
+  return new Promise(resolve=>{
+    const sameKey = existing.filter(n=>normName(n)===normName(inputName));
+    const exactMatch = sameKey.find(n=>n===inputName);
+    const spaceDiff = sameKey.filter(n=>n!==inputName);
+
+    let desc = '';
+    if(spaceDiff.length && !exactMatch){
+      desc = `<span style="color:#b45309;font-weight:500">スペースの違いのみ</span>の名前がすでにFirebaseに登録されています。`;
+    } else {
+      desc = `<span style="color:#b45309;font-weight:500">同じ名前</span>がすでにFirebaseに登録されています。`;
+    }
+
+    const rows = sameKey.map(n=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:700;color:#1e293b">${n}</span>
+        ${n!==inputName?`<span style="font-size:10px;color:#64748b">← 入力:「${inputName}」</span>`:''}
+      </div>`).join('');
+
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML=`
+      <div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+        <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px">⚠️ 既存データが見つかりました</div>
+        <p style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.7">${desc}</p>
+        <div style="margin-bottom:14px">${rows}</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onclick="this.closest('div[style*=fixed]').remove();window._importResolve('merge')"
+            style="padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+            🔗 既存データに統合する（ケア記録・体重は既存優先）
+          </button>
+          <button onclick="this.closest('div[style*=fixed]').remove();window._importResolve('new')"
+            style="padding:11px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+            ➕ 別人として新規登録する（介助詳細・体重のみ上書き）
+          </button>
+          <button onclick="this.closest('div[style*=fixed]').remove();window._importResolve('cancel')"
+            style="padding:9px;background:none;color:#94a3b8;border:none;cursor:pointer;font-size:12px;font-family:inherit">
+            キャンセル
+          </button>
+        </div>
+      </div>`;
+    window._importResolve=resolve;
+    document.body.appendChild(modal);
+  });
+}
+
 async function doImport(){
   if(!selectedRoom){alert('部屋を選択してください');return;}
   const name=document.getElementById('f_name').value.trim();
   if(!name){alert('氏名（利用者名）は必須です');return;}
+
+  // ── 既存データとの重複チェック ──
+  const allNames=await loadAllResidentNames();
+  const matches=allNames.filter(n=>normName(n)===normName(name));
+  let mergeMode='new';// 'merge' or 'new'
+  if(matches.length){
+    const choice=await showImportSameNameModal(name,matches);
+    if(choice==='cancel')return;
+    mergeMode=choice;
+  }
 
   const btn=document.getElementById('importBtn');
   const st=document.getElementById('importStatus');
@@ -428,12 +500,15 @@ async function doImport(){
   try{
     const k=encKey(name);
 
-    // 1. 部屋名を設定（新方式: 名前→部屋の紐付け + 旧方式互換）
+    // 統合モードの場合は既存データのキーを使う（normName が同じなら同じキー）
+    // 表示名は入力されたものを使用
+
+    // 1. 部屋名を設定
     await db.ref('residents/'+k+'/room').set(selectedRoom);
     await db.ref('rooms/'+selectedRoom+'/name').set(name);
 
     // 2. 介助詳細（careNotes）
-    const careNotes={
+    const newCareNotes={
       shintai:   document.getElementById('f_shintai').value,
       ido:       '',
       shokuji_shushoku: document.getElementById('f_shushoku').value,
@@ -445,12 +520,33 @@ async function doImport(){
       haisetsu_basho:'',haisetsu_freq:'',
       sonota:document.getElementById('f_sonota').value
     };
-    await db.ref('residents/'+k+'/careNotes').set(careNotes);
+    if(mergeMode==='merge'){
+      // 統合モード: 既存careNotesが空の項目だけ上書き
+      const existingCN=await db.ref('residents/'+k+'/careNotes').get();
+      const exCN=existingCN.exists()?existingCN.val():{};
+      const mergedCN={...newCareNotes};
+      Object.keys(exCN).forEach(key=>{if(exCN[key]&&exCN[key]!==''&&exCN[key]!==false)mergedCN[key]=exCN[key];});
+      await db.ref('residents/'+k+'/careNotes').set(mergedCN);
+    } else {
+      // 新規モード: 上書き
+      await db.ref('residents/'+k+'/careNotes').set(newCareNotes);
+    }
 
-    // 3. 薬関連メモを latest に書き込み
+    // 3. 薬関連メモ（latest）
     const yakuNote=document.getElementById('f_yaku').value;
-    const latestData={renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:yakuNote||'',gaishuDate:'',gaishuNote:''};
-    await db.ref('residents/'+k+'/latest').set(latestData);
+    if(mergeMode==='merge'){
+      // 統合モード: 既存のlatestがあれば yakuNote だけ補完
+      const existingLatest=await db.ref('residents/'+k+'/latest').get();
+      if(!existingLatest.exists()&&yakuNote){
+        const latestData={renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:yakuNote||'',gaishuDate:'',gaishuNote:''};
+        await db.ref('residents/'+k+'/latest').set(latestData);
+      } else if(existingLatest.exists()&&yakuNote&&!existingLatest.val().yakuNote){
+        await db.ref('residents/'+k+'/latest/yakuNote').set(yakuNote);
+      }
+    } else {
+      const latestData={renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:yakuNote||'',gaishuDate:'',gaishuNote:''};
+      await db.ref('residents/'+k+'/latest').set(latestData);
+    }
 
     // 4. 体重・身長（今月分）
     const h=document.getElementById('f_height').value;
@@ -458,11 +554,18 @@ async function doImport(){
     if(h||w){
       const now=new Date();
       const monthKey=now.getFullYear()+'_'+String(now.getMonth()+1).padStart(2,'0');
-      await db.ref('wh/'+k+'/'+monthKey).set({weight:w||'',height:h||''});
+      if(mergeMode==='merge'){
+        // 統合モード: 既存の今月データがなければ書き込む
+        const existWH=await db.ref('wh/'+k+'/'+monthKey).get();
+        if(!existWH.exists()) await db.ref('wh/'+k+'/'+monthKey).set({weight:w||'',height:h||''});
+      } else {
+        await db.ref('wh/'+k+'/'+monthKey).set({weight:w||'',height:h||''});
+      }
     }
 
+    const modeLabel=mergeMode==='merge'?'統合':'新規登録';
     st.className='status ok';
-    st.innerHTML=`✅ インポート完了！<br>${selectedRoom}号室に「${name}」さんのデータを書き込みました。<br>ケア記録アプリを<strong>再読み込み</strong>すると反映されます。`;
+    st.innerHTML=`✅ ${modeLabel}完了！<br>${selectedRoom}号室に「${name}」さんのデータを書き込みました。<br>ケア記録アプリを<strong>再読み込み</strong>すると反映されます。`;
     btn.textContent='✅ 完了';
 
   }catch(e){
