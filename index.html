@@ -1233,20 +1233,13 @@ async function saveLinks(){lss('links',links);await fbSet('settings/links',links
 // ── データ保存・読込 ──────────────────────────────
 async function saveRoomName(r,n){
   lss('rname_'+r,n);
-  lss('rname_'+r,n);
-  // 名前側に部屋番号を紐付け（新方式）＋rooms/（PC互換・旧方式）
-  // 新: 名前側に部屋番号を紐付け（名前がキー）
   if(n&&n.trim()){
     await fbSet('residents/'+encKey(n)+'/room',r);
     await fbSet('rooms/'+r+'/name',n);
   } else {
     await fbSet('rooms/'+r+'/name','');
   }
-  const prevName=S[r].name&&S[r].name.trim()!==n.trim()?S[r].name.trim():null;
-  if(prevName){
-    const prevData=await fbGet('residents/'+encKey(prevName)+'/room');
-    if(prevData===r) await fbSet('residents/'+encKey(prevName)+'/room',null);
-  }
+  // ※ 旧利用者の room 解除は onNameBlur 側で実施済み
 }
 async function saveDaily(room){
   const name=(S[room].name||'').trim();if(!name)return;
@@ -1520,6 +1513,16 @@ function updateDateNote(){
 function onNameInput(r,v){S[r].name=v;const el=document.getElementById('name-'+r);if(el)el.className='name-input';setTag(r,'');}
 async function onNameBlur(r){
   const name=(S[r].name||'').trim();
+  // ① 旧名前を保持してリスナーを即切断（旧データで上書きされるのを防ぐ）
+  const prevName=ls('rname_'+r)||'';
+  if(listeners[r]){listeners[r].off();delete listeners[r];}
+  // ② 旧利用者の room 属性を Firebase から解除
+  if(prevName&&prevName.trim()&&prevName.trim()!==name){
+    const prevKey=encKey(prevName.trim());
+    const prevRoom=await fbGet('residents/'+prevKey+'/room');
+    if(prevRoom===r) await fbSet('residents/'+prevKey+'/room',null);
+    await fbSet('rooms/'+r+'/name',name||'');
+  }
   await saveRoomName(r,name);
   if(!name){setTag(r,'');return;}
   // 同姓同名チェック（他の部屋・入替）
@@ -1618,6 +1621,14 @@ function toggleDischarge(r){
 function onSubNameInput(r,v){SUB[r].name=v;const el=document.getElementById('sub-name-'+r);if(el)el.className='sub-name-input';setSubTag(r,'');}
 async function onSubNameBlur(r){
   const name=(SUB[r].name||'').trim();
+  // 旧入替名を先に保持してリスナーを切断
+  const prevSubName=ls('sub_rname_'+r)||'';
+  if(subListeners[r]){subListeners[r].off();delete subListeners[r];}
+  if(prevSubName&&prevSubName.trim()&&prevSubName.trim()!==name){
+    const prevSubKey=encKey(prevSubName.trim());
+    const prevSubRoom=await fbGet('residents/'+prevSubKey+'/sub_room');
+    if(prevSubRoom===r) await fbSet('residents/'+prevSubKey+'/sub_room',null);
+  }
   await saveSubRoomName(r,name);
   if(!name){setSubTag(r,'');return;}
   // 同名チェック（スペース差・他の部屋・メイン・他の入替を含む）
