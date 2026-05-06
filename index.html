@@ -1417,8 +1417,8 @@ async function onDateChange(d){
   const prevMs=new Date(prevDate+'T00:00:00').getTime();
   const newMs =new Date(d+'T00:00:00').getTime();
   const diffDaysMove=Math.round((newMs-prevMs)/(1000*60*60*24));
-  // メイン機のみ引継処理・退所処理を実行（サブ機はデータ読み込みのみ）
-  const isMovingForward=(diffDaysMove>=1)&&isMainDevice();
+  const _diffOk=(diffDaysMove>=1);
+  // 部屋ごとに担当フロアかチェック（isMovingForward は部屋別に判定）
 
   // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
   // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
@@ -1441,6 +1441,7 @@ async function onDateChange(d){
 
   for(const r of ALL){
     // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
+    const isMovingForward=_diffOk&&isResponsibleFor(r);
     if(discharged[r]&&isMovingForward){
       const dName=(S[r].name||'').trim();
       if(dName) await addDischargedLog(dName,r,d);
@@ -2150,86 +2151,91 @@ const DEVICE_MODE_KEY='deviceMode';
 const DEVICE_MODE_PWD_KEY='deviceModePwd';
 function getDeviceMode(){return ls(DEVICE_MODE_KEY)||'sub';}
 function getDeviceModePwd(){return ls(DEVICE_MODE_PWD_KEY)||'1234';}
-function isMainDevice(){return getDeviceMode()==='main';}
+// このデバイスが引継処理を担当する部屋一覧を返す（空配列=サブ機）
+function getResponsibleRooms(){
+  const m=getDeviceMode();
+  if(m==='main_1f')return F1;
+  if(m==='main_2f')return F2;
+  if(m==='main_all')return ALL;
+  return [];// sub
+}
+function isResponsibleFor(r){return getResponsibleRooms().includes(r);}
 
 function renderDeviceModeUI(){
   const mode=getDeviceMode();
   const el=document.getElementById('deviceModeLabel');
-  if(el){
-    el.textContent=mode==='main'?'🟢 メイン機':'🔵 サブ機';
-    el.style.color=mode==='main'?'#16a34a':'#2563eb';
-  }
+  if(!el)return;
+  const labels={main_1f:'🟢 1Fメイン',main_2f:'🟢 2Fメイン',main_all:'🟢 全フロアメイン',sub:'🔵 サブ機'};
+  const colors={main_1f:'#16a34a',main_2f:'#059669',main_all:'#0d9488',sub:'#2563eb'};
+  el.textContent=labels[mode]||'🔵 サブ機';
+  el.style.color=colors[mode]||'#2563eb';
 }
 
 function openDeviceModeModal(){
   const mode=getDeviceMode();
+  const opts=[
+    {key:'main_all', icon:'🟢', label:'全フロア メイン機', desc:'1F・2F 両方の引継処理を担当'},
+    {key:'main_1f',  icon:'🟩', label:'1F メイン機',       desc:'1F（100番台）の引継処理を担当'},
+    {key:'main_2f',  icon:'🟦', label:'2F メイン機',       desc:'2F（200番台）の引継処理を担当'},
+    {key:'sub',      icon:'🔵', label:'サブ機',             desc:'表示・入力のみ（引継処理なし）'},
+  ];
+  const rows=opts.map(o=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:2px solid ${mode===o.key?'#22c55e':'#e2e8f0'};background:${mode===o.key?'#f0fdf4':'#f8fafc'};margin-bottom:6px;cursor:pointer" onclick="applyDeviceMode('${o.key}')">
+      <span style="font-size:18px">${o.icon}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#1e293b">${o.label}</div>
+        <div style="font-size:11px;color:#64748b">${o.desc}</div>
+      </div>
+      ${mode===o.key?'<span style="font-size:11px;font-weight:700;color:#16a34a">現在</span>':''}
+    </div>`).join('');
   document.getElementById('modalContent').innerHTML=`
     <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-title">📱 メイン / サブ機の設定</div>
-    <p style="font-size:12px;color:#64748b;margin-bottom:14px;line-height:1.7">
-      メイン機のみ翌日の引継処理（排便日更新・退所クリア・入替移行）を実行します。<br>
-      通常は1台をメイン機に設定してください。
+    <div class="modal-title">📱 フロア担当の設定</div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.7">
+      日付が変わったとき、引継処理（排便日更新・退所・入替移行）を担当するフロアを設定します。<br>
+      変更にはパスワードが必要です。
     </p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:2px solid ${mode==='main'?'#22c55e':'#e2e8f0'};background:${mode==='main'?'#f0fdf4':'#f8fafc'}">
-        <span style="font-size:20px">🟢</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:#1e293b">メイン機</div>
-          <div style="font-size:11px;color:#64748b">引継処理・退所処理を自動実行</div>
-        </div>
-        ${mode==='main'?'<span style="font-size:11px;font-weight:700;color:#16a34a">現在の設定</span>':''}
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:2px solid ${mode==='sub'?'#2563eb':'#e2e8f0'};background:${mode==='sub'?'#eff6ff':'#f8fafc'}">
-        <span style="font-size:20px">🔵</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:#1e293b">サブ機</div>
-          <div style="font-size:11px;color:#64748b">表示・入力のみ（引継処理はしない）</div>
-        </div>
-        ${mode==='sub'?'<span style="font-size:11px;font-weight:700;color:#2563eb">現在の設定</span>':''}
+    <div id="dmModeList">${rows}</div>
+    <div id="dmPwdRow" style="display:none;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px">パスワードを入力して確定</div>
+      <div style="display:flex;gap:8px">
+        <input id="deviceModeInput" type="password" class="modal-input" placeholder="パスワード" style="flex:1">
+        <button onclick="confirmDeviceMode()" style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">確定</button>
       </div>
     </div>
-    ${mode==='main'?`
-      <div style="border-top:1px solid #f1f5f9;padding-top:12px">
-        <div style="font-size:12px;color:#64748b;margin-bottom:8px">サブ機に変更する（パスワード必要）</div>
-        <div style="display:flex;gap:8px">
-          <input id="deviceModeInput" type="password" class="modal-input" placeholder="パスワードを入力" style="flex:1">
-          <button onclick="switchToSub()" style="padding:8px 14px;background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">サブ機にする</button>
+    <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:8px">
+      <details style="font-size:12px;color:#64748b">
+        <summary style="cursor:pointer;font-weight:500;margin-bottom:6px">パスワードを変更</summary>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <input id="deviceModePwdOld" type="password" class="modal-input" placeholder="現在" style="flex:1;min-width:80px">
+          <input id="deviceModePwdNew" type="password" class="modal-input" placeholder="新しい" style="flex:1;min-width:80px">
+          <button onclick="changeDeviceModePwd()" style="padding:8px 12px;background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">変更</button>
         </div>
-        <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
-          <div style="font-size:12px;color:#64748b;margin-bottom:6px">パスワードを変更</div>
-          <div style="display:flex;gap:8px">
-            <input id="deviceModePwdOld" type="password" class="modal-input" placeholder="現在のパスワード" style="flex:1">
-            <input id="deviceModePwdNew" type="password" class="modal-input" placeholder="新しいパスワード" style="flex:1">
-            <button onclick="changeDeviceModePwd()" style="padding:8px 14px;background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">変更</button>
-          </div>
-        </div>
-      </div>
-    `:`
-      <div style="border-top:1px solid #f1f5f9;padding-top:12px">
-        <div style="font-size:12px;color:#64748b;margin-bottom:8px">メイン機に変更する（パスワード必要）</div>
-        <div style="display:flex;gap:8px">
-          <input id="deviceModeInput" type="password" class="modal-input" placeholder="パスワードを入力" style="flex:1">
-          <button onclick="switchToMain()" style="padding:8px 14px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">メイン機にする</button>
-        </div>
-      </div>
-    `}`;
+      </details>
+    </div>`;
+  window._pendingDeviceMode=null;
   document.getElementById('modalBg').style.display='flex';
 }
 
-function switchToMain(){
+let _pendingDeviceMode=null;
+function applyDeviceMode(key){
+  _pendingDeviceMode=key;
+  // サブ機への変更、または現在の設定と同じ場合もパスワード要求
+  document.getElementById('dmPwdRow').style.display='block';
+  document.getElementById('deviceModeInput').value='';
+  document.getElementById('deviceModeInput').focus();
+}
+function confirmDeviceMode(){
   const pwd=document.getElementById('deviceModeInput')?.value;
   if(pwd!==getDeviceModePwd()){alert('パスワードが違います');return;}
-  lss(DEVICE_MODE_KEY,'main');
+  if(!_pendingDeviceMode)return;
+  lss(DEVICE_MODE_KEY,_pendingDeviceMode);
   closeModal();renderDeviceModeUI();
-  alert('🟢 この端末をメイン機に設定しました。');
+  const labels={main_all:'全フロア メイン機',main_1f:'1F メイン機',main_2f:'2F メイン機',sub:'サブ機'};
+  alert('設定を変更しました：'+labels[_pendingDeviceMode]);
 }
-function switchToSub(){
-  const pwd=document.getElementById('deviceModeInput')?.value;
-  if(pwd!==getDeviceModePwd()){alert('パスワードが違います');return;}
-  lss(DEVICE_MODE_KEY,'sub');
-  closeModal();renderDeviceModeUI();
-  alert('🔵 この端末をサブ機に設定しました。');
-}
+
+
 function changeDeviceModePwd(){
   const old=document.getElementById('deviceModePwdOld')?.value;
   const nw=document.getElementById('deviceModePwdNew')?.value;
@@ -2901,11 +2907,11 @@ function checkDateAutoUpdate(){
   const diffDays=Math.round(diffMs/(1000*60*60*24));
   if(diffDays===1||diffDays>=2){
     document.getElementById('dateInput').value=today;
-    if(isMainDevice()){
-      // メイン機: 引継処理ごと実行
+    // 担当フロアがあれば引継処理あり（全フロア/1F/2F担当）、なければサブ機扱い
+    if(getResponsibleRooms().length>0){
       onDateChange(today);
     } else {
-      // サブ機: 日付だけ更新してデータを読み直す（引継処理はしない）
+      // サブ機: 日付だけ更新してデータを読み直す
       currentDate=today;updateDateNote();
       loadAll();
     }
