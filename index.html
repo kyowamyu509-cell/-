@@ -68,7 +68,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .bath-check-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;cursor:pointer;transition:all 0.15s}
 .bath-check-wrap.checked{background:#eff6ff;border-color:#93c5fd}
 .bath-check-wrap input[type=checkbox]{width:16px;height:16px;accent-color:#2563eb;cursor:pointer;flex-shrink:0}
-.bath-check-label{font-size:13px;font-weight:500;color:#64748b;cursor:pointer}
+.bath-check-label{font-size:13px;font-weight:500;color:#64748b;cursor:pointer;display:none}
 .bath-check-wrap.checked .bath-check-label{color:#2563eb}
 .memo-section{display:flex;flex-direction:column;gap:4px;margin-top:3px}
 .memo-section-label{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em}
@@ -308,6 +308,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 <div class="header">
   <div class="header-top">
     <div><div class="app-title" id="appTitle" onclick="onTitleTap()" style="cursor:default;user-select:none">日常ケア記録</div><div class="app-sub" id="dateNote"></div></div>
+    <button onclick="openDeviceModeModal()" style="border:none;background:none;font-size:11px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:'Noto Sans JP',sans-serif" id="deviceModeLabel">🔵 サブ機</button>
     <input type="date" class="date-input" id="dateInput" onchange="onDateChange(this.value)">
   </div>
   <div class="main-tabs">
@@ -1416,7 +1417,8 @@ async function onDateChange(d){
   const prevMs=new Date(prevDate+'T00:00:00').getTime();
   const newMs =new Date(d+'T00:00:00').getTime();
   const diffDaysMove=Math.round((newMs-prevMs)/(1000*60*60*24));
-  const isMovingForward=(diffDaysMove>=1); // 2日以上スリープ後も退所・入替移行を実行
+  // メイン機のみ引継処理・退所処理を実行（サブ機はデータ読み込みのみ）
+  const isMovingForward=(diffDaysMove>=1)&&isMainDevice();
 
   // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
   // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
@@ -1574,7 +1576,7 @@ async function onExtraCheckChange(r,checked,isSub){
   const wrap=document.getElementById((isSub?'sub-':'')+'extra-wrap-'+r);
   const lbl=document.getElementById((isSub?'sub-':'')+'extra-lbl-'+r);
   if(wrap)wrap.className='bath-check-wrap'+(checked?' checked':'');
-  if(lbl)lbl.textContent=checked?'入浴済み（当日）':'当日入浴なし';
+  if(lbl)lbl.textContent='';
   if(document.getElementById('mainPage2').classList.contains('active'))renderDashboard();
 }
 async function onExtraSel(r,k,v,el,isSub){
@@ -2140,6 +2142,104 @@ async function dbMergeExecute(){
     btn.disabled=false;btn.textContent='🔗 統合を実行';
   }
 }
+
+// ── メイン/サブ機モード ─────────────────────────────
+// 'main' = 引継処理・退所処理を実行する端末
+// 'sub'  = 表示のみ（同期はするが引継処理はしない）
+const DEVICE_MODE_KEY='deviceMode';
+const DEVICE_MODE_PWD_KEY='deviceModePwd';
+function getDeviceMode(){return ls(DEVICE_MODE_KEY)||'sub';}
+function getDeviceModePwd(){return ls(DEVICE_MODE_PWD_KEY)||'1234';}
+function isMainDevice(){return getDeviceMode()==='main';}
+
+function renderDeviceModeUI(){
+  const mode=getDeviceMode();
+  const el=document.getElementById('deviceModeLabel');
+  if(el){
+    el.textContent=mode==='main'?'🟢 メイン機':'🔵 サブ機';
+    el.style.color=mode==='main'?'#16a34a':'#2563eb';
+  }
+}
+
+function openDeviceModeModal(){
+  const mode=getDeviceMode();
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">📱 メイン / サブ機の設定</div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:14px;line-height:1.7">
+      メイン機のみ翌日の引継処理（排便日更新・退所クリア・入替移行）を実行します。<br>
+      通常は1台をメイン機に設定してください。
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:2px solid ${mode==='main'?'#22c55e':'#e2e8f0'};background:${mode==='main'?'#f0fdf4':'#f8fafc'}">
+        <span style="font-size:20px">🟢</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#1e293b">メイン機</div>
+          <div style="font-size:11px;color:#64748b">引継処理・退所処理を自動実行</div>
+        </div>
+        ${mode==='main'?'<span style="font-size:11px;font-weight:700;color:#16a34a">現在の設定</span>':''}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:2px solid ${mode==='sub'?'#2563eb':'#e2e8f0'};background:${mode==='sub'?'#eff6ff':'#f8fafc'}">
+        <span style="font-size:20px">🔵</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#1e293b">サブ機</div>
+          <div style="font-size:11px;color:#64748b">表示・入力のみ（引継処理はしない）</div>
+        </div>
+        ${mode==='sub'?'<span style="font-size:11px;font-weight:700;color:#2563eb">現在の設定</span>':''}
+      </div>
+    </div>
+    ${mode==='main'?`
+      <div style="border-top:1px solid #f1f5f9;padding-top:12px">
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px">サブ機に変更する（パスワード必要）</div>
+        <div style="display:flex;gap:8px">
+          <input id="deviceModeInput" type="password" class="modal-input" placeholder="パスワードを入力" style="flex:1">
+          <button onclick="switchToSub()" style="padding:8px 14px;background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">サブ機にする</button>
+        </div>
+        <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
+          <div style="font-size:12px;color:#64748b;margin-bottom:6px">パスワードを変更</div>
+          <div style="display:flex;gap:8px">
+            <input id="deviceModePwdOld" type="password" class="modal-input" placeholder="現在のパスワード" style="flex:1">
+            <input id="deviceModePwdNew" type="password" class="modal-input" placeholder="新しいパスワード" style="flex:1">
+            <button onclick="changeDeviceModePwd()" style="padding:8px 14px;background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">変更</button>
+          </div>
+        </div>
+      </div>
+    `:`
+      <div style="border-top:1px solid #f1f5f9;padding-top:12px">
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px">メイン機に変更する（パスワード必要）</div>
+        <div style="display:flex;gap:8px">
+          <input id="deviceModeInput" type="password" class="modal-input" placeholder="パスワードを入力" style="flex:1">
+          <button onclick="switchToMain()" style="padding:8px 14px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">メイン機にする</button>
+        </div>
+      </div>
+    `}`;
+  document.getElementById('modalBg').style.display='flex';
+}
+
+function switchToMain(){
+  const pwd=document.getElementById('deviceModeInput')?.value;
+  if(pwd!==getDeviceModePwd()){alert('パスワードが違います');return;}
+  lss(DEVICE_MODE_KEY,'main');
+  closeModal();renderDeviceModeUI();
+  alert('🟢 この端末をメイン機に設定しました。');
+}
+function switchToSub(){
+  const pwd=document.getElementById('deviceModeInput')?.value;
+  if(pwd!==getDeviceModePwd()){alert('パスワードが違います');return;}
+  lss(DEVICE_MODE_KEY,'sub');
+  closeModal();renderDeviceModeUI();
+  alert('🔵 この端末をサブ機に設定しました。');
+}
+function changeDeviceModePwd(){
+  const old=document.getElementById('deviceModePwdOld')?.value;
+  const nw=document.getElementById('deviceModePwdNew')?.value;
+  if(old!==getDeviceModePwd()){alert('現在のパスワードが違います');return;}
+  if(!nw||nw.length<4){alert('新しいパスワードは4文字以上にしてください');return;}
+  lss(DEVICE_MODE_PWD_KEY,nw);
+  alert('パスワードを変更しました');
+  openDeviceModeModal();
+}
+
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
@@ -2182,7 +2282,7 @@ function refreshCard(r){
   const _exCb=document.getElementById('extra-cb-'+r);
   if(_exCb)_exCb.checked=_exChecked;
   if(_exWrap)_exWrap.className='bath-check-wrap'+(_exChecked?' checked':'');
-  if(_exLbl)_exLbl.textContent=_exChecked?'入浴済み（当日）':'当日入浴なし';
+  if(_exLbl)_exLbl.textContent='';
   const memo=document.getElementById('memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('name-'+r);if(ni){ni.value=d.name||'';ni.className='name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
   const dot=document.getElementById('dot-'+r);if(dot)dot.style.background=dotCol(p);
@@ -2210,7 +2310,7 @@ function refreshSubCard(r){
   const _sExCb=document.getElementById('sub-extra-cb-'+r);
   if(_sExCb)_sExCb.checked=_sExChecked;
   if(_sExWrap)_sExWrap.className='bath-check-wrap'+(_sExChecked?' checked':'');
-  if(_sExLbl)_sExLbl.textContent=_sExChecked?'入浴済み（当日）':'当日入浴なし';
+  if(_sExLbl)_sExLbl.textContent='';
   const memo=document.getElementById('sub-memo-'+r);if(memo)memo.value=d.memo||'';
   const ni=document.getElementById('sub-name-'+r);if(ni){ni.value=d.name||'';ni.className='sub-name-input'+(d._tag==='today'?' loaded':d._tag==='carried'?' carried':'');}
   setSubTag(r,d._tag);
@@ -2787,6 +2887,7 @@ document.getElementById('whMonth').value=currentDate.slice(0,7);
 document.getElementById('whMonth').onchange=()=>renderWHTable();
 updateDateNote();
 loadAll();
+renderDeviceModeUI();
 
 // ── 日付自動更新 ─────────────────────────────────────────────
 // ① 日付チェック共通関数
@@ -2799,9 +2900,15 @@ function checkDateAutoUpdate(){
   const diffMs=new Date(today+'T00:00:00')-new Date(currentDate+'T00:00:00');
   const diffDays=Math.round(diffMs/(1000*60*60*24));
   if(diffDays===1||diffDays>=2){
-    // 1日進んだ（深夜0時超え）または2日以上ずれた（長期スリープ）→ 自動更新
     document.getElementById('dateInput').value=today;
-    onDateChange(today);
+    if(isMainDevice()){
+      // メイン機: 引継処理ごと実行
+      onDateChange(today);
+    } else {
+      // サブ機: 日付だけ更新してデータを読み直す（引継処理はしない）
+      currentDate=today;updateDateNote();
+      loadAll();
+    }
     showDateChangedToast(today);
   }
   // diffDaysが負（今日より未来の日付を手動設定中）→ 触らない
