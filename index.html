@@ -131,7 +131,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .bath-group-title{font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:7px;display:flex;align-items:center;gap:6px}
 .bath-group-title .cnt{background:#c4b5fd;color:#4c1d95;font-size:10px;padding:1px 7px;border-radius:20px}
 .bath-person-list{display:flex;flex-wrap:wrap;gap:5px}
-.bath-person{font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:3px 9px;color:#1e293b}
+.bath-person{font-size:12px;background:#fff;border:0.5px solid #e2e8f0;border-radius:7px;padding:3px 9px;color:#1e293b;transition:background 0.15s}.bath-person:hover{background:#eff6ff;border-color:#93c5fd}
 .bath-person .room-no{font-size:10px;color:#64748b;margin-right:4px}
 .bath-person.is-sub{border-color:#c4b5fd;background:#fdf8ff}
 .wh-page{padding:14px;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
@@ -1420,9 +1420,14 @@ async function onDateChange(d){
       const dName=(S[r].name||'').trim();
       if(dName) await addDischargedLog(dName,r,d);
       const _dName=(S[r].name||'').trim();
-      if(_dName) await fbSet('residents/'+encKey(_dName)+'/room',null);
+      if(_dName){
+        if(listeners[r]){listeners[r].off();delete listeners[r];}
+        await fbSet('residents/'+encKey(_dName)+'/room',null);
+        await fbSet('rooms/'+r+'/name','');
+      }
       lss('rname_'+r,'');
       S[r]={name:'',...emptyDaily(),_tag:''};
+      careNotes[r]=emptyCareNotes();
       discharged[r]=false;
     }
     // ② 入替者がいればメインに移行（翌日以降に進んだときのみ）
@@ -1567,6 +1572,8 @@ async function onExtraTextChange(r,k,v,isSub){
 function clearRoom(r){
   backups[r]={...S[r]};
   lss('backup_'+r,backups[r]);
+  // リスナーを切断しておく（旧データで戻されるのを防ぐ）
+  if(listeners[r]){listeners[r].off();delete listeners[r];}
   S[r]={...S[r],...emptyDaily(),_tag:S[r]._tag};
   refreshCard(r);
   flashRestore(r);
@@ -1642,7 +1649,11 @@ async function onSubMemoChange(r,v){
   SUB[r]._mt=setTimeout(async()=>{await saveSubDaily(r);subFlash(r,'✓ 保存');},700);
   if(document.getElementById('mainPage2').classList.contains('active'))refreshDashboardMemo();
 }
-function clearSubRoom(r){SUB[r]={...SUB[r],...emptyDaily(),_tag:SUB[r]._tag};refreshSubCard(r);subFlash(r,'クリア');}
+function clearSubRoom(r){
+  if(subListeners[r]){subListeners[r].off();delete subListeners[r];}
+  SUB[r]={...SUB[r],...emptyDaily(),_tag:SUB[r]._tag};
+  refreshSubCard(r);subFlash(r,'クリア');
+}
 
 // ── 入替表示トグル ────────────────────────────────
 function toggleSub(r){
@@ -2220,6 +2231,56 @@ function changeDeviceModePwd(){
   openDeviceModeModal();
 }
 
+
+// ── ダッシュボード用：介助詳細閲覧モーダル ────────────────
+async function openCareNoteModal(r,name){
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div style="font-size:15px;font-weight:500;color:#1e293b;margin-bottom:4px">${name}</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:14px">${r}号室　介助詳細</div>
+    <div id="cnModalBody"><div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">読み込み中...</div></div>`;
+  document.getElementById('modalBg').style.display='flex';
+
+  // careNotes を読み込む（キャッシュがあればそれを使う）
+  let cn=careNotes[r];
+  if(!cn||!cn.shintai&&!cn.ido&&!cn.shokuji_note&&!cn.nyuyoku_houhou&&!cn.haisetsu_note&&!cn.sonota){
+    const data=await loadCareNotesByName(name);
+    cn={...emptyCareNotes(),...data};
+  }
+
+  const row=(label,val,warn=false)=>val?`
+    <div style="padding:8px 0;border-bottom:0.5px solid #f1f5f9">
+      <div style="font-size:10px;font-weight:500;color:#64748b;margin-bottom:3px">${label}</div>
+      <div style="font-size:13px;color:${warn?'#dc2626':'#1e293b'};line-height:1.7;white-space:pre-wrap">${val}</div>
+    </div>`:'' ;
+
+  const shokujiParts=[];
+  if(cn.shokuji_shushoku) shokujiParts.push('主食: '+cn.shokuji_shushoku);
+  if(cn.shokuji_fukushoku) shokujiParts.push('副食: '+cn.shokuji_fukushoku);
+  if(cn.shokuji_toro) shokujiParts.push('とろみ: '+cn.shokuji_toro);
+  if(cn.shokuji_iero) shokujiParts.push('胃ろう使用');
+  if(cn.shokuji_note) shokujiParts.push(cn.shokuji_note);
+
+  const haisetsuParts=[];
+  if(cn.omutsu&&cn.omutsu!=='なし') haisetsuParts.push('オムツ: '+cn.omutsu);
+  if(cn.rehapan&&cn.rehapan!=='なし') haisetsuParts.push('リハパン: '+cn.rehapan);
+  if(cn.pad&&cn.pad!=='なし') haisetsuParts.push('パッド: '+cn.pad);
+  if(cn.haisetsu_basho) haisetsuParts.push('場所: '+cn.haisetsu_basho);
+  if(cn.haisetsu_freq) haisetsuParts.push('頻度: '+cn.haisetsu_freq);
+  if(cn.haisetsu_note) haisetsuParts.push(cn.haisetsu_note);
+
+  const nyuyokuVal=[cn.nyuyoku_houhou,cn.nyuyoku_note].filter(Boolean).join('　');
+
+  const body=document.getElementById('cnModalBody');
+  if(!body)return;
+  // 入浴情報のみ表示
+  const content=[
+    row('🛁 入浴方法',nyuyokuVal),
+  ].filter(Boolean).join('');
+
+  body.innerHTML=content||'<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">入浴方法の登録がありません</div>';
+}
+
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
@@ -2515,7 +2576,7 @@ function renderDashboard(){
   const bl=document.getElementById('bathList');
   const allBathKeys=[...BATH_TYPES,'方法未設定'];
   const anyBath=allBathKeys.some(t=>bathGroups[t]&&bathGroups[t].length>0);
-  bl.innerHTML=anyBath?allBathKeys.filter(t=>bathGroups[t]&&bathGroups[t].length>0).map(t=>`<div class="bath-group"><div class="bath-group-title">${t}<span class="cnt">${bathGroups[t].length}名</span></div><div class="bath-person-list">${bathGroups[t].map(p=>`<div class="bath-person${p.isSub?' is-sub':''}"><span class="room-no">${p.r}${p.isSub?'(入替)':''}</span>${p.name}</div>`).join('')}</div></div>`).join(''):'<div class="no-data">入浴の記録はありません</div>';
+  bl.innerHTML=anyBath?allBathKeys.filter(t=>bathGroups[t]&&bathGroups[t].length>0).map(t=>`<div class="bath-group"><div class="bath-group-title">${t}<span class="cnt">${bathGroups[t].length}名</span></div><div class="bath-person-list">${bathGroups[t].map(p=>`<div class="bath-person${p.isSub?' is-sub':''}" onclick="openCareNoteModal(${p.r},'${p.name.replace(/'/g,"\'")}')" style="cursor:pointer" title="介助詳細を見る"><span class="room-no">${p.r}${p.isSub?'(入替)':''}</span>${p.name}</div>`).join('')}</div></div>`).join(''):'<div class="no-data">入浴の記録はありません</div>';
 
   ddc('haiben');
   const hbc={};HB.forEach(h=>{hbc[h]=0;});
@@ -2884,13 +2945,13 @@ function checkDateAutoUpdate(){
   const diffDays=Math.round(diffMs/(1000*60*60*24));
   if(diffDays===1||diffDays>=2){
     document.getElementById('dateInput').value=today;
-    // 担当フロアがあれば引継処理あり（全フロア/1F/2F担当）、なければサブ機扱い
     if(getResponsibleRooms().length>0){
+      // メイン機: 引継処理を実行
       onDateChange(today);
     } else {
-      // サブ機: 日付だけ更新してデータを読み直す
+      // サブ機: メイン機が書き込むまで3秒待ってから読み直す
       currentDate=today;updateDateNote();
-      loadAll();
+      setTimeout(()=>loadAll(), 3000);
     }
     showDateChangedToast(today);
   }
