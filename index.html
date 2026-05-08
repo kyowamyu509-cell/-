@@ -2811,14 +2811,19 @@ async function dbRenameDeleteExecute(){
   dbLog('名前削除: '+name);
   try{
     if(room&&ALL.includes(room)){
+      // ① Firebaseリスナーを先に切断（旧データで上書きされるのを防ぐ）
+      if(listeners[room]){listeners[room].off();delete listeners[room];}
       await fbSet('residents/'+encKey(name)+'/room',null);
+      await fbSet('rooms/'+room+'/name','');
       lss('rname_'+room,'');
       S[room]={name:'',...emptyDaily(),_tag:''};
       careNotes[room]=emptyCareNotes();
+      // ② サマリーバーも含めて即座に再描画
+      renderSum(F1_SET.has(room)?1:2, F1_SET.has(room)?F1:F2);
       refreshCard(room);
     }
     dbLog('✅ 削除完了: '+name);
-    if(resultEl){resultEl.textContent='✅ 「'+name+'」の部屋紐づけを削除しました。ケアデータは保持されています。';resultEl.style.display='block';resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';resultEl.style.color='#065f46';}
+    if(resultEl){resultEl.textContent='✅ 「'+name+'」の部屋を空室にしました。ケアデータは保持されています。';resultEl.style.display='block';resultEl.style.background='#f0fdf4';resultEl.style.borderColor='#86efac';resultEl.style.color='#065f46';}
     dbRenameSelectedData=null;
     document.getElementById('dbRenameSelected').style.display='none';
     document.getElementById('dbRenameNewRow').style.display='none';
