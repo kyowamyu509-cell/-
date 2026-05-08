@@ -23,34 +23,34 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .app-sub{font-size:11px;color:#64748b;margin-top:1px}
 .date-input{border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:12px;color:#1e293b;outline:none;background:#f8fafc;font-family:'Noto Sans JP',sans-serif}
 .main-tabs{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
-.main-tab{padding:7px 13px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;color:#64748b;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
-.main-tab.active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
+.main-tab{padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;border:0.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#64748b;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
+.main-tab.active{background:#eff6ff;color:#4f46e5;border-color:#a5b4fc}
 .floor-tabs{display:flex;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
-.floor-tab{flex:1;padding:8px 0;font-size:13px;font-weight:500;cursor:pointer;border:none;background:#f8fafc;color:#64748b;font-family:'Noto Sans JP',sans-serif}
-.floor-tab.active{background:#eff6ff;color:#2563eb}
+.floor-tab{flex:1;padding:7px 0;font-size:12px;font-weight:500;cursor:pointer;border:none;background:#f8fafc;color:#64748b;font-family:'Noto Sans JP',sans-serif}
+.floor-tab.active{background:#eff6ff;color:#4f46e5}
 .sync-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:#fff;border-bottom:1px solid #f1f5f9}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#cbd5e1;transition:background 0.3s}
 .sync-dot.ok{background:#22c55e}
 .sync-dot.warn{background:#f59e0b}
 .sync-label{font-size:11px;color:#64748b}
 .summary-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:7px 12px;display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.chip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 9px;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer;background:#f8fafc;min-width:44px}
-.chip.done{border-color:#86efac;background:#f0fdf4}
+.chip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 9px;border-radius:8px;border:0.5px solid #e2e8f0;cursor:pointer;background:#f8fafc;min-width:42px}
+.chip.done{border-color:#86efac;background:#f0fdf4;}
 .chip.partial{border-color:#fcd34d;background:#fffbeb}
-.chip-num{font-size:12px;font-weight:500;color:#1e293b}
+.chip-num{font-size:12px;font-weight:500;color:var(--cn,#1e293b)}
 .chip-sub{font-size:10px;color:#64748b}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;padding:12px;max-width:1400px;margin:0 auto}
-.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0}
+.card{background:#fff;border-radius:12px;border:0.5px solid #e2e8f0}
 .card.discharged{border-color:#fca5a5;background:#fff5f5}
 .card.discharged .card-head{background:#fff5f5}
-.card-head{padding:10px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.card-head{padding:10px 12px;border-bottom:0.5px solid #e8edf2;display:flex;align-items:center;gap:8px}
 .room-num{font-size:19px;font-weight:700;color:#1e293b;min-width:40px}
-.name-input{flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;min-width:0}
+.name-input{flex:1;border:0.5px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;min-width:0}
 .name-input:focus{border-color:#93c5fd;background:#fff}
-.name-input.loaded{border-color:#86efac;background:#f0fdf4}
+.name-input.loaded{border-color:#86efac;background:#f0fdf4;color:#15803d}
 .name-input.carried{border-color:#fcd34d;background:#fffbeb}
 .tag{font-size:9px;padding:2px 6px;border-radius:20px;font-weight:500;flex-shrink:0;text-align:center;min-width:28px}
-.tag.today{background:#eff6ff;color:#2563eb}
+.tag.today{background:#eff6ff;color:#4f46e5;border:0.5px solid #a5b4fc}
 .tag.carried{background:#fffbeb;color:#b45309}
 .tag.new{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
 .flash{font-size:10px;color:#16a34a;min-width:36px;text-align:right;opacity:0;transition:opacity 0.3s;flex-shrink:0}
@@ -61,33 +61,33 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .field{display:flex;flex-direction:column;gap:3px}
 .flabel{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em;display:flex;align-items:center;gap:3px}
 .flabel-edit{font-size:10px;cursor:pointer;color:#93c5fd;padding:1px 4px;border-radius:4px;border:1px solid #e2e8f0;background:#f8fafc;font-family:'Noto Sans JP',sans-serif;line-height:1.4}
-.fsel{width:100%;padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
+.fsel{width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
 .fsel.v-ari{background-color:#eff6ff;border-color:#93c5fd;color:#2563eb}
 .fsel.v-hb{background-color:#fff;border-color:#cbd5e1}
 /* 入浴チェックボックス */
-.bath-check-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;cursor:pointer;transition:all 0.15s}
-.bath-check-wrap.checked{background:#eff6ff;border-color:#93c5fd}
+.bath-check-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;cursor:pointer;transition:all 0.15s}
+.bath-check-wrap.checked{background:#eff6ff;border-color:#a5b4fc}
 .bath-check-wrap input[type=checkbox]{width:16px;height:16px;accent-color:#2563eb;cursor:pointer;flex-shrink:0}
 .bath-check-label{font-size:13px;font-weight:500;color:#64748b;cursor:pointer;display:none}
 .bath-check-wrap.checked .bath-check-label{color:#2563eb}
 .memo-section{display:flex;flex-direction:column;gap:4px;margin-top:3px}
 .memo-section-label{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em}
-.haiben-row{display:flex;align-items:center;gap:7px;background:#f8fafc;border:1px solid #e2e8f0;border-bottom:none;border-radius:8px 8px 0 0;padding:6px 9px}
+.haiben-row{display:flex;align-items:center;gap:7px;background:#f8fafc;border:0.5px solid #e2e8f0;border-bottom:none;border-radius:8px 8px 0 0;padding:5px 9px}
 .haiben-row-label{font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;flex-shrink:0}
 .haiben-sel{flex:1;border:none;background:transparent;font-size:13px;color:#1e293b;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;padding:0}
 .haiben-sel.v-hb{color:#2563eb;font-weight:500}
 .haiben-sel.v-hb-warn{color:#dc2626;font-weight:700}
-.fmemo{width:100%;padding:8px 10px;border-radius:0 0 8px 8px;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:80px;line-height:1.7}
+.fmemo{width:100%;padding:7px 10px;border-radius:0 0 8px 8px;border:0.5px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:80px;line-height:1.7}
 .fmemo:focus{border-color:#cbd5e1;background:#fff}
-.card-foot{padding:7px 12px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.clear-btn{border:1px solid #fca5a5;border-radius:8px;padding:5px 13px;font-size:11px;color:#dc2626;background:#fff5f5;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.card-foot{padding:6px 12px;border-top:0.5px solid #e8edf2;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.clear-btn{border:0.5px solid #fca5a5;border-radius:8px;padding:4px 12px;font-size:11px;color:#dc2626;background:#fff5f5;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .clear-btn:active{background:#fee2e2}
-.sub-toggle-btn{border:1px solid #c4b5fd;border-radius:8px;padding:5px 12px;font-size:11px;color:#7c3aed;background:#faf5ff;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
+.sub-toggle-btn{border:0.5px solid #c4b5fd;border-radius:8px;padding:4px 11px;font-size:11px;color:#7c3aed;background:#faf5ff;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
 .sub-toggle-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
-.discharge-btn{border:1px solid #e2e8f0;border-radius:8px;padding:5px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.discharge-btn{border:0.5px solid #e2e8f0;border-radius:8px;padding:4px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .discharge-btn.on{border-color:#fca5a5;background:#fee2e2;color:#dc2626;font-weight:600}
 .restore-btn{border:1px solid #f59e0b;border-radius:8px;padding:5px 11px;font-size:11px;color:#b45309;background:#fffbeb;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
-.sub-section{border-top:2px dashed #c4b5fd;display:none}
+.sub-section{border-top:1.5px dashed #c4b5fd;display:none}
 .sub-section.visible{display:block}
 .sub-header{padding:9px 12px;background:#faf5ff;display:flex;align-items:center;gap:8px}
 .sub-badge{font-size:10px;font-weight:700;background:#7c3aed;color:#fff;padding:2px 8px;border-radius:20px;flex-shrink:0}
@@ -255,14 +255,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .extra-section-label{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em}
 .extra-section-hide{font-size:10px;color:#2563eb;cursor:pointer;padding:2px 0;border:none;background:none;font-family:"Noto Sans JP",sans-serif}
 .extra-section-body{padding:6px 10px 8px}
-.extra-toggle-btn{border:1px solid #e2e8f0;border-radius:8px;padding:4px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500}
-.extra-toggle-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.extra-toggle-btn{border:0.5px solid #e2e8f0;border-radius:8px;padding:4px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500}
+.extra-toggle-btn.active{background:#4f46e5;color:#fff;border-color:#4f46e5}
 .extra-input{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:"Noto Sans JP",sans-serif;resize:none;line-height:1.7}
 .extra-input:focus{border-color:#93c5fd;background:#fff}
 .extra-row{display:flex;gap:6px;align-items:flex-start}
 .extra-date-input{width:80px;flex-shrink:0}
 /* コピーボタン */
-.copy-btn{border:1px solid #e2e8f0;border-radius:8px;padding:4px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500;display:flex;align-items:center;gap:4px}
+.copy-btn{border:0.5px solid #e2e8f0;border-radius:8px;padding:4px 11px;font-size:11px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500;display:flex;align-items:center;gap:4px}
 .copy-btn:active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}
 .copy-btn.copied{background:#f0fdf4;color:#16a34a;border-color:#86efac}
 
@@ -279,7 +279,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .discharged-days-left{font-size:10px;background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:20px;font-weight:600;flex-shrink:0}
 
 /* ── 介助詳細セクション ── */
-.cn-toggle-btn{border:1px solid #6ee7b7;border-radius:8px;padding:4px 11px;font-size:11px;color:#059669;background:#f0fdf4;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500}
+.cn-toggle-btn{border:0.5px solid #6ee7b7;border-radius:8px;padding:4px 11px;font-size:11px;color:#059669;background:#f0fdf4;cursor:pointer;font-family:"Noto Sans JP",sans-serif;font-weight:500}
 .cn-toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
 .cn-section{border-top:2px dashed #6ee7b7;display:none}
 .cn-section.visible{display:block}
@@ -583,7 +583,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
   <div class="manual-page">
     <div class="manual-cover">
       <div class="manual-cover-title">📖　日常ケア記録アプリ　操作説明書</div>
-      <div class="manual-cover-sub">はじめてでもわかる使い方ガイド　ver.3.0</div>
+      <div class="manual-cover-sub">はじめてでもわかる使い方ガイド　ver.4.0</div>
     </div>
 
     <div class="manual-toc">
@@ -601,8 +601,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <a href="#m10">10. リンクの登録と使い方</a>
         <a href="#m11">11. 翌日への引き継ぎ・自動処理</a>
         <a href="#m12">12. 日付自動更新・アプリ化（PWA）</a>
-        <a href="#m13">13. 2台のiPadで同期する</a>
-        <a href="#m14">14. よくある質問</a>
+        <a href="#m13">13. メイン機・サブ機の設定</a>
+        <a href="#m14">14. 複数台での同期</a>
+        <a href="#m15">15. よくある質問</a>
       </div>
     </div>
 
@@ -610,208 +611,170 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
     <div class="msec" id="m1">
       <div class="msec-title"><span class="msec-num">1</span>アプリの基本画面と構成</div>
       <div class="mssec">■ 画面上部のタブ（メニュー）</div>
-      <p class="mbody">画面の上部に5つのタブがあります。タップするとページが切り替わります。</p>
       <table class="mtbl"><tr><th>タブ名</th><th>できること</th></tr>
-        <tr><td>ケア記録</td><td>各部屋の連絡帳・薬変更・入浴・最終排便・申し送りを入力する（メイン画面）</td></tr>
+        <tr><td>ケア記録</td><td>各部屋の連絡帳・薬変更・入浴・最終排便・申し送りを入力する</td></tr>
         <tr><td>体重・身長</td><td>月ごとの体重・身長・BMIを記録・確認する</td></tr>
         <tr><td>ダッシュボード</td><td>入浴者一覧・申し送り一覧・薬変更者をまとめて確認する</td></tr>
-        <tr><td>リンク</td><td>NotionやGoogleドライブなど外部サービスへのリンクを管理する</td></tr>
+        <tr><td>リンク</td><td>外部サービスへのリンクを管理する</td></tr>
         <tr><td>📖 説明書</td><td>この操作説明書（今見ているページ）</td></tr>
       </table>
       <div class="mssec">■ フロアの切り替え（1F / 2F）</div>
-      <p class="mbody">「ケア記録」タブを開いたとき「1F 100番台」「2F 200番台」ボタンが表示されます。タップするとフロアが切り替わります。</p>
+      <p class="mbody">「ケア記録」タブで「1F 100番台」「2F 200番台」ボタンをタップするとフロアが切り替わります。</p>
       <div class="mssec">■ 日付の変更</div>
-      <p class="mbody">画面右上の日付欄をタップすると日付を変更できます。過去の日付に戻すとその日の記録を確認できます。退所ボタンを押した方が含まれていても、過去に戻す場合はデータが消えません。</p>
-      <div class="mpoint">📅　日付を変えても名前は消えません。ケアデータだけが日付ごとに保存されています。</div>
-      <div class="mssec">■ サマリーバーの色の意味</div>
-      <table class="mtbl"><tr><th>色</th><th>意味</th></tr>
-        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力</td></tr>
-        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">黄色</span></td><td>入力中（一部の項目が入力済み）</td></tr>
-        <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a">緑</span></td><td>完了（全6項目が入力済み）</td></tr>
+      <p class="mbody">画面右上の日付欄をタップすると日付を変更できます。過去の日付に戻してもデータは消えません。</p>
+      <div class="mssec">■ サマリーバーの色</div>
+      <table class="mtbl"><tr><th>色</th><th>意味</th><th>条件</th></tr>
+        <tr><td><span class="mbadge" style="background:#f1f5f9;color:#64748b">グレー</span></td><td>未入力</td><td>0項目</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">黄色</span></td><td>入力中</td><td>1〜4項目</td></tr>
+        <tr><td><span class="mbadge" style="background:#f0fdf4;color:#16a34a">緑</span></td><td>完了</td><td>全5項目（連絡帳・薬変更・目薬・軟膏・最終排便）</td></tr>
       </table>
-      <p class="mbody">部屋番号をタップすると、その部屋のカードまで自動でスクロールします。</p>
+      <div class="mpoint">💡　入浴チェックは進捗カウントに含まれません。毎日の状況を記録する別枠として扱います。</div>
     </div>
 
     <!-- 2 -->
     <div class="msec" id="m2">
       <div class="msec-title"><span class="msec-num">2</span>ケア記録の入力方法</div>
       <div class="mssec">■ 名前を入力してデータを呼び起こす</div>
-      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。新しい部屋で同じ名前を入力すれば過去のデータが引き継がれます。</p>
+      <p class="mbody">名前は部屋ではなく人に紐付いて保存されます。部屋が変わっても同じ名前を入力すれば過去データが引き継がれます。名前のスペース（全角・半角）は無視されるため「山田太郎」と「山田　太郎」は同じデータとして扱われます。</p>
       <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>お名前欄をタップしてキーボードを表示します</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>利用者の名前を入力します（例：山田　太郎）</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>Enterキーを押すか、入力欄の外をタップします</div></div>
-        <div class="mstep"><div class="mstep-num">4</div><div>過去のデータがあれば自動で読み込まれます</div></div>
+        <div class="mstep"><div class="mstep-num">1</div><div>お名前欄をタップしてキーボードを表示</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>利用者の名前を入力（例：山田　太郎）</div></div>
+        <div class="mstep"><div class="mstep-num">3</div><div>Enterまたは欄の外をタップ → データが自動で読み込まれます</div></div>
       </div>
       <table class="mtbl"><tr><th>タグ</th><th>意味</th></tr>
-        <tr><td><span class="mbadge" style="background:#eff6ff;color:#2563eb">今日</span></td><td>今日すでに入力・保存されているデータ</td></tr>
-        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>前回の記録を引き継いで表示（今日はまだ未保存）</td></tr>
+        <tr><td><span class="mbadge" style="background:#eff6ff;color:#2563eb">今日</span></td><td>今日すでに保存されているデータ</td></tr>
+        <tr><td><span class="mbadge" style="background:#fffbeb;color:#b45309">引継</span></td><td>前回の記録を引き継いで表示</td></tr>
         <tr><td><span class="mbadge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0">新規</span></td><td>初めて登録される利用者</td></tr>
       </table>
-      <div class="mssec">■ 各項目の選択肢</div>
-      <table class="mtbl"><tr><th>項目</th><th>選択肢</th></tr>
-        <tr><td>連絡帳・薬変更・目薬・軟膏処置</td><td>未選択 / 有 / 無</td></tr>
-        <tr><td>入浴（当日）</td><td>チェックボックス（オン＝入浴済み）</td></tr>
-        <tr><td>最終排便</td><td>未選択 / 0日 / 不明 / -1〜-10日</td></tr>
+      <div class="mpoint mpoint-warn">⚠️　同じ名前の方がすでにいる場合は確認ダイアログが表示されます。同一人物ならOK（データが統合されます）、別人なら「(2)」などを付けてください。</div>
+      <div class="mssec">■ 各項目</div>
+      <table class="mtbl"><tr><th>項目</th><th>選択肢</th><th>進捗カウント</th></tr>
+        <tr><td>連絡帳・薬変更・目薬・軟膏処置</td><td>未選択 / 有 / 無</td><td>✅ カウント対象</td></tr>
+        <tr><td>入浴（当日）</td><td>チェックボックス</td><td>対象外</td></tr>
+        <tr><td>最終排便</td><td>未選択 / 0日 / 不明 / -1〜-10日</td><td>✅ カウント対象</td></tr>
       </table>
-      <div class="mpoint">💡　入浴は毎日チェックする形式です。翌日には自動でリセットされます。入浴方法（一般・リフト浴など）は介助詳細の「入浴」タブに入力します。</div>
-      <div class="mpoint mpoint-warn">⚠️　最終排便が -3日以下になると赤文字で警告表示されます。</div>
       <div class="mssec">■ 追加セクション（用具・設備 / 薬関連 / 外出）</div>
-      <p class="mbody">カード下部のボタンをタップするとセクションが展開されます。</p>
       <table class="mtbl"><tr><th>ボタン</th><th>内容</th><th>翌日引継</th></tr>
-        <tr><td>用具・設備</td><td>ラバー・ベッド下NCの有無（あり／なし）</td><td>引き継がれます</td></tr>
-        <tr><td>薬関連</td><td>薬の変更内容などを自由記入</td><td>引き継がれます</td></tr>
-        <tr><td>外出</td><td>月日と要件を入力（例：4/20・通院）</td><td>引き継がれます</td></tr>
+        <tr><td>用具・設備</td><td>ラバー・ベッド下NCの有無</td><td>○</td></tr>
+        <tr><td>薬関連</td><td>薬の変更内容（自由記入）</td><td>○</td></tr>
+        <tr><td>外出</td><td>月日と要件</td><td>○</td></tr>
       </table>
-      <div class="mpoint">💡　ボタンが青いとき＝セクション表示中。再タップまたはセクション内の「非表示」で閉じます。表示状態はiPadごとに記憶されます。</div>
+      <div class="mpoint">💡　ボタンが青＝表示中。再タップまたは「非表示」で閉じます。表示状態は端末ごとに記憶されます。</div>
     </div>
 
     <!-- 3 -->
     <div class="msec" id="m3">
       <div class="msec-title"><span class="msec-num">3</span>申し送り内容・最終排便の記入</div>
-      <p class="mbody">各カードの下部に「申し送り内容」セクションがあります。最終排便のプルダウンと自由記入テキスト欄で構成されています。</p>
       <div class="mssec">■ 最終排便</div>
       <table class="mtbl"><tr><th>選択肢</th><th>意味</th></tr>
         <tr><td>0日</td><td>本日排便あり</td></tr>
-        <tr><td>不明</td><td>排便状況が把握できていない</td></tr>
-        <tr><td style="color:#dc2626;font-weight:700">-3〜-10</td><td><span style="color:#dc2626;font-weight:700">⚠ 赤文字で警告表示（3日以上排便なし）</span></td></tr>
+        <tr><td>不明</td><td>把握できていない</td></tr>
+        <tr><td style="color:#dc2626;font-weight:700">-3〜-10</td><td><span style="color:#dc2626;font-weight:700">⚠ 赤文字で警告表示</span></td></tr>
       </table>
-      <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると、引継データの場合は自動で1日加算されます（例：-3日→翌日-4日）。今日入力済みのデータには影響しません。</div>
+      <div class="mpoint mpoint-warn">⚠️　翌日に日付を切り替えると引継データは自動で1日加算されます（例：-3日→-4日）。</div>
       <div class="mssec">■ 申し送りテキスト</div>
-      <p class="mbody">自由にテキストを入力できます。入力が止まると0.7秒後に自動保存されます。</p>
-      <div class="mpoint">↩　テキスト欄右上の「元に戻す」ボタンで、直前の状態に戻せます（最大20段階）。</div>
-      <div class="mpoint">📌　入力した申し送りはダッシュボードの申し送り一覧にも表示されます。1Fは青、2Fは緑で色分けされています。</div>
+      <p class="mbody">自由にテキストを入力できます。入力が止まると0.7秒後に自動保存されます。「↩ 元に戻す」で最大20段階まで戻せます。</p>
+      <div class="mpoint">📌　申し送りはダッシュボードの一覧にも表示されます。1Fは青、2Fは緑で色分け。</div>
     </div>
 
     <!-- 4 -->
     <div class="msec" id="m4">
       <div class="msec-title"><span class="msec-num">4</span>介助詳細の入力</div>
-      <p class="mbody">カード下部の「介助詳細」ボタン（緑色）をタップするとセクションが展開されます。6つのタブで情報を管理します。</p>
-      <table class="mtbl"><tr><th>タブ</th><th>入力できる内容</th></tr>
-        <tr><td>身体情報</td><td>アレルギー・既往歴・禁忌事項などの注意点</td></tr>
-        <tr><td>移動</td><td>移動・移乗の介助方法（歩行器・車椅子・移乗方法など）</td></tr>
-        <tr><td>食事</td><td>主食・副食の形態、とろみ、胃ろうの有無、食事介助の注意事項</td></tr>
-        <tr><td>入浴</td><td>入浴方法（一般・リフト浴・機械浴・シャワー浴・清拭）と注意事項</td></tr>
-        <tr><td>排泄</td><td>オムツ・リハパン・パッドのサイズ、排泄場所・頻度・注意事項</td></tr>
-        <tr><td>その他</td><td>夜間対応・コミュニケーション・家族対応など特記事項</td></tr>
+      <p class="mbody">カード下部の「介助詳細」ボタン（緑）をタップすると展開されます。利用者名に紐付いてFirebaseに保存され、複数台のiPadで共有されます。</p>
+      <table class="mtbl"><tr><th>タブ</th><th>内容</th></tr>
+        <tr><td>身体情報</td><td>アレルギー・既往歴・禁忌事項</td></tr>
+        <tr><td>移動</td><td>移動・移乗の介助方法</td></tr>
+        <tr><td>食事</td><td>主食・副食・とろみ・胃ろう・注意事項</td></tr>
+        <tr><td>入浴</td><td>入浴方法（一般/リフト浴/機械浴/シャワー浴/清拭）と注意事項</td></tr>
+        <tr><td>排泄</td><td>オムツ・リハパン・パッド・排泄場所・頻度・注意事項</td></tr>
+        <tr><td>その他</td><td>夜間対応・コミュニケーション・家族対応など</td></tr>
       </table>
-      <div class="mpoint mpoint-green">✅　介助詳細は利用者名に紐付いてFirebaseに保存されます。2台のiPadで共有されます。入力が止まると0.7秒後に自動保存されます。</div>
-      <div class="mpoint">💡　ダッシュボードの入浴者一覧には、入浴チェックが入っている方の「介助詳細→入浴」に設定した入浴方法でグループ分けして表示されます。</div>
+      <div class="mpoint">💡　ダッシュボードの入浴者一覧は、入浴チェックが入った方を介助詳細の「入浴方法」でグループ分けして表示します。</div>
     </div>
 
     <!-- 5 -->
     <div class="msec" id="m5">
       <div class="msec-title"><span class="msec-num">5</span>入れ替え利用者の記録</div>
-      <p class="mbody">同じ部屋に一時的に別の方が入る場合（短期・一時入所など）に使います。メインの利用者とは完全に別のデータとして管理されます。</p>
+      <p class="mbody">同じ部屋に一時的に別の方が入る場合に使います。メインの方とは独立したデータとして管理されます。</p>
       <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「入替 表示」ボタン（紫色）をタップ</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>紫色の入替セクションが表示されます</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>入替の方のお名前を入力し、通常と同じ手順でケア項目を入力</div></div>
+        <div class="mstep"><div class="mstep-num">1</div><div>「入替 表示」ボタン（紫）をタップ</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>入替の方のお名前を入力し、各項目を入力</div></div>
       </div>
-      <div class="mpoint mpoint-purple">💜　翌日の日付切替で入替の方が自動でメイン利用者に移行されます。入替欄は空になります。不要なときは「入替 非表示」で隠せます。</div>
+      <div class="mpoint mpoint-purple">💜　翌日の日付切替で入替の方が自動でメイン利用者に移行されます。介助詳細も引き継がれます。</div>
       <div class="mpoint">💡　入替セクションにも用具・設備・薬関連・外出のボタンがあります。</div>
     </div>
 
     <!-- 6 -->
     <div class="msec" id="m6">
       <div class="msec-title"><span class="msec-num">6</span>退所ボタンの使い方・退所者履歴</div>
-      <div class="mssec">■ 退所ボタンの操作</div>
       <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>カード下部の「退所」ボタンをタップ → カードが赤くなり「退所済」に変わる</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>翌日以降の日付に切り替えると自動でその部屋がクリアされます</div></div>
+        <div class="mstep"><div class="mstep-num">1</div><div>「退所」ボタンをタップ → カードが赤くなり「退所済」に変わる</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>翌日以降に日付を切り替えると自動でその部屋がクリアされます</div></div>
       </div>
-      <div class="mpoint mpoint-warn">⚠️　間違えて押した場合は、もう一度「退所済」をタップすれば解除できます。</div>
-      <div class="mpoint">🔍　退所ボタンを押した後に過去の日付に戻しても、データは消えません。退所処理は「前より新しい日付に進んだとき」だけ実行されます。</div>
+      <div class="mpoint mpoint-warn">⚠️　間違えた場合はもう一度「退所済」をタップすれば解除できます。過去の日付に戻しても退所処理は実行されません。</div>
       <div class="mssec">■ 退所者履歴（7日間）</div>
-      <p class="mbody">退所処理が実行されると、ケア記録画面の上部に赤いバーで退所者履歴が表示されます。</p>
-      <table class="mtbl"><tr><th>操作</th><th>内容</th></tr>
-        <tr><td>バーをタップ</td><td>退所者一覧を開閉する</td></tr>
-        <tr><td>「記録を見る」</td><td>退所前7日分のケア記録を確認</td></tr>
-        <tr><td>残り○日</td><td>履歴が自動削除されるまでの残日数</td></tr>
-      </table>
+      <p class="mbody">退所処理後、画面上部に赤いバーで退所者履歴が表示されます。「記録を見る」で退所前7日分のケア記録を確認できます。</p>
     </div>
 
     <!-- 7 -->
     <div class="msec" id="m7">
       <div class="msec-title"><span class="msec-num">7</span>クリア・元に戻す</div>
-      <p class="mbody">入力を間違えたときに、その部屋の画面表示だけをリセットします。Firebaseには書き込まれません。</p>
       <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」ボタンをタップします</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>入力内容が消え、「元に戻す」ボタンが12秒間表示されます</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>「元に戻す」を12秒以内にタップするとクリア前の状態に復元されます</div></div>
+        <div class="mstep"><div class="mstep-num">1</div><div>カード右下の「クリア」をタップ → 入力内容がリセットされます</div></div>
+        <div class="mstep"><div class="mstep-num">2</div><div>12秒以内に「元に戻す」をタップすると復元されます</div></div>
       </div>
-      <div class="mpoint mpoint-warn">⚠️　「元に戻す」が消えた後は復元できません。申し送りテキストには別途「↩ 元に戻す」ボタンがあり、最大20段階まで戻れます。</div>
+      <div class="mpoint mpoint-warn">⚠️　申し送りテキストは「↩ 元に戻す」ボタンで最大20段階まで個別に戻せます。</div>
     </div>
 
     <!-- 8 -->
     <div class="msec" id="m8">
       <div class="msec-title"><span class="msec-num">8</span>ダッシュボードの見方</div>
-      <div class="mssec">■ 統計カード</div>
-      <table class="mtbl"><tr><th>カード名</th><th>内容</th></tr>
+      <table class="mtbl"><tr><th>カード</th><th>内容</th></tr>
         <tr><td>薬変更あり</td><td>「有」を選んだ利用者の数</td></tr>
-        <tr><td>入浴あり（紫）</td><td>当日入浴にチェックが入っている利用者の数（入替含む）</td></tr>
+        <tr><td>入浴あり（紫）</td><td>当日入浴チェックが入っている数（入替含む）</td></tr>
       </table>
       <div class="mssec">■ 入浴者一覧</div>
-      <p class="mbody">当日入浴にチェックが入っている方を、介助詳細に設定した入浴方法（一般・リフト浴・機械浴・シャワー浴・清拭）でグループ分けして表示します。入浴方法が未設定の場合は「方法未設定」グループに表示されます。</p>
-      <div class="mssec">■ 最終排便　日数分布の色</div>
+      <p class="mbody">入浴チェックが入っている方を、介助詳細の入浴方法でグループ分けして表示します。入浴方法が未設定の場合は「方法未設定」グループに入ります。</p>
+      <div class="mssec">■ 最終排便 日数分布の色</div>
       <table class="mtbl"><tr><th>色</th><th>内容</th></tr>
-        <tr><td><span style="color:#16a34a;font-weight:700">緑</span></td><td>0〜-2日（最近排便あり）</td></tr>
+        <tr><td><span style="color:#16a34a;font-weight:700">緑</span></td><td>0〜-2日</td></tr>
         <tr><td><span style="color:#b45309;font-weight:700">黄</span></td><td>-3〜-4日（やや注意）</td></tr>
         <tr><td><span style="color:#dc2626;font-weight:700">赤</span></td><td>-5日以上（要注意）</td></tr>
-      </table>
-      <div class="mssec">■ 申し送り一覧</div>
-      <p class="mbody">各申し送りをタップすると、その方のケア項目を確認できるポップアップが開きます。右上の × で閉じます。</p>
-      <table class="mtbl"><tr><th>色</th><th>フロア・種別</th></tr>
-        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#93c5fd;border-radius:2px;vertical-align:middle"></span> 青</td><td>1F（100番台）</td></tr>
-        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#6ee7b7;border-radius:2px;vertical-align:middle"></span> 緑</td><td>2F（200番台）</td></tr>
-        <tr><td><span style="display:inline-block;width:12px;height:12px;background:#c4b5fd;border-radius:2px;vertical-align:middle"></span> 紫</td><td>入替の方</td></tr>
       </table>
     </div>
 
     <!-- 9 -->
     <div class="msec" id="m9">
       <div class="msec-title"><span class="msec-num">9</span>体重・身長の記録</div>
-      <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>上部の「体重・身長」タブをタップします</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>「表示月」で記録したい月を選択します</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>体重・身長欄に数字を入力します</div></div>
-        <div class="mstep"><div class="mstep-num">4</div><div>入力欄から外れると自動でBMIが計算・保存されます</div></div>
-      </div>
-      <div class="mpoint">📊　一覧には現在の入居者だけでなく、過去にケア記録や体重記録があった方（退所済みを含む全員）が表示されます。「履歴」ボタンで過去24ヶ月分の推移グラフを確認できます。</div>
+      <p class="mbody">「体重・身長」タブで月ごとに記録できます。一覧には現在の入居者だけでなく、過去にデータがあった方（退所済み含む全員）が表示されます。「履歴」ボタンで過去24ヶ月の推移グラフを確認できます。</p>
     </div>
 
     <!-- 10 -->
     <div class="msec" id="m10">
       <div class="msec-title"><span class="msec-num">10</span>リンクの登録と使い方</div>
-      <div class="msteps">
-        <div class="mstep"><div class="mstep-num">1</div><div>「リンク」タブをタップします</div></div>
-        <div class="mstep"><div class="mstep-num">2</div><div>プリセットボタン（Notion・Googleドライブなど）をタップするだけで追加できます</div></div>
-        <div class="mstep"><div class="mstep-num">3</div><div>独自のURLは「＋ リンクを追加」から名前・URL・絵文字を入力して登録します</div></div>
-      </div>
-      <div class="mpoint">🔗　登録したリンクはFirebaseに保存されるため、2台のiPadで共有されます。リンクカード右上の × で削除できます。</div>
+      <p class="mbody">プリセットボタン（Notion・Googleドライブなど）をタップするだけで追加できます。「＋ リンクを追加」から独自URLも登録できます。登録したリンクはFirebaseに保存され複数台で共有されます。</p>
     </div>
 
     <!-- 11 -->
     <div class="msec" id="m11">
       <div class="msec-title"><span class="msec-num">11</span>翌日への引き継ぎ・自動処理</div>
-      <p class="mbody">翌日以降の日付に切り替えたとき、以下の処理が自動で行われます。手動操作は不要です。</p>
+      <p class="mbody">翌日以降の日付に切り替えたとき（<strong>メイン機のみ</strong>）、以下の処理が自動で行われます。</p>
       <table class="mtbl"><tr><th>状況</th><th>自動で行われること</th></tr>
-        <tr><td>通常の利用者（引継）</td><td>最終排便が1日加算。入浴チェックはリセット</td></tr>
-        <tr><td>今日すでに入力した利用者</td><td>今日のデータがそのまま引き継がれる</td></tr>
-        <tr><td>退所ボタンを押した部屋</td><td>名前とデータが自動でクリアされ空室になる（退所者履歴に7日間保持）</td></tr>
-        <tr><td>入替の方がいた部屋</td><td>入替の方が自動でメイン利用者に移行。入替欄は空になる</td></tr>
+        <tr><td>引継データの利用者</td><td>最終排便が1日加算。入浴チェックはリセット</td></tr>
+        <tr><td>今日すでに入力済みの利用者</td><td>今日のデータがそのまま引き継がれる</td></tr>
+        <tr><td>退所ボタンを押した部屋</td><td>名前とデータが自動でクリアされ空室に（退所者履歴に7日間保持）</td></tr>
+        <tr><td>入替の方がいた部屋</td><td>入替の方が自動でメイン利用者に移行。介助詳細も引き継がれる</td></tr>
       </table>
-      <div class="mpoint mpoint-green">✅　過去の日付に戻した場合は退所処理・引継処理は実行されません。安心して過去の記録を確認できます。</div>
+      <div class="mpoint mpoint-green">✅　過去の日付に戻した場合は退所・引継処理は実行されません。</div>
     </div>
 
     <!-- 12 -->
     <div class="msec" id="m12">
       <div class="msec-title"><span class="msec-num">12</span>日付自動更新・アプリ化（PWA）</div>
-      <div class="mssec">■ 日付の自動更新</div>
       <table class="mtbl"><tr><th>タイミング</th><th>動作</th></tr>
-        <tr><td>深夜0時ちょうど</td><td>自動で翌日の日付に切り替わる（画面下にトースト通知）</td></tr>
-        <tr><td>iPadのスリープ復帰時</td><td>日付が変わっていれば即座に切り替わる</td></tr>
-        <tr><td>1分ごとのバックグラウンド確認</td><td>確実な切り替えのためのフォールバック</td></tr>
+        <tr><td>深夜0時</td><td>自動で翌日の日付に切り替わる</td></tr>
+        <tr><td>スリープ復帰時</td><td>日付が変わっていれば即座に切り替わる</td></tr>
+        <tr><td>1分ごと</td><td>バックグラウンドでも確認（フォールバック）</td></tr>
       </table>
       <div class="mssec">■ ホーム画面へのアプリ追加</div>
       <div class="msteps">
@@ -819,33 +782,44 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
         <div class="mstep"><div class="mstep-num">2</div><div>画面下の共有ボタン（□↑）をタップ</div></div>
         <div class="mstep"><div class="mstep-num">3</div><div>「ホーム画面に追加」→「追加」をタップ</div></div>
       </div>
-      <div class="mpoint">📱　2本指でピンチイン・ピンチアウトして画面を拡大・縮小できます。</div>
     </div>
 
     <!-- 13 -->
     <div class="msec" id="m13">
-      <div class="msec-title"><span class="msec-num">13</span>2台のiPadで同期する</div>
-      <p class="mbody">両方のiPadが同じURLを開いていれば、入力内容がリアルタイムで自動同期されます。特別な操作は不要です。</p>
-      <table class="mtbl"><tr><th>同期される</th><th>同期されない（端末ごとの設定）</th></tr>
-        <tr><td>ケアデータ（各項目・申し送り）</td><td>入替セクションの表示/非表示</td></tr>
-        <tr><td>介助詳細データ</td><td>追加セクションの表示/非表示</td></tr>
-        <tr><td>退所者履歴・外部リンク</td><td>クリア前のバックアップデータ</td></tr>
-        <tr><td>体重・身長データ</td><td>退所フラグ（退所ボタンの状態）</td></tr>
+      <div class="msec-title"><span class="msec-num">13</span>メイン機・サブ機の設定</div>
+      <p class="mbody">画面右上の「🟢 メイン機」または「🔵 サブ機」ボタンをタップすると設定できます。変更にはパスワードが必要です（初期値：1234）。</p>
+      <table class="mtbl"><tr><th>設定</th><th>担当フロア</th><th>引継処理</th></tr>
+        <tr><td>🟢 全フロア メイン機</td><td>1F・2F 両方</td><td>✅ 実行</td></tr>
+        <tr><td>🟩 1F メイン機</td><td>1F（100番台）のみ</td><td>✅ 実行</td></tr>
+        <tr><td>🟦 2F メイン機</td><td>2F（200番台）のみ</td><td>✅ 実行</td></tr>
+        <tr><td>🔵 サブ機</td><td>なし</td><td>❌ しない（表示・入力のみ）</td></tr>
       </table>
-      <div class="mpoint mpoint-warn">⚠️　日付切替は1台で操作してからもう1台を再読み込みすると、排便日数の不整合が起きにくくなります。</div>
+      <div class="mpoint mpoint-warn">⚠️　同じフロアを2台以上がメイン機に設定すると排便日が二重カウントされる場合があります。フロアごとに1台だけメイン機に設定してください。</div>
+      <div class="mpoint">💡　サブ機でも入力した内容はすべてFirebaseに保存・同期されます。</div>
     </div>
 
     <!-- 14 -->
     <div class="msec" id="m14">
-      <div class="msec-title"><span class="msec-num">14</span>よくある質問</div>
-      <div class="mfaq"><div class="mfaq-q">Q. 名前を間違えて入力してしまいました</div><div class="mfaq-a">名前欄をタップして正しい名前に修正し、Enterを押してください。新しい名前でデータを読み込み直します。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 申し送りを間違えて消してしまいました</div><div class="mfaq-a">申し送り欄の「↩ 元に戻す」ボタンをタップしてください（最大20段階）。カード全体のクリアは12秒以内に「元に戻す」で復元できます。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 入浴チェックが翌日に消えてしまいます</div><div class="mfaq-a">仕様です。入浴は毎日の記録なので翌日は自動でリセットされます。入浴方法の設定は介助詳細の「入浴」タブに入力すると引き継がれます。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 申し送りがダッシュボードに表示されない</div><div class="mfaq-a">テキスト入力後に少し待つと自動保存されます。ダッシュボードをタップし直してみてください。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 翌日に切り替えたら名前が消えてしまいました</div><div class="mfaq-a">退所ボタンが押されていた可能性があります。退所者履歴（画面上部の赤いバー）から「記録を見る」で確認できます。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 退所した方の記録を確認したい</div><div class="mfaq-a">退所後7日以内であれば、ケア記録画面上部の「退所者履歴」から「記録を見る」をタップしてください。退所前7日分のケア記録が確認できます。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 同期がうまくいかない</div><div class="mfaq-a">両方のiPadが同じWi-Fiに接続されているか確認してください。Safariを再読み込みすると解決することが多いです。</div></div>
-      <div class="mfaq"><div class="mfaq-q">Q. 排便日数が変わる人と変わらない人がいます</div><div class="mfaq-a">2台のiPadが同時に日付切替を行うと発生することがあります。1台で操作後にもう1台を再読み込みしてください。</div></div>
+      <div class="msec-title"><span class="msec-num">14</span>複数台での同期</div>
+      <p class="mbody">すべての端末が同じURLを開いていれば、入力内容がリアルタイムで自動同期されます。</p>
+      <table class="mtbl"><tr><th>同期される</th><th>端末ごとの設定（同期されない）</th></tr>
+        <tr><td>ケアデータ（各項目・申し送り）</td><td>入替セクションの表示/非表示</td></tr>
+        <tr><td>介助詳細・体重・身長</td><td>追加セクションの表示/非表示</td></tr>
+        <tr><td>退所者履歴・外部リンク</td><td>クリア前のバックアップデータ</td></tr>
+        <tr><td>メイン/サブ機の設定</td><td>退所フラグ（退所ボタンの状態）</td></tr>
+      </table>
+    </div>
+
+    <!-- 15 -->
+    <div class="msec" id="m15">
+      <div class="msec-title"><span class="msec-num">15</span>よくある質問</div>
+      <div class="mfaq"><div class="mfaq-q">Q. 名前を打ち換えても元に戻ってしまいます</div><div class="mfaq-a">他の端末で同じ名前のリスナーが動いている可能性があります。他のiPadを再読み込みしてから名前を変更してください。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 同じ名前の方を入力したら確認ダイアログが出た</div><div class="mfaq-a">同一人物の場合はOKを押してください（データが統合されます）。別の方の場合はキャンセルして末尾に「(2)」などを追加してください。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 排便日数が変わらない</div><div class="mfaq-a">この端末がサブ機に設定されている可能性があります。画面右上のボタンを確認し、担当フロアをメイン機に設定してください。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 入浴チェックが翌日に消える</div><div class="mfaq-a">仕様です。入浴は毎日の記録なので翌日は自動でリセットされます。入浴方法の設定は介助詳細の「入浴」タブに入力すると引き継がれます。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 退所した方の記録を確認したい</div><div class="mfaq-a">退所後7日以内であれば、ケア記録画面上部の「退所者履歴」から「記録を見る」をタップしてください。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 名前のスペースが違う人が別々に登録されてしまった</div><div class="mfaq-a">管理パネル（タイトルを5回タップ→🔧→PIN認証）の「データ統合」セクションから統合できます。</div></div>
+      <div class="mfaq"><div class="mfaq-q">Q. 同期がうまくいかない</div><div class="mfaq-a">すべての端末が同じWi-Fiに接続されているか確認し、Safariを再読み込みしてください。</div></div>
     </div>
 
   </div>
@@ -875,7 +849,7 @@ const F1_SET=new Set(F1);
 const HB=['0','不明','-1','-2','-3','-4','-5','-6','-7','-8','-9','-10'];
 const BATH_TYPES=['一般','リフト浴','機械浴','シャワー浴','清拭'];
 const YN=[{k:'renrakucho',l:'連絡帳'},{k:'yakuhenkou',l:'薬変更'},{k:'megusuri',l:'目薬'},{k:'nankou',l:'軟膏処置'}];
-const PROG_MAX=6;
+const PROG_MAX=5;
 
 // 日本時間でのローカル日付取得（toISOStringはUTCなので午前0〜9時に前日になるバグを防ぐ）
 function getLocalDate(){
@@ -2249,7 +2223,7 @@ function changeDeviceModePwd(){
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
-function prog(r){return[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben,S[r].extra].filter(v=>v).length;}
+function prog(r){return[S[r].renrakucho,S[r].yakuhenkou,S[r].megusuri,S[r].nankou,S[r].haiben].filter(v=>v).length;}
 function dotCol(p){return p===PROG_MAX?'#22c55e':p>0?'#f59e0b':'#cbd5e1';}
 function updateChip(r,p){const c=document.getElementById('chip-'+r);if(!c)return;c.className='chip'+(p===PROG_MAX?' done':p>0?' partial':'');c.querySelector('.chip-sub').textContent=p+'/'+PROG_MAX;}
 
@@ -2446,14 +2420,14 @@ function buildCard(r){
     <button class="sub-toggle-btn${vis?' active':''}" id="sub-toggle-${r}" onclick="toggleSub(${r})">${vis?'入替 非表示':'入替 表示'}</button>
     <button class="discharge-btn${discharged[r]?' on':''}" id="discharge-btn-${r}" onclick="toggleDischarge(${r})">${discharged[r]?'退所済':'退所'}</button>
     <button class="cn-toggle-btn${careNotesVisible[r]?' active':''}" id="cn-toggle-${r}" onclick="toggleCareNotes(${r})">${careNotesVisible[r]?'介助詳細 非表示':'介助詳細'}</button>
+    <button class="copy-btn" id="copy-btn-${r}" onclick="copyResidentData(${r},false)" title="コピー" style="padding:4px 9px">📋</button>
   </div>
 </div>
-<div style="padding:5px 12px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
+<div style="padding:5px 12px;border-top:0.5px solid #e8edf2;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
   <div style="display:flex;gap:5px;flex-wrap:wrap">
     <button class="extra-toggle-btn${extraSec[r].tools?' active':''}" id="extra-btn-tools-${r}" onclick="toggleExtraSec(${r},'tools',false)">用具・設備</button>
     <button class="extra-toggle-btn${extraSec[r].yaku?' active':''}" id="extra-btn-yaku-${r}" onclick="toggleExtraSec(${r},'yaku',false)">薬関連</button>
     <button class="extra-toggle-btn${extraSec[r].gaishu?' active':''}" id="extra-btn-gaishu-${r}" onclick="toggleExtraSec(${r},'gaishu',false)">外出</button>
-    <button class="copy-btn" id="copy-btn-${r}" onclick="copyResidentData(${r},false)">📋 コピー</button>
   </div>
   <button class="clear-btn" onclick="clearRoom(${r})">クリア</button>
 </div>
@@ -2471,16 +2445,14 @@ function buildCard(r){
     </div>
     ${buildHaibenMemo(r,'sub-',sd)}
   </div>
-  <div class="sub-foot" style="flex-direction:column;gap:6px;align-items:stretch">
+  <div class="sub-foot" style="flex-direction:row;gap:6px;align-items:center;justify-content:space-between;flex-wrap:wrap">
     <div style="display:flex;gap:5px;flex-wrap:wrap">
       <button class="extra-toggle-btn${subExtraSec[r].tools?' active':''}" id="sub-extra-btn-tools-${r}" onclick="toggleExtraSec(${r},'tools',true)">用具・設備</button>
       <button class="extra-toggle-btn${subExtraSec[r].yaku?' active':''}" id="sub-extra-btn-yaku-${r}" onclick="toggleExtraSec(${r},'yaku',true)">薬関連</button>
       <button class="extra-toggle-btn${subExtraSec[r].gaishu?' active':''}" id="sub-extra-btn-gaishu-${r}" onclick="toggleExtraSec(${r},'gaishu',true)">外出</button>
-      <button class="copy-btn" id="copy-btn-sub-${r}" onclick="copyResidentData(${r},true)">📋 コピー</button>
+      <button class="copy-btn" id="copy-btn-sub-${r}" onclick="copyResidentData(${r},true)" title="コピー" style="padding:4px 9px">📋</button>
     </div>
-    <div style="display:flex;justify-content:flex-end">
-      <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
-    </div>
+    <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
   </div>
 </div>
 ${buildCareNotesSection(r)}
