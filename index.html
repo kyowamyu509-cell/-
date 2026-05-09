@@ -56,12 +56,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .flash{font-size:10px;color:#16a34a;min-width:36px;text-align:right;opacity:0;transition:opacity 0.3s;flex-shrink:0}
 .flash.show{opacity:1}
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s}
-.card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
-.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.card-body{padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 .field{display:flex;flex-direction:column;gap:3px}
-.flabel{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em;display:flex;align-items:center;gap:3px}
+.flabel{font-size:9px;font-weight:500;color:#94a3b8;letter-spacing:0.04em;display:flex;align-items:center;gap:3px;margin-bottom:2px}
 .flabel-edit{font-size:10px;cursor:pointer;color:#93c5fd;padding:1px 4px;border-radius:4px;border:1px solid #e2e8f0;background:#f8fafc;font-family:'Noto Sans JP',sans-serif;line-height:1.4}
-.fsel{width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
+.fsel{width:100%;padding:4px 7px;border-radius:7px;border:0.5px solid #e2e8f0;font-size:12px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px}
 .fsel.v-ari{background-color:#eff6ff;border-color:#93c5fd;color:#2563eb}
 .fsel.v-hb{background-color:#fff;border-color:#cbd5e1}
 /* 入浴チェックボックス */
@@ -72,12 +72,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .bath-check-wrap.checked .bath-check-label{color:#2563eb}
 .memo-section{display:flex;flex-direction:column;gap:4px;margin-top:3px}
 .memo-section-label{font-size:10px;font-weight:500;color:#64748b;letter-spacing:0.04em}
-.haiben-row{display:flex;align-items:center;gap:7px;background:#f8fafc;border:0.5px solid #e2e8f0;border-bottom:none;border-radius:8px 8px 0 0;padding:5px 9px}
-.haiben-row-label{font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;flex-shrink:0}
-.haiben-sel{flex:1;border:none;background:transparent;font-size:13px;color:#1e293b;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;padding:0}
+.haiben-row{display:flex;align-items:center;gap:7px;background:#f8fafc;border:0.5px solid #e2e8f0;border-bottom:none;border-radius:7px 7px 0 0;padding:4px 8px}
+.haiben-row-label{font-size:10px;color:#64748b;font-weight:500;white-space:nowrap;flex-shrink:0}
+.haiben-sel{flex:1;border:none;background:transparent;font-size:12px;color:#1e293b;outline:none;font-family:'Noto Sans JP',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;padding:0}
 .haiben-sel.v-hb{color:#2563eb;font-weight:500}
 .haiben-sel.v-hb-warn{color:#dc2626;font-weight:700}
-.fmemo{width:100%;padding:7px 10px;border-radius:0 0 8px 8px;border:0.5px solid #e2e8f0;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:80px;line-height:1.7}
+.fmemo{width:100%;padding:6px 9px;border-radius:0 0 7px 7px;border:0.5px solid #e2e8f0;font-size:12px;color:#1e293b;background:#f8fafc;outline:none;font-family:'Noto Sans JP',sans-serif;resize:vertical;min-height:64px;line-height:1.7}
 .fmemo:focus{border-color:#cbd5e1;background:#fff}
 .card-foot{padding:6px 12px;border-top:0.5px solid #e8edf2;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .clear-btn{border:0.5px solid #fca5a5;border-radius:8px;padding:4px 12px;font-size:11px;color:#dc2626;background:#fff5f5;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
@@ -2589,28 +2589,61 @@ function renderDashboard(){
 }
 
 // ── 申し送り詳細モーダル ──────────────────────────
-function openMemoDetail(r,isSub){
+async function openMemoDetail(r,isSub){
   const d=isSub?SUB[r]:S[r];
   const isF1=F1_SET.has(r);
-  const flColor=isSub?'#7c3aed':isF1?'#2563eb':'#059669';
+  const flColor=isSub?'#7c3aed':isF1?'#4f46e5':'#059669';
   const flLabel=isSub?'入替':isF1?'1F':'2F';
-  const bdColor=isSub?'#c4b5fd':isF1?'#93c5fd':'#6ee7b7';
+  const bdColor=isSub?'#c4b5fd':isF1?'#a5b4fc':'#6ee7b7';
   function bdg(val,col){
     if(!val)return'<span style="font-size:12px;color:#94a3b8">未選択</span>';
-    return'<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+val+'</span>';
+    return'<span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:500;background:'+col+'22;color:'+col+';border:0.5px solid '+col+'44">'+val+'</span>';
   }
-  const ynRows=YN.map(f=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+f.l+'</span>'+bdg(d[f.k],'#2563eb')+'</div>').join('');
-  const bathRow=d.extra?'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+extraLabel+'</span>'+bdg(d.extra,'#7c3aed')+'</div>':'';
-  const hbRow='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-size:12px;color:#64748b;font-weight:500">最終排便</span>'+(d.haiben?'<span style="font-size:13px;font-weight:500;color:#0369a1">'+d.haiben+'日</span>':'<span style="font-size:12px;color:#94a3b8">未選択</span>')+'</div>';
-  const memoBlock=d.memo?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:6px">申し送り内容</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;line-height:1.8;color:#1e293b;white-space:pre-wrap">'+d.memo+'</div></div>':'';
+  const ynRows=YN.map(f=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">'+f.l+'</span>'+bdg(d[f.k],'#4f46e5')+'</div>').join('');
+  const bathRow=d.extra==='済'?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f1f5f9"><span style="font-size:12px;color:#64748b;font-weight:500">入浴（当日）</span><span style="font-size:12px;font-weight:500;color:#4f46e5">✓ 入浴済み</span></div>':'';
+  const hbRow='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0"><span style="font-size:12px;color:#64748b;font-weight:500">最終排便</span>'+(d.haiben?'<span style="font-size:13px;font-weight:500;color:#0369a1">'+d.haiben+'日</span>':'<span style="font-size:12px;color:#94a3b8">未選択</span>')+'</div>';
+
+  // 介助詳細を読み込む
+  let cn=careNotes[r];
+  if(!cn||(!cn.shintai&&!cn.ido&&!cn.shokuji_note&&!cn.nyuyoku_houhou&&!cn.haisetsu_note&&!cn.sonota)){
+    const data=await loadCareNotesByName(d.name);
+    cn={...emptyCareNotes(),...data};
+  }
+  const cnRow=(icon,label,val,warn=false)=>val?'<div style="padding:8px 0;border-bottom:0.5px solid #f1f5f9"><div style="font-size:10px;font-weight:500;color:#64748b;margin-bottom:3px">'+icon+' '+label+'</div><div style="font-size:12px;color:'+(warn?'#dc2626':'#1e293b')+';line-height:1.7;white-space:pre-wrap">'+val+'</div></div>':'';
+  const shokujiParts=[];
+  if(cn.shokuji_shushoku)shokujiParts.push('主食: '+cn.shokuji_shushoku);
+  if(cn.shokuji_fukushoku)shokujiParts.push('副食: '+cn.shokuji_fukushoku);
+  if(cn.shokuji_toro)shokujiParts.push('とろみ: '+cn.shokuji_toro);
+  if(cn.shokuji_iero)shokujiParts.push('胃ろう使用');
+  if(cn.shokuji_note)shokujiParts.push(cn.shokuji_note);
+  const haisetsuParts=[];
+  if(cn.omutsu&&cn.omutsu!=='なし')haisetsuParts.push('オムツ: '+cn.omutsu);
+  if(cn.rehapan&&cn.rehapan!=='なし')haisetsuParts.push('リハパン: '+cn.rehapan);
+  if(cn.pad&&cn.pad!=='なし')haisetsuParts.push('パッド: '+cn.pad);
+  if(cn.haisetsu_basho)haisetsuParts.push('場所: '+cn.haisetsu_basho);
+  if(cn.haisetsu_freq)haisetsuParts.push('頻度: '+cn.haisetsu_freq);
+  if(cn.haisetsu_note)haisetsuParts.push(cn.haisetsu_note);
+  const nyuyokuVal=[cn.nyuyoku_houhou,cn.nyuyoku_note].filter(Boolean).join('　');
+
+  const cnBlock=[
+    cnRow('🏥','身体情報・注意事項',cn.shintai,true),
+    cnRow('🚶','移動・移乗',cn.ido),
+    cnRow('🍚','食事',shokujiParts.join(' / ')),
+    cnRow('🛁','入浴',nyuyokuVal),
+    cnRow('🚽','排泄',haisetsuParts.join(' / ')),
+    cnRow('📝','その他',cn.sonota),
+  ].filter(Boolean).join('');
+
+  const cnSection=cnBlock?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:600;color:#059669;margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="background:#059669;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px">介助詳細</span></div><div style="border:0.5px solid #d1fae5;border-radius:8px;padding:0 12px;background:#f9fffd">'+cnBlock+'<div style="height:4px"></div></div></div>':'';
+
   document.getElementById('modalContent').innerHTML=
     '<button class="modal-close" onclick="closeModal()">×</button>'+
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'+
-    '<span style="font-size:22px;font-weight:700;color:#1e293b">'+r+'号室</span>'+
-    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+flColor+'22;color:'+flColor+';border:1px solid '+bdColor+'">'+flLabel+'</span>'+
-    '<span style="font-size:16px;font-weight:500;color:#1e293b;flex:1">'+(d.name||'（名前未入力）')+'</span></div>'+
-    '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;margin-bottom:6px">'+ynRows+bathRow+hbRow+'</div>'+
-    memoBlock;
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'+
+    '<span style="font-size:20px;font-weight:700;color:#1e293b">'+r+'号室</span>'+
+    '<span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;background:'+flColor+'22;color:'+flColor+';border:0.5px solid '+bdColor+'">'+flLabel+'</span>'+
+    '<span style="font-size:15px;font-weight:500;color:#1e293b;flex:1">'+(d.name||'（名前未入力）')+'</span></div>'+
+    '<div style="border:0.5px solid #e2e8f0;border-radius:10px;padding:0 12px;margin-bottom:4px">'+ynRows+bathRow+hbRow+'</div>'+
+    cnSection;
   document.getElementById('modalBg').style.display='flex';
 }
 
