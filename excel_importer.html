@@ -2,7 +2,664 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CS式アセス → ケア記録 インポートツール</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;color:#1e293b;font-size:15px;padding:20px}
+h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.sub{font-size:12px;color:#64748b;margin-bottom:20px}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px 20px;margin-bottom:14px;max-width:820px}
+.card-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.badge{font-size:10px;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:20px;font-weight:500}
+.drop-zone{border:2px dashed #93c5fd;border-radius:10px;padding:30px;text-align:center;cursor:pointer;background:#f8fafc;transition:all 0.2s}
+.drop-zone:hover,.drop-zone.drag{border-color:#2563eb;background:#eff6ff}
+.drop-zone input{display:none}
+.drop-icon{font-size:36px;margin-bottom:10px}
+.drop-text{font-size:13px;color:#64748b;margin-bottom:8px}
+.drop-hint{font-size:11px;color:#94a3b8}
+.field-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.field-label{font-size:12px;font-weight:500;color:#64748b;min-width:130px;padding-top:7px;flex-shrink:0}
+.field-val{flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;min-width:0;font-family:inherit}
+.field-val:focus{border-color:#93c5fd;background:#fff}
+textarea.field-val{resize:vertical;min-height:60px;line-height:1.7}
+select.field-val{cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:24px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.room-sel-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.room-sel-row label{font-size:12px;font-weight:500;color:#64748b;min-width:24px}
+.room-grid{display:flex;flex-wrap:wrap;gap:6px}
+.room-btn{padding:6px 12px;font-size:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;font-family:inherit;color:#64748b}
+.room-btn.selected{background:#2563eb;color:#fff;border-color:#2563eb}
+.btn{padding:10px 22px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-primary:disabled{background:#cbd5e1;cursor:not-allowed}
+.btn-gray{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}
+.status{font-size:12px;padding:9px 13px;border-radius:8px;margin-top:10px;display:none}
+.status.ok{background:#f0fdf4;color:#16a34a;border:1px solid #86efac;display:block}
+.status.err{background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;display:block}
+.status.info{background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;display:block}
+.section-divider{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;margin:16px 0 8px;border-top:1px solid #f1f5f9;padding-top:12px}
+</style>
+</head>
+<body>
+<div style="margin-bottom:14px">
+  <button onclick="history.back()" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 16px;font-size:13px;color:#64748b;background:#f8fafc;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px">← ケア記録に戻る</button>
+</div>
+<h1>📥 CS式アセス → ケア記録 インポートツール</h1>
+<p class="sub">CS式アセスメントシートのExcelファイルを読み込んで、ケア記録アプリに取り込みます。</p>
+
+<div class="card">
+  <div class="card-title">🔥 Firebase接続 <span class="badge">自動</span></div>
+  <div id="fbStatus" class="status info">接続中...</div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 Excelファイルを選択</div>
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+    <div class="drop-icon">📊</div>
+    <div class="drop-text">CS式アセス_最新.xlsmをここにドロップ<br>またはクリックして選択</div>
+    <div class="drop-hint">対応形式: .xlsm .xlsx</div>
+    <input type="file" id="fileInput" accept=".xlsm,.xlsx" onchange="readExcel(this.files[0])">
+  </div>
+  <div id="fileStatus" class="status"></div>
+</div>
+
+<div class="card" id="previewCard" style="display:none">
+  <div class="card-title">👁️ 読み込み内容の確認・編集 <span class="badge">必要であれば修正してください</span></div>
+
+  <div class="section-divider">▌ 基本情報</div>
+  <div class="field-row">
+    <div class="field-label">氏名 *（利用者）</div>
+    <input class="field-val" id="f_name" placeholder="山田 太郎">
+  </div>
+
+  <div class="section-divider">▌ 身体・介助情報</div>
+  <div class="field-row">
+    <div class="field-label">身長 (cm)</div>
+    <input class="field-val" id="f_height" type="number" step="0.1" placeholder="165.0" style="max-width:130px">
+  </div>
+  <div class="field-row">
+    <div class="field-label">体重 (kg)</div>
+    <input class="field-val" id="f_weight" type="number" step="0.1" placeholder="60.0" style="max-width:130px">
+  </div>
+  <div class="field-row">
+    <div class="field-label">身体情報・注意点</div>
+    <textarea class="field-val" id="f_shintai" placeholder="既往歴・アレルギー・禁忌など（自動生成）"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 移動</div>
+  <div class="field-row">
+    <div class="field-label">移動・移乗</div>
+    <textarea class="field-val" id="f_ido" placeholder="例：歩行器使用・見守り、移乗は2名介助、左麻痺に注意" rows="3"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 入浴</div>
+  <div class="field-row">
+    <div class="field-label">入浴方法</div>
+    <select class="field-val" id="f_nyuyoku_houhou">
+      <option value="">未設定</option>
+      <option>一般</option><option>リフト浴</option><option>機械浴</option><option>シャワー浴</option><option>清拭</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">入浴注意点</div>
+    <textarea class="field-val" id="f_nyuyoku_note" placeholder="例：全介助・座位不安定、皮膚に傷あり注意" rows="2"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 食事</div>
+  <div class="field-row">
+    <div class="field-label">主食</div>
+    <select class="field-val" id="f_shushoku">
+      <option value="">未設定</option>
+      <option>常食</option><option>軟飯</option><option>お粥</option><option>ペースト</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">副食</div>
+    <select class="field-val" id="f_fukushoku">
+      <option value="">未設定</option>
+      <option>常食</option><option>一口大</option><option>刻み</option><option>極刻み</option><option>ペースト</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">食事備考</div>
+    <textarea class="field-val" id="f_shokuji_note" placeholder="食事介助・嚥下・注意事項" rows="2"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 排泄・オムツ</div>
+  <div class="field-row">
+    <div class="field-label">オムツ（テープ型）</div>
+    <select class="field-val" id="f_omutsu">
+      <option value="">なし</option><option>S</option><option>M</option><option>L</option><option>LL</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">リハパン</div>
+    <select class="field-val" id="f_rehapan">
+      <option value="">なし</option><option>S</option><option>M</option><option>L</option><option>LL</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">パット</div>
+    <select class="field-val" id="f_pad">
+      <option value="">なし</option><option>レギュラー</option><option>パワフル</option><option>ビッグ</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">排泄場所</div>
+    <select class="field-val" id="f_haisetsu_basho">
+      <option value="">未設定</option>
+      <option>トイレ</option><option>ポータブルトイレ</option><option>床上（オムツ内）</option><option>尿道カテーテル</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">交換頻度</div>
+    <select class="field-val" id="f_haisetsu_freq">
+      <option value="">未設定</option>
+      <option>随時</option><option>2時間ごと</option><option>3時間ごと</option><option>4時間ごと</option><option>排泄時</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-label">排泄注意点</div>
+    <textarea class="field-val" id="f_haisetsu_note" placeholder="例：全介助・声かけ要、尿意あり呼ぼん使用、皮膚トラブルに注意" rows="2"></textarea>
+  </div>
+
+  <div class="section-divider">▌ 薬情報</div>
+  <div class="field-row">
+    <div class="field-label">薬の詳細</div>
+    <textarea class="field-val" id="f_yaku" placeholder="薬名・服用時間・注意事項など" rows="3"></textarea>
+  </div>
+
+  <div class="section-divider">▌ その他</div>
+  <div class="field-row">
+    <div class="field-label">生活歴</div>
+    <textarea class="field-val" id="f_seikatsu" rows="2"></textarea>
+  </div>
+  <div class="field-row">
+    <div class="field-label">その他メモ</div>
+    <textarea class="field-val" id="f_sonota" rows="2" placeholder="介助上の特記事項など（介助詳細→その他に保存）"></textarea>
+  </div>
+</div>
+
+<div class="card" id="importCard" style="display:none">
+  <div class="card-title">🏠 インポート先の部屋を選択</div>
+  <div class="room-sel-row">
+    <label>1F</label>
+    <div class="room-grid" id="roomGrid1"></div>
+  </div>
+  <div class="room-sel-row">
+    <label>2F</label>
+    <div class="room-grid" id="roomGrid2"></div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-primary" id="importBtn" onclick="doImport()" disabled>🚀 この部屋にインポート</button>
+    <button class="btn btn-gray" onclick="copyAllText()">📋 テキストでコピー</button>
+  </div>
+  <div id="importStatus" class="status"></div>
+</div>
+
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyBCUKrjGlyOqigYrwySaqQjUYRsyXv-_Ys",authDomain:"mousi-bab8c.firebaseapp.com",databaseURL:"https://mousi-bab8c-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"mousi-bab8c",storageBucket:"mousi-bab8c.firebasestorage.app",messagingSenderId:"560482916279",appId:"1:560482916279:web:153f51a24929f3dbc5ba32"};
+let db=null;
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db=firebase.database();
+  db.ref('.info/connected').on('value',s=>{
+    const el=document.getElementById('fbStatus');
+    if(s.val()){el.className='status ok';el.textContent='✅ Firebase接続完了';}
+    else{el.className='status err';el.textContent='⚠️ Firebase未接続';}
+  });
+}catch(e){document.getElementById('fbStatus').className='status err';document.getElementById('fbStatus').textContent='❌ 接続エラー: '+e.message;}
+
+function normName(n){return(n||'').trim().replace(/[\s\u3000]+/g,'');}
+function encKey(n){const norm=normName(n);return encodeURIComponent(norm).replace(/\./g,'%2E').replace(/#/g,'%23').replace(/\$/g,'%24').replace(/\[/g,'%5B').replace(/\]/g,'%5D');}
+
+const F1=[101,102,103,105,106,107,108,110,111,112];
+const F2=[201,202,203,205,206,207,208,210,211,212];
+let selectedRoom=null;
+
+['roomGrid1','roomGrid2'].forEach((id,fi)=>{
+  const rooms=fi===0?F1:F2;
+  document.getElementById(id).innerHTML=rooms.map(r=>`<button class="room-btn" id="rbtn-${r}" onclick="selectRoom(${r})">${r}</button>`).join('');
+});
+function selectRoom(r){
+  if(selectedRoom)document.getElementById('rbtn-'+selectedRoom).className='room-btn';
+  selectedRoom=r;
+  document.getElementById('rbtn-'+r).className='room-btn selected';
+  document.getElementById('importBtn').disabled=false;
+}
+
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').className='drop-zone drag';}
+function onDragLeave(){document.getElementById('dropZone').className='drop-zone';}
+function onDrop(e){e.preventDefault();onDragLeave();const f=e.dataTransfer.files[0];if(f)readExcel(f);}
+
+function cv(rows,r,c){return rows[r]&&rows[r][c]!=null?String(rows[r][c]).trim():'';}
+function nz(v){return v&&v!=='0'&&v!=='None'?v:'';}
+
+function readExcel(file){
+  if(!file)return;
+  const el=document.getElementById('fileStatus');
+  el.className='status info';el.textContent='読み込み中...';
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+
+      const wsBasic=wb.Sheets['基本情報'];
+      const wsDetail=wb.Sheets['詳細情報（初回）']||wb.Sheets[wb.SheetNames.find(s=>s.includes('詳細'))||''];
+
+      const toRows=ws=>{
+        if(!ws)return[];
+        const ref=ws['!ref']||'A1:A1';
+        const range=XLSX.utils.decode_range(ref);
+        const rows=[];
+        for(let r=range.s.r;r<=range.e.r;r++){
+          const row=[];
+          for(let c=range.s.c;c<=range.e.c;c++){
+            const cell=ws[XLSX.utils.encode_cell({r,c})];
+            row.push(cell!=null?String(cell.v||'').trim():'');
+          }
+          rows.push(row);
+        }
+        return rows;
+      };
+
+      const bRows=toRows(wsBasic);
+      const dRows=toRows(wsDetail);
+      const data={};
+
+      // 氏名のみ取得（個人特定につながる属性は取得しない）
+      if(bRows.length>=3){
+        data.name = nz(cv(bRows,2,2)); // 行3 C列 = 利用者氏名
+      }
+
+      // 介護上の注意点
+      for(let ri=13;ri<Math.min(25,bRows.length);ri++){
+        const row=bRows[ri];
+        if(row[0]==='介護上の注意点'&&bRows[ri+1]){
+          data.kaigonote=bRows[ri+1].filter(v=>v&&v!=='0').join(' ');break;
+        }
+      }
+
+      // 生活歴
+      for(let ri=13;ri<Math.min(25,bRows.length);ri++){
+        if(bRows[ri][0]==='生活歴'&&bRows[ri+1]){
+          data.seikatsu=bRows[ri+1].filter(v=>v&&v!=='0').join(' ');break;
+        }
+      }
+
+      // 薬情報
+      const yakuLines=[];
+      for(let ri=0;ri<bRows.length;ri++){
+        const row=bRows[ri];
+        if(row.includes('薬名')&&row.includes('服用時間')){
+          for(let k=ri+2;k<Math.min(ri+20,bRows.length);k++){
+            const yakuRow=bRows[k];
+            const yakuName=nz(yakuRow[1]||yakuRow[2]||'');
+            if(yakuName&&yakuName!=='薬名'){
+              const times=[];
+              [4,5,6,7,8].forEach(ci=>{if(nz(yakuRow[ci])&&yakuRow[ci]!=='0')times.push(['朝','昼','夕','起床','眠前'][ci-4]+':'+yakuRow[ci]);});
+              yakuLines.push(yakuName+(times.length?'（'+times.join(' ')+'）':''));
+            }
+          }
+          break;
+        }
+      }
+      if(yakuLines.length)data.yaku=yakuLines.join('\n');
+
+      // 既往歴（介護注意点の一部として扱う）
+      const kiouVals=[];
+      for(let ri=0;ri<bRows.length;ri++){
+        if(bRows[ri][0]==='既往歴'){
+          for(let k=ri+1;k<Math.min(ri+6,bRows.length);k++){
+            const v=bRows[k].filter(x=>nz(x)&&x!=='既往歴').join(' / ');
+            if(v)kiouVals.push(v);
+          }
+          break;
+        }
+      }
+      if(kiouVals.length)data.kiou=kiouVals.join('　');
+
+      // 食事歴（主食・副食）
+      for(let ri=0;ri<bRows.length;ri++){
+        if(bRows[ri][0]==='食事歴'){
+          for(let k=ri+1;k<Math.min(ri+8,bRows.length);k++){
+            const row=bRows[k];
+            if(row[1]==='主食'){const v=row.slice(3).find(x=>nz(x));if(v&&!data.shushoku)data.shushoku=v;}
+            if(row[1]==='副食'){const v=row.slice(3).find(x=>nz(x));if(v&&!data.fukushoku)data.fukushoku=v;}
+          }
+          break;
+        }
+      }
+
+      // 詳細情報から身長・体重・食事
+      for(let ri=0;ri<dRows.length;ri++){
+        const row=dRows[ri];
+        for(let ci=0;ci<row.length;ci++){
+          if(row[ci]==='身長'&&nz(row[ci+1])&&parseFloat(row[ci+1])>0)data.height=row[ci+1];
+          if(row[ci]==='体重'&&nz(row[ci+1])&&parseFloat(row[ci+1])>0)data.weight=row[ci+1];
+          if(row[ci]==='主食'&&!data.shushoku&&dRows[ri+1]&&nz(dRows[ri+1][ci]))data.shushoku=dRows[ri+1][ci];
+          if(row[ci]==='副食'&&!data.fukushoku&&dRows[ri+1]&&nz(dRows[ri+1][ci]))data.fukushoku=dRows[ri+1][ci];
+        }
+      }
+
+      // ── 移動・移乗（全シートを横断してキーワード検索）──
+      const allSheets=[bRows,dRows];
+      const idoKeywords=['移動','移乗','歩行','車椅子'];
+      for(const rows of allSheets){
+        for(let ri=0;ri<rows.length&&!data.ido;ri++){
+          const row=rows[ri];
+          for(let ci=0;ci<row.length&&!data.ido;ci++){
+            if(idoKeywords.some(kw=>row[ci]===kw)){
+              // ヘッダー行の次行から値を収集
+              const vals=[];
+              for(let k=ri;k<Math.min(ri+4,rows.length);k++){
+                const v=rows[k].filter(x=>nz(x)&&!idoKeywords.includes(x)).join(' ');
+                if(v)vals.push(v);
+              }
+              if(vals.length)data.ido=vals.join(' / ');
+            }
+          }
+        }
+      }
+
+      // ── 入浴（入浴方法・注意点）──
+      const bathKeywords=['入浴','浴槽','シャワー'];
+      const bathMethods=['一般','リフト浴','機械浴','シャワー浴','清拭','特浴'];
+      for(const rows of allSheets){
+        for(let ri=0;ri<rows.length;ri++){
+          const row=rows[ri];
+          for(let ci=0;ci<row.length;ci++){
+            if(bathKeywords.some(kw=>row[ci].includes(kw))){
+              // 同行・近傍行からメソッドと注意点を探す
+              if(!data.nyuyoku_houhou){
+                const flat=[...row,...(rows[ri+1]||[]),...(rows[ri+2]||[])].filter(nz);
+                data.nyuyoku_houhou=flat.find(v=>bathMethods.some(m=>v.includes(m)))||'';
+              }
+              if(!data.nyuyoku_note){
+                const noteVals=[];
+                for(let k=ri;k<Math.min(ri+3,rows.length);k++){
+                  const v=rows[k].filter(x=>nz(x)&&!bathKeywords.some(kw=>x===kw)).join(' ');
+                  if(v)noteVals.push(v);
+                }
+                if(noteVals.length)data.nyuyoku_note=noteVals.join(' ');
+              }
+              break;
+            }
+          }
+        }
+      }
+
+      // ── 排泄・オムツ（キーワード検索）──
+      const omutsuTypes=['テープ型','テープ式','オムツ'];
+      const rehapanTypes=['リハパン','リハビリパンツ','パンツ型'];
+      const padTypes=['パット','パッド','尿取り'];
+      const sizeMap=(v)=>{
+        if(v.includes('SS'))return'SS';
+        if(v.includes('LL'))return'LL';
+        if(v.includes('L '))return'L';
+        if(/[^LLい]L$/.test(v))return'L';
+        if(v.includes(' M')||v.endsWith('M'))return'M';
+        if(v.includes(' S')||v.endsWith('S'))return'S';
+        return'';
+      };
+      for(const rows of allSheets){
+        for(let ri=0;ri<rows.length;ri++){
+          const row=rows[ri];
+          const rowStr=row.join(' ');
+          if(!data.omutsu&&omutsuTypes.some(k=>rowStr.includes(k))){
+            const sz=sizeMap(rowStr);if(sz)data.omutsu=sz;
+          }
+          if(!data.rehapan&&rehapanTypes.some(k=>rowStr.includes(k))){
+            const sz=sizeMap(rowStr);if(sz)data.rehapan=sz;
+          }
+          if(!data.pad&&padTypes.some(k=>rowStr.includes(k))){
+            if(rowStr.includes('ビッグ')||rowStr.includes('大'))data.pad='ビッグ';
+            else if(rowStr.includes('パワフル')||rowStr.includes('中'))data.pad='パワフル';
+            else if(rowStr.includes('レギュラー')||rowStr.includes('小'))data.pad='レギュラー';
+          }
+          // 排泄場所
+          if(!data.haisetsu_basho){
+            if(rowStr.includes('トイレ誘導')||rowStr.includes('トイレへ'))data.haisetsu_basho='トイレ';
+            else if(rowStr.includes('ポータブル'))data.haisetsu_basho='ポータブルトイレ';
+            else if(rowStr.includes('カテーテル'))data.haisetsu_basho='尿道カテーテル';
+            else if(rowStr.includes('床上'))data.haisetsu_basho='床上（オムツ内）';
+          }
+        }
+      }
+      // 排泄注意点（排泄 or 排便 ヘッダー近傍）
+      for(const rows of allSheets){
+        for(let ri=0;ri<rows.length&&!data.haisetsu_note;ri++){
+          if(['排泄','排便','排尿'].some(kw=>rows[ri][0]===kw||rows[ri][1]===kw)){
+            const vals=[];
+            for(let k=ri;k<Math.min(ri+3,rows.length);k++){
+              const v=rows[k].filter(x=>nz(x)&&x!=='排泄'&&x!=='排便').join(' ');
+              if(v)vals.push(v);
+            }
+            if(vals.length)data.haisetsu_note=vals.join(' / ');
+          }
+        }
+      }
+
+      // ── フォームに反映（個人情報は含めない）──
+      setField('f_name',     data.name||'');
+      setField('f_height',   data.height||'');
+      setField('f_weight',   data.weight||'');
+      setField('f_ido',      data.ido||'');
+      setField('f_nyuyoku_houhou', data.nyuyoku_houhou||'');
+      setField('f_nyuyoku_note',   data.nyuyoku_note||'');
+      setField('f_shushoku', data.shushoku||'');
+      setField('f_fukushoku',data.fukushoku||'');
+      setField('f_yaku',     data.yaku||'');
+      setField('f_seikatsu', data.seikatsu||'');
+      setField('f_omutsu',        data.omutsu||'');
+      setField('f_rehapan',       data.rehapan||'');
+      setField('f_pad',           data.pad||'');
+      setField('f_haisetsu_basho',data.haisetsu_basho||'');
+      setField('f_haisetsu_freq', data.haisetsu_freq||'');
+      setField('f_haisetsu_note', data.haisetsu_note||'');
+
+      // 身体情報：既往歴＋介護注意点のみ（性別・生年月日・要介護度は含めない）
+      const shintaiParts=[];
+      if(data.kiou)      shintaiParts.push('既往歴: '+data.kiou);
+      if(data.kaigonote) shintaiParts.push('介護注意: '+data.kaigonote);
+      setField('f_shintai', shintaiParts.join('\n'));
+
+      // その他：空欄（緊急連絡先は取り込まない）
+      setField('f_sonota', '');
+
+      el.className='status ok';
+      el.textContent='✅ 読み込み完了！内容を確認してからインポートしてください。';
+      document.getElementById('previewCard').style.display='block';
+      document.getElementById('importCard').style.display='block';
+
+    }catch(err){
+      el.className='status err';
+      el.textContent='❌ 読み込みエラー: '+err.message;
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function setField(id,val){
+  const el=document.getElementById(id);if(!el)return;
+  if(el.tagName==='SELECT'){
+    for(const opt of el.options){if(opt.value&&val&&val.includes(opt.value)){el.value=opt.value;return;}}
+    el.value='';
+  }else{el.value=val||'';}
+}
+
+async function loadAllResidentNames(){
+  const names=[];
+  if(!db)return names;
+  try{
+    const snap=await db.ref('residents').get();
+    if(snap.exists()){
+      Object.keys(snap.val()).forEach(k=>{
+        try{names.push(decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']')));}catch(e){}
+      });
+    }
+  }catch(e){}
+  return names;
+}
+
+function showImportSameNameModal(inputName,existing){
+  return new Promise(resolve=>{
+    const sameKey=existing.filter(n=>normName(n)===normName(inputName));
+    const exactMatch=sameKey.find(n=>n===inputName);
+    const spaceDiff=sameKey.filter(n=>n!==inputName);
+    let desc='';
+    if(spaceDiff.length&&!exactMatch){
+      desc=`<span style="color:#b45309;font-weight:500">スペースの違いのみ</span>の名前がすでにFirebaseに登録されています。`;
+    }else{
+      desc=`<span style="color:#b45309;font-weight:500">同じ名前</span>がすでにFirebaseに登録されています。`;
+    }
+    const rows=sameKey.map(n=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:700;color:#1e293b">${n}</span>
+        ${n!==inputName?`<span style="font-size:10px;color:#64748b">← 入力:「${inputName}」</span>`:''}
+      </div>`).join('');
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML=`
+      <div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+        <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px">⚠️ 既存データが見つかりました</div>
+        <p style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.7">${desc}</p>
+        <div style="margin-bottom:14px">${rows}</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onclick="this.closest('div[style*=fixed]').remove();window._importResolve('merge')"
+            style="padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+            🔗 既存データに統合する（ケア記録・体重は既存優先）
+          </button>
+          <button onclick="this.closest('div[style*=fixed]').remove();window._importResolve('new')"
+            style="padding:11px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+            ➕ 別人として新規登録する（介助詳細・体重のみ上書き）
+          </button>
+          <button onclick="this.closest('div[style*=fixed]').remove();window._importResolve('cancel')"
+            style="padding:9px;background:none;color:#94a3b8;border:none;cursor:pointer;font-size:12px;font-family:inherit">
+            キャンセル
+          </button>
+        </div>
+      </div>`;
+    window._importResolve=resolve;
+    document.body.appendChild(modal);
+  });
+}
+
+async function doImport(){
+  if(!selectedRoom){alert('部屋を選択してください');return;}
+  const name=document.getElementById('f_name').value.trim();
+  if(!name){alert('氏名（利用者名）は必須です');return;}
+
+  const allNames=await loadAllResidentNames();
+  const matches=allNames.filter(n=>normName(n)===normName(name));
+  let mergeMode='new';
+  if(matches.length){
+    const choice=await showImportSameNameModal(name,matches);
+    if(choice==='cancel')return;
+    mergeMode=choice;
+  }
+
+  const btn=document.getElementById('importBtn');
+  const st=document.getElementById('importStatus');
+  btn.disabled=true;btn.textContent='インポート中...';
+  st.className='status info';st.textContent='Firebaseに書き込み中...';
+
+  try{
+    const k=encKey(name);
+
+    // 1. 部屋名を設定
+    await db.ref('residents/'+k+'/room').set(selectedRoom);
+    await db.ref('rooms/'+selectedRoom+'/name').set(name);
+
+    // 2. 介助詳細（careNotes）個人情報フィールドは保存しない
+    const newCareNotes={
+      shintai:    document.getElementById('f_shintai').value,
+      ido:        document.getElementById('f_ido').value,
+      nyuyoku_houhou: document.getElementById('f_nyuyoku_houhou').value,
+      nyuyoku_note:   document.getElementById('f_nyuyoku_note').value,
+      shokuji_shushoku:  document.getElementById('f_shushoku').value,
+      shokuji_fukushoku: document.getElementById('f_fukushoku').value,
+      shokuji_toro:'',shokuji_iero:false,
+      shokuji_note:document.getElementById('f_shokuji_note').value,
+      haisetsu_note: document.getElementById('f_haisetsu_note').value,
+      omutsu:        document.getElementById('f_omutsu').value,
+      rehapan:       document.getElementById('f_rehapan').value,
+      pad:           document.getElementById('f_pad').value,
+      haisetsu_basho:document.getElementById('f_haisetsu_basho').value,
+      haisetsu_freq: document.getElementById('f_haisetsu_freq').value,
+      sonota:document.getElementById('f_sonota').value
+    };
+    if(mergeMode==='merge'){
+      const existingCN=await db.ref('residents/'+k+'/careNotes').get();
+      const exCN=existingCN.exists()?existingCN.val():{};
+      const mergedCN={...newCareNotes};
+      Object.keys(exCN).forEach(key=>{if(exCN[key]&&exCN[key]!==''&&exCN[key]!==false)mergedCN[key]=exCN[key];});
+      await db.ref('residents/'+k+'/careNotes').set(mergedCN);
+    }else{
+      await db.ref('residents/'+k+'/careNotes').set(newCareNotes);
+    }
+
+    // 3. 薬関連メモ（latest）
+    const yakuNote=document.getElementById('f_yaku').value;
+    if(mergeMode==='merge'){
+      const existingLatest=await db.ref('residents/'+k+'/latest').get();
+      if(!existingLatest.exists()&&yakuNote){
+        const latestData={renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:yakuNote||'',gaishuDate:'',gaishuNote:''};
+        await db.ref('residents/'+k+'/latest').set(latestData);
+      }else if(existingLatest.exists()&&yakuNote&&!existingLatest.val().yakuNote){
+        await db.ref('residents/'+k+'/latest/yakuNote').set(yakuNote);
+      }
+    }else{
+      const latestData={renrakucho:'',yakuhenkou:'',megusuri:'',nankou:'',haiben:'',extra:'',memo:'',rubber:'',bedNC:'',yakuNote:yakuNote||'',gaishuDate:'',gaishuNote:''};
+      await db.ref('residents/'+k+'/latest').set(latestData);
+    }
+
+    // 4. 体重・身長（今月分）
+    const h=document.getElementById('f_height').value;
+    const w=document.getElementById('f_weight').value;
+    if(h||w){
+      const now=new Date();
+      const monthKey=now.getFullYear()+'_'+String(now.getMonth()+1).padStart(2,'0');
+      if(mergeMode==='merge'){
+        const existWH=await db.ref('wh/'+k+'/'+monthKey).get();
+        if(!existWH.exists())await db.ref('wh/'+k+'/'+monthKey).set({weight:w||'',height:h||''});
+      }else{
+        await db.ref('wh/'+k+'/'+monthKey).set({weight:w||'',height:h||''});
+      }
+    }
+
+    const modeLabel=mergeMode==='merge'?'統合':'新規登録';
+    st.className='status ok';
+    st.innerHTML=`✅ ${modeLabel}完了！<br>${selectedRoom}号室に「${name}」さんのデータを書き込みました。<br>ケア記録アプリを<strong>再読み込み</strong>すると反映されます。`;
+    btn.textContent='✅ 完了';
+
+  }catch(e){
+    st.className='status err';st.textContent='❌ エラー: '+e.message;
+    btn.disabled=false;btn.textContent='🚀 この部屋にインポート';
+  }
+}
+
+function copyAllText(){
+  const ids=['f_name','f_height','f_weight','f_shintai','f_ido','f_nyuyoku_houhou','f_nyuyoku_note','f_shushoku','f_fukushoku','f_shokuji_note','f_omutsu','f_rehapan','f_pad','f_haisetsu_basho','f_haisetsu_freq','f_haisetsu_note','f_yaku','f_seikatsu','f_sonota'];
+  const labels={f_name:'氏名',f_height:'身長(cm)',f_weight:'体重(kg)',f_shintai:'身体情報',f_ido:'移動・移乗',f_nyuyoku_houhou:'入浴方法',f_nyuyoku_note:'入浴注意点',f_shushoku:'主食',f_fukushoku:'副食',f_shokuji_note:'食事備考',f_omutsu:'オムツ',f_rehapan:'リハパン',f_pad:'パット',f_haisetsu_basho:'排泄場所',f_haisetsu_freq:'交換頻度',f_haisetsu_note:'排泄注意点',f_yaku:'薬情報',f_seikatsu:'生活歴',f_sonota:'その他'};
+  const lines=['【CS式アセスメント 読み込みデータ】'];
+  ids.forEach(id=>{const v=document.getElementById(id).value;if(v)lines.push(labels[id]+': '+v);});
+  const text=lines.join('\n');
+  navigator.clipboard.writeText(text).then(()=>alert('クリップボードにコピーしました！')).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('コピーしました');});
+}
+</script>
+</body>
+</html>
 <title>CS式アセス → ケア記録 インポートツール</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
