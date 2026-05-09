@@ -2281,6 +2281,15 @@ async function openCareNoteModal(r,name){
   body.innerHTML=content||'<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">入浴方法の登録がありません</div>';
 }
 
+
+// ── 印刷ページを開く ────────────────────────────────
+function openPrintPage(r,isSub){
+  const name=(isSub?SUB[r].name:S[r].name)||'';
+  if(!name.trim()){alert('名前が入力されていません');return;}
+  const url='print_resident.html?name='+encodeURIComponent(name)+'&date='+currentDate+(isSub?'&sub=1':'');
+  window.open(url,'_blank');
+}
+
 function closeModal(){document.getElementById('modalBg').style.display='none';}
 
 // ── 進捗 ──────────────────────────────────────────
@@ -2482,6 +2491,7 @@ function buildCard(r){
     <button class="discharge-btn${discharged[r]?' on':''}" id="discharge-btn-${r}" onclick="toggleDischarge(${r})">${discharged[r]?'退所済':'退所'}</button>
     <button class="cn-toggle-btn${careNotesVisible[r]?' active':''}" id="cn-toggle-${r}" onclick="toggleCareNotes(${r})">${careNotesVisible[r]?'介助詳細 非表示':'介助詳細'}</button>
     <button class="copy-btn" id="copy-btn-${r}" onclick="copyResidentData(${r},false)" title="コピー" style="padding:4px 9px">📋</button>
+    <button class="copy-btn" onclick="openPrintPage(${r},false)" title="印刷" style="padding:4px 9px">🖨️</button>
   </div>
 </div>
 <div style="padding:5px 12px;border-top:0.5px solid #e8edf2;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
@@ -2512,6 +2522,7 @@ function buildCard(r){
       <button class="extra-toggle-btn${subExtraSec[r].yaku?' active':''}" id="sub-extra-btn-yaku-${r}" onclick="toggleExtraSec(${r},'yaku',true)">薬関連</button>
       <button class="extra-toggle-btn${subExtraSec[r].gaishu?' active':''}" id="sub-extra-btn-gaishu-${r}" onclick="toggleExtraSec(${r},'gaishu',true)">外出</button>
       <button class="copy-btn" id="copy-btn-sub-${r}" onclick="copyResidentData(${r},true)" title="コピー" style="padding:4px 9px">📋</button>
+      <button class="copy-btn" onclick="openPrintPage(${r},true)" title="印刷" style="padding:4px 9px">🖨️</button>
     </div>
     <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
   </div>
