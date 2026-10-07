@@ -854,7 +854,7 @@ const FIREBASE_CONFIG = {
 // ================================================================
 
 // ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
-const APP_VERSION='1.0.3';
+const APP_VERSION='1.0.4';
 const APP_DATE='2026-10-07';
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
@@ -1380,7 +1380,7 @@ function showNameSuggest(r,inputEl,isSub){
   const map=getNameRoomMap();
   const filtered=val?_nameCandidates.filter(n=>n.includes(val)):_nameCandidates;
   if(filtered.length===0){list.style.display='none';return;}
-  list.innerHTML=filtered.slice(0,25).map(name=>{
+  list.innerHTML=filtered.map(name=>{
     const info=map[name];
     const badge=info
       ?(info.type==='main'
