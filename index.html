@@ -34,6 +34,15 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .sync-dot.warn{background:#f59e0b}
 .sync-label{font-size:11px;color:#64748b}
 .app-version{flex-shrink:0;white-space:nowrap;font-size:12px;opacity:0.7;user-select:none;color:#64748b}
+/* ── 名前候補ドロップダウン ── */
+#nameSuggestList{position:fixed;z-index:400;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-height:240px;overflow-y:auto;display:none;min-width:180px;-webkit-overflow-scrolling:touch}
+.name-suggest-item{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;font-size:13px;color:#1e293b;cursor:pointer;gap:8px;font-family:'Noto Sans JP',sans-serif;border-bottom:0.5px solid #f1f5f9}
+.name-suggest-item:last-child{border-bottom:none}
+.name-suggest-item:active{background:#f1f5f9}
+.name-suggest-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nsbadge{font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.nsbadge-main{background:#eff6ff;color:#2563eb;border:0.5px solid #93c5fd}
+.nsbadge-sub{background:#faf5ff;color:#7c3aed;border:0.5px solid #c4b5fd}
 .summary-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:7px 12px;display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .chip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 9px;border-radius:8px;border:0.5px solid #e2e8f0;cursor:pointer;background:#f8fafc;min-width:42px}
 .chip.done{border-color:#86efac;background:#f0fdf4;}
@@ -845,7 +854,7 @@ const FIREBASE_CONFIG = {
 // ================================================================
 
 // ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
-const APP_VERSION='1.0.1';
+const APP_VERSION='1.0.3';
 const APP_DATE='2026-10-07';
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
@@ -1327,6 +1336,82 @@ function listenSubResident(room,name){
   subListeners[room]=ref;
 }
 
+// ── 名前候補ドロップダウン ────────────────────────
+// Firebase residents/ キーを候補ソースにする。loadAll()後に毎回更新。
+let _nameCandidates=[];
+async function refreshNameCandidates(){
+  const names=new Set();
+  ALL.forEach(r=>{
+    if(S[r].name&&S[r].name.trim())names.add(S[r].name.trim());
+    if(SUB[r].name&&SUB[r].name.trim())names.add(SUB[r].name.trim());
+  });
+  if(db){
+    try{
+      const snap=await db.ref('residents').get();
+      if(snap.exists()){
+        Object.keys(snap.val()).forEach(k=>{
+          try{names.add(decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']')));}catch(e){}
+        });
+      }
+    }catch(e){}
+  }
+  // localStorageからも補完（Firebase未接続時のフォールバック）
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);if(!key)continue;
+    if(key.startsWith('care_')&&!key.startsWith('care_notes_')){
+      const wo=key.slice(5);if(wo.length>11)names.add(wo.slice(0,wo.length-11).trim());
+    }
+  }
+  _nameCandidates=Array.from(names).filter(n=>n&&n.trim()).sort((a,b)=>a.localeCompare(b,'ja'));
+}
+// 現在の登録状況マップ: {名前: {type:'main'|'sub', room:r}}
+function getNameRoomMap(){
+  const map={};
+  ALL.forEach(r=>{if(S[r].name&&S[r].name.trim())map[S[r].name.trim()]={type:'main',room:r};});
+  ALL.forEach(r=>{if(SUB[r].name&&SUB[r].name.trim())map[SUB[r].name.trim()]={type:'sub',room:r};});
+  return map;
+}
+let _suggestTargetR=null,_suggestTargetSub=false,_suggestHideTimer=null;
+function showNameSuggest(r,inputEl,isSub){
+  clearTimeout(_suggestHideTimer);
+  _suggestTargetR=r;_suggestTargetSub=isSub;
+  const val=(inputEl.value||'').trim();
+  const list=document.getElementById('nameSuggestList');if(!list)return;
+  const map=getNameRoomMap();
+  const filtered=val?_nameCandidates.filter(n=>n.includes(val)):_nameCandidates;
+  if(filtered.length===0){list.style.display='none';return;}
+  list.innerHTML=filtered.slice(0,25).map(name=>{
+    const info=map[name];
+    const badge=info
+      ?(info.type==='main'
+        ?`<span class="nsbadge nsbadge-main">${info.room}号室</span>`
+        :`<span class="nsbadge nsbadge-sub">入替・${info.room}号室</span>`)
+      :'';
+    return`<div class="name-suggest-item" onmousedown="pickNameSuggest('${name.replace(/'/g,"\\'")}')"><span class="name-suggest-name">${name}</span>${badge}</div>`;
+  }).join('');
+  const rect=inputEl.getBoundingClientRect();
+  list.style.display='block';
+  list.style.left=rect.left+'px';
+  list.style.top=rect.bottom+2+'px';
+  list.style.width=Math.max(rect.width,200)+'px';
+}
+function hideNameSuggest(){
+  _suggestHideTimer=setTimeout(()=>{
+    const list=document.getElementById('nameSuggestList');
+    if(list)list.style.display='none';
+  },180);
+}
+function pickNameSuggest(name){
+  clearTimeout(_suggestHideTimer);
+  const list=document.getElementById('nameSuggestList');if(list)list.style.display='none';
+  if(_suggestTargetR===null)return;
+  const r=_suggestTargetR;const isSub=_suggestTargetSub;
+  const inputId=isSub?'sub-name-'+r:'name-'+r;
+  const el=document.getElementById(inputId);if(el)el.value=name;
+  if(isSub){onSubNameInput(r,name);setTimeout(()=>{const e=document.getElementById(inputId);if(e){e.value=name;e.blur();}},0);}
+  else{onNameInput(r,name);setTimeout(()=>{const e=document.getElementById(inputId);if(e){e.value=name;e.blur();}},0);}
+}
+
 // ── 初期ロード ────────────────────────────────────
 // opts.skipIfOffline=true のとき: Firebase未接続なら何もせず即リターン
 // → 退所・入替処理後のリトライで古いlocalStorage状態に巻き戻さないようにする
@@ -1400,10 +1485,18 @@ async function loadAll(opts={}){
   for(const r of ALL){
     const name=roomNameMap[r]||'';
     lss('rname_'+r,name);
-    const data=await readByName(name);S[r]={...S[r],...data,name};
+    const data=await readByName(name);
+    // ★ 日付変更後にメイン機がまだFirebaseへ書き込んでいない間も、
+    //    引継ぎデータ(_tag:'carried')のhaibenを表示上デクリメントする。
+    //    メイン機が書き込み後はdates/{today}が存在して_tag:'today'になるため
+    //    二重デクリメントは発生しない。保存はしない（担当メイン機のみが書く）。
+    if(data._tag==='carried')data.haiben=decrementHaiben(data.haiben);
+    S[r]={...S[r],...data,name};
     const sname=subRoomNameMap[r]||'';
     lss('sub_rname_'+r,sname);
-    const sdata=await readSubByName(sname);SUB[r]={...SUB[r],...sdata,name:sname};
+    const sdata=await readSubByName(sname);
+    if(sdata._tag==='carried')sdata.haiben=decrementHaiben(sdata.haiben);
+    SUB[r]={...SUB[r],...sdata,name:sname};
     if(name)await loadCareNotesForRoom(r,name);
   }
   // ⑥ discharged自動解除（Firebase疎通済みで部屋名が空になった場合のみ）
@@ -1425,6 +1518,8 @@ async function loadAll(opts={}){
     if(S[r].name)listenResident(r,S[r].name);
     if(SUB[r].name)listenSubResident(r,SUB[r].name);
   });
+  // 名前候補リストを更新（非同期・表示に影響なし）
+  refreshNameCandidates();
 }
 
 // ── 日付変更 ──────────────────────────────────────
@@ -2524,7 +2619,7 @@ function buildCard(r){
   return`<div class="card${discharged[r]?' discharged':''}" id="card-${r}">
 <div class="card-head">
   <div class="room-num">${r}</div>
-  <input class="${niCls}" id="name-${r}" placeholder="お名前を入力" value="${d.name||''}" oninput="onNameInput(${r},this.value)" onblur="onNameBlur(${r})" onkeydown="if(event.key==='Enter')this.blur()">
+  <input class="${niCls}" id="name-${r}" placeholder="お名前を入力" value="${d.name||''}" oninput="onNameInput(${r},this.value);showNameSuggest(${r},this,false)" onfocus="showNameSuggest(${r},this,false)" onblur="onNameBlur(${r});hideNameSuggest()" onkeydown="if(event.key==='Enter')this.blur();else if(event.key==='Escape')hideNameSuggest()">
   <span class="${tagCls}" id="tag-${r}">${tagTxt}</span>
   <span class="flash" id="flash-${r}"></span>
   <div class="dot" id="dot-${r}" style="background:${dotCol(p)}"></div>
@@ -2556,7 +2651,7 @@ function buildCard(r){
 <div class="sub-section${vis?' visible':''}" id="sub-section-${r}">
   <div class="sub-header">
     <span class="sub-badge">入替</span>
-    <input class="${sniCls}" id="sub-name-${r}" placeholder="入替の方のお名前" value="${sd.name||''}" oninput="onSubNameInput(${r},this.value)" onblur="onSubNameBlur(${r})" onkeydown="if(event.key==='Enter')this.blur()">
+    <input class="${sniCls}" id="sub-name-${r}" placeholder="入替の方のお名前" value="${sd.name||''}" oninput="onSubNameInput(${r},this.value);showNameSuggest(${r},this,true)" onfocus="showNameSuggest(${r},this,true)" onblur="onSubNameBlur(${r});hideNameSuggest()" onkeydown="if(event.key==='Enter')this.blur();else if(event.key==='Escape')hideNameSuggest()">
     <span class="${stagCls}" id="sub-tag-${r}">${stagTxt}</span>
     <span class="sub-flash" id="sub-flash-${r}"></span>
   </div>
@@ -3159,5 +3254,7 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+<!-- 名前候補ドロップダウン（グローバル・1つだけ置く） -->
+<div id="nameSuggestList"></div>
 </body>
 </html>
