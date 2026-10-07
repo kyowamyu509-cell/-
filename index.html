@@ -28,11 +28,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .floor-tabs{display:flex;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
 .floor-tab{flex:1;padding:7px 0;font-size:12px;font-weight:500;cursor:pointer;border:none;background:#f8fafc;color:#64748b;font-family:'Noto Sans JP',sans-serif}
 .floor-tab.active{background:#eff6ff;color:#4f46e5}
-.sync-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:#fff;border-bottom:1px solid #f1f5f9}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:5px 14px;padding-right:max(14px,env(safe-area-inset-right));box-sizing:border-box;background:#fff;border-bottom:1px solid #f1f5f9}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#cbd5e1;transition:background 0.3s}
 .sync-dot.ok{background:#22c55e}
 .sync-dot.warn{background:#f59e0b}
 .sync-label{font-size:11px;color:#64748b}
+.app-version{flex-shrink:0;white-space:nowrap;font-size:12px;opacity:0.7;user-select:none;color:#64748b}
 .summary-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:7px 12px;display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .chip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 9px;border-radius:8px;border:0.5px solid #e2e8f0;cursor:pointer;background:#f8fafc;min-width:42px}
 .chip.done{border-color:#86efac;background:#f0fdf4;}
@@ -330,6 +331,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 <div class="sync-bar">
   <div class="sync-dot" id="syncDot"></div>
   <span class="sync-label" id="syncLabel">起動中...</span>
+  <span class="app-version" id="appVersion"></span>
 </div>
 
 <div class="main-page active" id="mainPage0">
@@ -842,6 +844,10 @@ const FIREBASE_CONFIG = {
 };
 // ================================================================
 
+// ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
+const APP_VERSION='1.0.1';
+const APP_DATE='2026-10-07';
+
 const F1=[101,102,103,105,106,107,108,110,111,112];
 const F2=[201,202,203,205,206,207,208,210,211,212];
 const ALL=[...F1,...F2];
@@ -1322,34 +1328,56 @@ function listenSubResident(room,name){
 }
 
 // ── 初期ロード ────────────────────────────────────
-async function loadAll(){
+// opts.skipIfOffline=true のとき: Firebase未接続なら何もせず即リターン
+// → 退所・入替処理後のリトライで古いlocalStorage状態に巻き戻さないようにする
+async function loadAll(opts={}){
+  const {skipIfOffline=false}=opts;
+
+  // ① Firebase疎通チェックを最初に実施（状態変更より前）
+  // ネットワーク断か正常応答かをここで判定する
+  const roomNameMap={};
+  const subRoomNameMap={};
+  let _fbReachable=false;
+  let _fbSnap=null;
+  if(db){
+    try{
+      // fbGet() は catch して null を返すため「疎通できたが空」を区別できない
+      // ここでは直接 .get() を呼び、例外なしなら疎通済みとみなす
+      _fbSnap=await db.ref('residents').get();
+      _fbReachable=true; // 例外なし = Firebase疎通済み（空ノードでも true）
+    }catch(e){
+      // Firebase未接続・ネットワーク断 → _fbReachable=false のまま
+    }
+  }
+
+  // ② 日付変更後リトライ時: Firebase未接続なら処理を中断
+  // 退所・入替移動後に古いlocalStorageで表示を巻き戻さないようにする
+  // → Firebase復旧後に .info/connected リスナーか次の定期同期が自動で再実行する
+  if(!_fbReachable && skipIfOffline) return;
+
+  // ③ 状態初期化（Firebase疎通確認後に実施）
   loadSubVisible();loadExtraSec();loadDischarged();await loadDischargedLog();
   loadCareNotesVisible();
   await loadLinks();
-  // 名前→部屋の逆引きマップを residents/ から構築
-  const roomNameMap={};   // {101: '山田太郎', ...}
-  const subRoomNameMap={};
-  if(db){
-    try{
-      const allRes=await fbGet('residents');
-      if(allRes){
-        Object.keys(allRes).forEach(k=>{
-          const res=allRes[k];
-          if(res&&res.room){
-            try{
-              const name=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
-              roomNameMap[res.room]=name;
-            }catch(e){}
-          }
-          if(res&&res.sub_room){
-            try{
-              const name=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
-              subRoomNameMap[res.sub_room]=name;
-            }catch(e){}
-          }
-        });
+
+  // ④ residents/ マップ構築（疎通済み・スナップショット使用）
+  if(_fbSnap&&_fbSnap.exists()){
+    const allRes=_fbSnap.val();
+    Object.keys(allRes).forEach(k=>{
+      const res=allRes[k];
+      if(res&&res.room){
+        try{
+          const name=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
+          roomNameMap[res.room]=name;
+        }catch(e){}
       }
-    }catch(e){}
+      if(res&&res.sub_room){
+        try{
+          const name=decodeURIComponent(k.replace(/%2E/g,'.').replace(/%23/g,'#').replace(/%24/g,'$').replace(/%5B/g,'[').replace(/%5D/g,']'));
+          subRoomNameMap[res.sub_room]=name;
+        }catch(e){}
+      }
+    });
   }
   // フォールバック①: rooms/（旧方式・PC互換）からも読む
   if(db){
@@ -1359,12 +1387,16 @@ async function loadAll(){
       if(_fbSR) ALL.forEach(r=>{if(!subRoomNameMap[r]&&_fbSR[r]&&_fbSR[r].name)subRoomNameMap[r]=_fbSR[r].name;});
     }catch(e){}
   }
-  // フォールバック②: localStorageからも読む
-  ALL.forEach(r=>{
-    if(!roomNameMap[r]){const n=ls('rname_'+r);if(n)roomNameMap[r]=n;}
-    if(!subRoomNameMap[r]){const n=ls('sub_rname_'+r);if(n)subRoomNameMap[r]=n;}
-  });
+  // フォールバック②: localStorageからも読む（Firebase未接続時のみ）
+  // Firebase疎通済みの場合は使わない → 退所・入替移動後に古い名前が復活しないよう
+  if(!_fbReachable){
+    ALL.forEach(r=>{
+      if(!roomNameMap[r]){const n=ls('rname_'+r);if(n)roomNameMap[r]=n;}
+      if(!subRoomNameMap[r]){const n=ls('sub_rname_'+r);if(n)subRoomNameMap[r]=n;}
+    });
+  }
 
+  // ⑤ 部屋ごとのデータ読み込み
   for(const r of ALL){
     const name=roomNameMap[r]||'';
     lss('rname_'+r,name);
@@ -1373,6 +1405,20 @@ async function loadAll(){
     lss('sub_rname_'+r,sname);
     const sdata=await readSubByName(sname);SUB[r]={...SUB[r],...sdata,name:sname};
     if(name)await loadCareNotesForRoom(r,name);
+  }
+  // ⑥ discharged自動解除（Firebase疎通済みで部屋名が空になった場合のみ）
+  // 他タブレットが退所処理した後、このタブレットの discharged フラグを自動クリア
+  // ※ Firebase未接続時は実行しない（空＝退所と誤判断しないよう）
+  if(_fbReachable){
+    let _dcChanged=false;
+    ALL.forEach(r=>{
+      if(discharged[r]&&!S[r].name){
+        discharged[r]=false;
+        careNotes[r]=emptyCareNotes();
+        _dcChanged=true;
+      }
+    });
+    if(_dcChanged)saveDischarged();
   }
   renderAll();
   ALL.forEach(r=>{
@@ -1442,8 +1488,13 @@ async function onDateChange(d){
       await loadCareNotesForRoom(r,subName);
       await saveRoomName(r,subName);
       await saveDaily(r); // residents/ に書き込む
+      // ★ SUB[r].name を空にする前に Firebase の sub_room を先にクリアする
+      // （後で saveSubRoomName を呼ぶと SUB[r].name が空になっていて
+      //   prev 名が検出できず residents/{subName}/sub_room が残るバグを防ぐ）
+      await fbSet('residents/'+encKey(subName)+'/sub_room',null);
+      await fbSet('sub_rooms/'+r+'/name','');
+      lss('sub_rname_'+r,'');
       SUB[r]={name:'',...emptyDaily(),_tag:''};
-      await saveSubRoomName(r,'');
     } else if(!isMovingForward&&SUB[r].name&&SUB[r].name.trim()){
       // 過去日付に戻した場合は入替データもそのまま読み込む
       const sdata=await readSubByName(SUB[r].name);
@@ -2970,6 +3021,8 @@ function doChangePIN(){
 }
 
 // ── 起動 ──────────────────────────────────────────
+// バージョン表示（APP_VERSION / APP_DATE を変更すれば自動で反映）
+(()=>{const el=document.getElementById('appVersion');if(el)el.textContent='v'+APP_VERSION+' / '+APP_DATE;})();
 document.getElementById('dateInput').value=getLocalDate();currentDate=getLocalDate();
 document.getElementById('whMonth').value=currentDate.slice(0,7);
 document.getElementById('whMonth').onchange=()=>renderWHTable();
@@ -2978,8 +3031,12 @@ loadAll();
 renderDeviceModeUI();
 
 // ── 日付自動更新 ─────────────────────────────────────────────
+// 重複実行防止フラグ
+let _dateChanging=false;
+
 // ① 日付チェック共通関数
 function checkDateAutoUpdate(){
+  if(_dateChanging) return; // 処理中は再入しない
   const today=getLocalDate();
   if(today===currentDate) return; // 既に今日なら何もしない
   // 現在表示中の日付が「昨日より前」の場合は手動で過去を見ている可能性があるため
@@ -2988,14 +3045,27 @@ function checkDateAutoUpdate(){
   const diffMs=new Date(today+'T00:00:00')-new Date(currentDate+'T00:00:00');
   const diffDays=Math.round(diffMs/(1000*60*60*24));
   if(diffDays===1||diffDays>=2){
+    _dateChanging=true;
     document.getElementById('dateInput').value=today;
     if(getResponsibleRooms().length>0){
-      // メイン機: 引継処理を実行
-      onDateChange(today);
+      // メイン機: 担当フロアの引継処理を実行後、担当外を複数回リトライで再同期
+      // （他メイン機のFirebase書き込みが遅れても確実に取得できるよう）
+      onDateChange(today).then(()=>{
+        // 2秒後・7秒後・15秒後に再読み込み（通信遅延に対応）
+        [2000,7000,15000].forEach(delay=>{
+          setTimeout(()=>loadAll(),delay);
+        });
+        _dateChanging=false;
+      });
     } else {
-      // サブ機: メイン機が書き込むまで3秒待ってから読み直す
+      // サブ機: メイン機が書き込むまで待機してから複数回リトライ
+      // loadAll()内でFirebase優先ロード＋discharged自動解除が行われる
       currentDate=today;updateDateNote();
-      setTimeout(()=>loadAll(), 3000);
+      // 3秒後・8秒後・18秒後に再読み込み（通信遅延に対応）
+      [3000,8000,18000].forEach(delay=>{
+        setTimeout(()=>loadAll(),delay);
+      });
+      _dateChanging=false;
     }
     showDateChangedToast(today);
   }
@@ -3047,7 +3117,27 @@ document.addEventListener('visibilitychange',()=>{
 // ⑤ 念のため1分ごとにもチェック（確実なフォールバック）
 setInterval(checkDateAutoUpdate, 60000);
 
-// ⑥ 起動時に深夜タイマーをセット
+// ⑥ Firebase接続復旧時の自動再同期
+// .info/connected は接続・切断を検知する Firebase の組み込みパス
+// 起動直後の初回 true は無視し、切断→復旧のタイミングでだけ loadAll を実行する
+if(db){
+  let _fbConnFirstFire=true;
+  db.ref('.info/connected').on('value',snap=>{
+    if(snap.val()===true){
+      if(_fbConnFirstFire){_fbConnFirstFire=false;return;} // 起動時の初回は無視
+      // 接続復旧 → 2秒待ってから全データを再同期
+      // skipIfOffline:true を指定しているが、この時点では復旧済みなので必ず実行される
+      setTimeout(()=>loadAll({skipIfOffline:true}),2000);
+    }
+  });
+}
+
+// ⑦ バックグラウンド定期同期（10分ごと）
+// 3回リトライを超えた遅延や、長時間アプリを開いたままの場合にも対応
+// skipIfOffline:true で Firebase未接続時は何もしない
+setInterval(()=>{if(db)loadAll({skipIfOffline:true});}, 10*60*1000);
+
+// ⑧ 起動時に深夜タイマーをセット
 scheduleMidnightUpdate();
 // ── PWA Service Worker登録 ─────────────────────────
 // PCのウィンドウフォーカス時にも同期チェック（別タブから戻ったとき）
