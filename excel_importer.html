@@ -33,6 +33,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 .sync-dot.ok{background:#22c55e}
 .sync-dot.warn{background:#f59e0b}
 .sync-label{font-size:11px;color:#64748b}
+.app-version{margin-left:auto;font-size:10px;color:#cbd5e1;letter-spacing:0.02em;user-select:none}
 .summary-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:7px 12px;display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .chip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 9px;border-radius:8px;border:0.5px solid #e2e8f0;cursor:pointer;background:#f8fafc;min-width:42px}
 .chip.done{border-color:#86efac;background:#f0fdf4;}
@@ -330,6 +331,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 <div class="sync-bar">
   <div class="sync-dot" id="syncDot"></div>
   <span class="sync-label" id="syncLabel">起動中...</span>
+  <span class="app-version" id="appVersion"></span>
 </div>
 
 <div class="main-page active" id="mainPage0">
@@ -841,6 +843,10 @@ const FIREBASE_CONFIG = {
   appId:             "1:560482916279:web:153f51a24929f3dbc5ba32"
 };
 // ================================================================
+
+// ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
+const APP_VERSION='1.0.1';
+const APP_DATE='2026-10-07';
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
 const F2=[201,202,203,205,206,207,208,210,211,212];
@@ -3015,6 +3021,8 @@ function doChangePIN(){
 }
 
 // ── 起動 ──────────────────────────────────────────
+// バージョン表示（APP_VERSION / APP_DATE を変更すれば自動で反映）
+(()=>{const el=document.getElementById('appVersion');if(el)el.textContent='v'+APP_VERSION+' / '+APP_DATE;})();
 document.getElementById('dateInput').value=getLocalDate();currentDate=getLocalDate();
 document.getElementById('whMonth').value=currentDate.slice(0,7);
 document.getElementById('whMonth').onchange=()=>renderWHTable();
