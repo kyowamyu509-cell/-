@@ -854,8 +854,8 @@ const FIREBASE_CONFIG = {
 // ================================================================
 
 // ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
-const APP_VERSION='1.0.4';
-const APP_DATE='2026-10-07';
+const APP_VERSION='1.0.5';
+const APP_DATE='2026-10-10';
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
 const F2=[201,202,203,205,206,207,208,210,211,212];
@@ -1081,8 +1081,27 @@ function hideExtraSec(r,key,isSub){
   if(sec)sec.className='extra-section';
   if(btn)btn.className='extra-toggle-btn';
 }
-function loadDischarged(){const s=ls('discharged');if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)discharged[r]=true;});}}
-function saveDischarged(){lss('discharged',discharged);}
+// discharged: Firebase優先・localStorageバックアップ
+async function loadDischarged(){
+  // Firebase から最新を取得（疎通できている場合）
+  const fb=await fbGet('settings/discharged');
+  if(fb&&typeof fb==='object'){
+    ALL.forEach(r=>{discharged[r]=fb[r]===true;});
+    lss('discharged',discharged); // localStorageにキャッシュ
+    return;
+  }
+  // フォールバック: localStorage
+  const s=ls('discharged');
+  if(s&&typeof s==='object'){ALL.forEach(r=>{if(s[r]===true)discharged[r]=true;});}
+}
+async function saveDischarged(){
+  // localStorage に即時保存
+  lss('discharged',discharged);
+  // Firebase にも保存（失敗してもlocalStorageは残る）
+  const payload={};
+  ALL.forEach(r=>{payload[r]=discharged[r]?true:false;});
+  await fbSet('settings/discharged',payload);
+}
 
 // ── 退所者履歴ログ（7日間保持）─────────────────────────────
 let dischargedLog=[];// [{name, room, date}]
@@ -1441,7 +1460,7 @@ async function loadAll(opts={}){
   if(!_fbReachable && skipIfOffline) return;
 
   // ③ 状態初期化（Firebase疎通確認後に実施）
-  loadSubVisible();loadExtraSec();loadDischarged();await loadDischargedLog();
+  loadSubVisible();loadExtraSec();await loadDischarged();await loadDischargedLog();
   loadCareNotesVisible();
   await loadLinks();
 
@@ -1503,6 +1522,8 @@ async function loadAll(opts={}){
   // 他タブレットが退所処理した後、このタブレットの discharged フラグを自動クリア
   // ※ Firebase未接続時は実行しない（空＝退所と誤判断しないよう）
   if(_fbReachable){
+    // discharged 自動解除: Firebase疎通済みで名前が空になっていたらフラグをクリア
+    // ※ 他端末が退所処理済みの場合（Firebaseの名前が消えている）に対応
     let _dcChanged=false;
     ALL.forEach(r=>{
       if(discharged[r]&&!S[r].name){
@@ -1511,7 +1532,7 @@ async function loadAll(opts={}){
         _dcChanged=true;
       }
     });
-    if(_dcChanged)saveDischarged();
+    if(_dcChanged)saveDischarged(); // awaitしない（非同期で構わない）
   }
   renderAll();
   ALL.forEach(r=>{
@@ -1535,11 +1556,16 @@ async function onDateChange(d){
   const _diffOk=(diffDaysMove>=1);
   // 部屋ごとに担当フロアかチェック（isMovingForward は部屋別に判定）
 
-  // ── Firebaseから最新の部屋名を再読み込み（2台iPad間の同期ズレ防止）──
-  // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
-  const [_allRes,_allRooms,_allSubRooms]=await Promise.all([
-    fbGet('residents'),fbGet('rooms'),fbGet('sub_rooms')
+  // ── Firebaseから最新の部屋名・退所フラグを再読み込み（端末間同期）──
+  const [_allRes,_allRooms,_allSubRooms,_fbDischarged]=await Promise.all([
+    fbGet('residents'),fbGet('rooms'),fbGet('sub_rooms'),fbGet('settings/discharged')
   ]);
+  // Firebase の discharged フラグを discharged[] にマージ（他端末のボタン操作を反映）
+  if(_fbDischarged&&typeof _fbDischarged==='object'){
+    ALL.forEach(r=>{if(_fbDischarged[r]===true)discharged[r]=true;});
+    lss('discharged',discharged);
+  }
+  // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
   if(_allRes){
     Object.keys(_allRes).forEach(k=>{
       const res=_allRes[k];
@@ -1550,19 +1576,21 @@ async function onDateChange(d){
       }catch(e){}
     });
   }
-  // rooms/ フォールバック（PC互換）
   if(typeof _allRooms!=='undefined'&&_allRooms) ALL.forEach(r=>{if(!S[r].name&&_allRooms[r]&&_allRooms[r].name)S[r].name=_allRooms[r].name;});
   if(typeof _allSubRooms!=='undefined'&&_allSubRooms) ALL.forEach(r=>{if(!SUB[r].name&&_allSubRooms[r]&&_allSubRooms[r].name)SUB[r].name=_allSubRooms[r].name;});
 
   for(const r of ALL){
     // ① 退所チェックがある → 翌日以降に進んだ場合のみ名前クリア
-    const isMovingForward=_diffOk&&isResponsibleFor(r);
+    // ★ isResponsibleFor の条件を外し全端末で処理する
+    //    ただし名前が実際に存在する場合のみ Firebase 書き込みを行う（冪等性確保）
+    const isMovingForward=_diffOk;
     if(discharged[r]&&isMovingForward){
       const dName=(S[r].name||'').trim();
       if(dName) await addDischargedLog(dName,r,d);
       const _dName=(S[r].name||'').trim();
       if(_dName){
         if(listeners[r]){listeners[r].off();delete listeners[r];}
+        // 名前が実際に存在する場合のみ Firebase 書き込み（冪等性）
         await fbSet('residents/'+encKey(_dName)+'/room',null);
         await fbSet('rooms/'+r+'/name','');
       }
@@ -1570,6 +1598,9 @@ async function onDateChange(d){
       S[r]={name:'',...emptyDaily(),_tag:''};
       careNotes[r]=emptyCareNotes();
       discharged[r]=false;
+      // Firebase の discharged フラグも即時クリア（他端末の二重処理を防ぐ）
+      await fbSet('settings/discharged/'+r,false);
+      lss('discharged',discharged);
     }
     // ② 入替者がいればメインに移行（翌日以降に進んだときのみ）
     if(isMovingForward&&SUB[r].name&&SUB[r].name.trim()){
@@ -1623,7 +1654,7 @@ async function onDateChange(d){
       }
     }
   }
-  saveDischarged();
+  await saveDischarged(); // Firebase + localStorage 両方に保存
   renderAll();
   ALL.forEach(r=>{
     if(S[r].name)listenResident(r,S[r].name);
@@ -1738,13 +1769,30 @@ function flashRestore(r){
 }
 
 // ── 退所トグル ─────────────────────────────────────
-function toggleDischarge(r){
+async function toggleDischarge(r){
+  const prev=discharged[r];
   discharged[r]=!discharged[r];
-  saveDischarged();
+  // UI を先行更新
   const card=document.getElementById('card-'+r);
   const btn=document.getElementById('discharge-btn-'+r);
-  if(card)card.className='card'+(discharged[r]?' discharged':'');
-  if(btn){btn.className='discharge-btn'+(discharged[r]?' on':'');btn.textContent=discharged[r]?'退所済':'退所';}
+  const applyUI=()=>{
+    if(card)card.className='card'+(discharged[r]?' discharged':'');
+    if(btn){btn.className='discharge-btn'+(discharged[r]?' on':'');btn.textContent=discharged[r]?'退所済':'退所';}
+  };
+  applyUI();
+  // ボタンを一時無効化（二重押し防止）
+  if(btn)btn.disabled=true;
+  try{
+    await saveDischarged(); // Firebase + localStorage 両方に保存
+    setSyncStatus('ok','退所フラグ保存');
+  }catch(e){
+    // Firebase保存失敗 → ロールバック
+    discharged[r]=prev;
+    applyUI();
+    setSyncStatus('warn','退所フラグの保存に失敗しました。再試行してください。');
+  }finally{
+    if(btn)btn.disabled=false;
+  }
 }
 
 // ── 入替ハンドラー ─────────────────────────────────
