@@ -911,7 +911,7 @@ const FIREBASE_CONFIG = {
 // ================================================================
 
 // ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
-const APP_VERSION='1.0.6';
+const APP_VERSION='1.0.7';
 const APP_DATE='2026-10-10';
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
@@ -1617,9 +1617,12 @@ async function onDateChange(d){
   const [_allRes,_allRooms,_allSubRooms,_fbDischarged]=await Promise.all([
     fbGet('residents'),fbGet('rooms'),fbGet('sub_rooms'),fbGet('settings/discharged')
   ]);
-  // Firebase の discharged フラグを discharged[] にマージ（他端末のボタン操作を反映）
+  // Firebase の discharged フラグを権威データとして使用（true/false 両方反映）
+  // ★ v1.0.7: 「のみtrue設定」から「Firebase優先の完全上書き」に変更
+  //    サブ機が退所済みボタンを押した後、メイン機が処理済みの場合に
+  //    Firebase の false を反映してローカルのstaleなtrueを解消するため
   if(_fbDischarged&&typeof _fbDischarged==='object'){
-    ALL.forEach(r=>{if(_fbDischarged[r]===true)discharged[r]=true;});
+    ALL.forEach(r=>{discharged[r]=_fbDischarged[r]===true;});
     lss('discharged',discharged);
   }
   // 名前→部屋マップを residents/ から再構築（rooms/ もフォールバックで参照）
@@ -3247,25 +3250,28 @@ function checkDateAutoUpdate(){
   if(diffDays===1||diffDays>=2){
     _dateChanging=true;
     document.getElementById('dateInput').value=today;
-    if(getResponsibleRooms().length>0){
-      // メイン機: 担当フロアの引継処理を実行後、担当外を複数回リトライで再同期
-      // （他メイン機のFirebase書き込みが遅れても確実に取得できるよう）
+    // ★ v1.0.7: サブ機も onDateChange() を実行
+    // 旧コード: サブ機は loadAll() のみ→退所済みフラグが true のまま名前が残る不具合
+    // 新コード: 全端末で onDateChange() を実行し退所・入替処理を確実に行う
+    //   - メイン機: 即時実行
+    //   - サブ機: メイン機の処理を先行させるため3秒待機してから実行
+    // 複数端末が同じ処理をしても Firebase 書き込みは冪等（重複安全）
+    const _isMain=getResponsibleRooms().length>0;
+    const _runDateChange=()=>{
       onDateChange(today).then(()=>{
-        // 2秒後・7秒後・15秒後に再読み込み（通信遅延に対応）
+        // 2秒後・7秒後・15秒後に再読み込み（通信遅延・他端末書き込みに対応）
         [2000,7000,15000].forEach(delay=>{
-          setTimeout(()=>loadAll(),delay);
+          setTimeout(()=>loadAll({skipIfOffline:true}),delay);
         });
         _dateChanging=false;
-      });
+      }).catch(()=>{_dateChanging=false;}); // エラー時も _dateChanging をリセット
+    };
+    if(_isMain){
+      _runDateChange();
     } else {
-      // サブ機: メイン機が書き込むまで待機してから複数回リトライ
-      // loadAll()内でFirebase優先ロード＋discharged自動解除が行われる
-      currentDate=today;updateDateNote();
-      // 3秒後・8秒後・18秒後に再読み込み（通信遅延に対応）
-      [3000,8000,18000].forEach(delay=>{
-        setTimeout(()=>loadAll(),delay);
-      });
-      _dateChanging=false;
+      // サブ機: 3秒後に実行（メイン機の先行処理を待つ）
+      // _dateChanging=true のまま維持することで二重起動を防ぐ
+      setTimeout(_runDateChange, 3000);
     }
     showDateChangedToast(today);
   }
