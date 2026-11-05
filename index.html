@@ -892,6 +892,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#f0f4f8;font-size:16px;col
 
   </div>
 </div>
+
 <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent"></div>
 </div>
@@ -911,8 +912,8 @@ const FIREBASE_CONFIG = {
 // ================================================================
 
 // ── アプリバージョン（ここを変更すると画面表示も自動更新）─────
-const APP_VERSION='1.0.7';
-const APP_DATE='2026-10-10';
+const APP_VERSION='1.2.0';
+const APP_DATE='2026-11-05';
 
 const F1=[101,102,103,105,106,107,108,110,111,112];
 const F2=[201,202,203,205,206,207,208,210,211,212];
@@ -1273,9 +1274,11 @@ function decrementHaiben(val){
 
 // ── Firebase ──────────────────────────────────────
 let db=null;
+
 try{
   firebase.initializeApp(FIREBASE_CONFIG);
   db=firebase.database();
+
   db.ref('.info/connected').on('value',s=>{
     setSyncStatus(s.val()?'ok':'warn',s.val()?'Firebase リアルタイム同期中':'再接続中...');
   });
@@ -1320,15 +1323,24 @@ async function readByName(name){
   const n=name.trim(),k=encKey(n);
   if(db){
     try{
+      // ① メイン居室の今日データ
       const td=await fbGet(`residents/${k}/dates/${currentDate}`);
       if(td)return{...emptyDaily(),...td,_tag:'today'};
+      // ★ v1.1.0: ② 入替欄の今日データも確認（入替欄で入力→メイン居室に名前を入れた場合に反映）
+      const std=await fbGet(`residents/${k}/sub_dates/${currentDate}`);
+      if(std)return{...emptyDaily(),...std,_tag:'today'};
+      // ③ 前回データ（メイン→入替の順で優先）
       const lt=await fbGet(`residents/${k}/latest`);
       if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
+      const slt=await fbGet(`residents/${k}/sub_latest`);
+      if(slt)return{...emptyDaily(),...slt,extra:'',_tag:'carried'};
       return{...emptyDaily(),_tag:'new'};
     }catch(e){setSyncStatus('warn','読込エラー');}
   }
   const td=ls('care_'+n+'_'+currentDate);if(td)return{...emptyDaily(),...td,_tag:'today'};
+  const std=ls('sub_care_'+n+'_'+currentDate);if(std)return{...emptyDaily(),...std,_tag:'today'};
   const lt=ls('care_'+n+'_latest');if(lt)return{...emptyDaily(),...lt,extra:'',_tag:'carried'};
+  const slt=ls('sub_care_'+n+'_latest');if(slt)return{...emptyDaily(),...slt,extra:'',_tag:'carried'};
   return{...emptyDaily(),_tag:'new'};
 }
 
@@ -1749,9 +1761,12 @@ async function onNameBlur(r){
   const sameSub=ALL.filter(or=>normName(SUB[or].name)===normName(name)&&SUB[or].name.trim());
   if(sameRooms.length||sameSub.length){
     const others=[...sameRooms.map(or=>or+'号室'),...sameSub.map(or=>or+'号室(入替)')].join('、');
-    const ok=confirm('⚠️ 同じ名前の方が'+others+'にもいます。同一人物の場合はOK（データが統合されます）。別の方の場合はキャンセルして末尾に「(2)」などを追加してください。');
+    const ok=await showConfirmModal(
+      '⚠️ 同名の方がいます',
+      `同じ名前の方が <strong>${others}</strong> にもいます。<br>同一人物の場合は「統合する」を押してください（データが統合されます）。<br>別の方の場合はキャンセルして末尾に「(2)」などを追加してください。`,
+      '同一人物として統合する','#2563eb'
+    );
     if(!ok){
-      // キャンセル: 名前入力欄にフォーカスを戻す
       const ni=document.getElementById('name-'+r);
       if(ni){ni.value=name+'(2)';S[r].name=name+'(2)';ni.focus();ni.select();}
       return;
@@ -1815,6 +1830,80 @@ function clearRoom(r){
   refreshCard(r);
   flashRestore(r);
 }
+
+// 汎用確認モーダル（confirm()の代替 — iframeでも動作）
+function showConfirmModal(title, body, okLabel, okColor){
+  return new Promise(resolve=>{
+    document.getElementById('modalContent').innerHTML=`
+      <button class="modal-close" onclick="closeModal();window._confirmResolve(false)">×</button>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px">${title}</div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.7">${body}</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="document.getElementById('modalBg').style.display='none';window._confirmResolve(true)"
+          style="padding:11px;background:${okColor||'#2563eb'};color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ${okLabel||'実行する'}
+        </button>
+        <button onclick="document.getElementById('modalBg').style.display='none';window._confirmResolve(false)"
+          style="padding:11px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          キャンセル
+        </button>
+      </div>`;
+    window._confirmResolve=resolve;
+    document.getElementById('modalBg').style.display='flex';
+  });
+}
+
+// ★ v1.1.0: 名前も含む全クリア（日付をまたいでも消えなかった場合の手動クリア用）
+async function clearRoomFull(r){
+  const name=(S[r].name||'').trim();
+  if(!name){clearRoom(r);return;}
+  const ok=await showConfirmModal(
+    '🗑️ 居室を全クリア',
+    `<strong style="color:#dc2626">${r}号室　${name}</strong> さんの名前とすべての情報を削除します。<br>この操作は取り消せません。`,
+    '全クリアする','#dc2626'
+  );
+  if(!ok)return;
+  if(listeners[r]){listeners[r].off();delete listeners[r];}
+  await fbSet('residents/'+encKey(name)+'/room',null);
+  await fbSet('rooms/'+r+'/name','');
+  lss('rname_'+r,'');
+  S[r]={name:'',...emptyDaily(),_tag:''};
+  careNotes[r]=emptyCareNotes();
+  if(discharged[r]){discharged[r]=false;await saveDischarged();}
+  refreshCard(r);
+  flash(r,'✓ 全クリア完了');
+  setSyncStatus('ok','全クリア完了');
+}
+
+// ★ v1.1.0: 入替欄の人を手動でメイン居室に移行するボタン
+async function promoteSubToMain(r){
+  const subName=(SUB[r].name||'').trim();
+  if(!subName){flash(r,'入替欄に名前がありません');return;}
+  const mainName=(S[r].name||'').trim();
+  const bodyMsg=mainName
+    ?`${r}号室にはすでに <strong>${mainName}</strong> さんがいます。<br>入替の <strong style="color:#2563eb">${subName}</strong> さんに上書きしますか？`
+    :`入替欄の <strong style="color:#2563eb">${subName}</strong> さんを <strong>${r}号室</strong> に移行します。`;
+  const ok=await showConfirmModal('🔄 入替 → 居室 移行', bodyMsg,'移行する','#2563eb');
+  if(!ok)return;
+  // sub→main 移行（onDateChange と同じロジック）
+  const subData=await readSubByName(subName);
+  S[r]={...subData,name:subName};
+  await loadCareNotesForRoom(r,subName);
+  await saveRoomName(r,subName);
+  await saveDaily(r);
+  // sub_room をクリア
+  await fbSet('residents/'+encKey(subName)+'/sub_room',null);
+  await fbSet('sub_rooms/'+r+'/name','');
+  lss('sub_rname_'+r,'');
+  if(subListeners[r]){subListeners[r].off();delete subListeners[r];}
+  SUB[r]={name:'',...emptyDaily(),_tag:''};
+  // 退所フラグ解除
+  if(discharged[r]){discharged[r]=false;await saveDischarged();}
+  listenResident(r,subName);
+  renderAll();
+  flash(r,'✓ 移行完了');
+  setSyncStatus('ok','入替→居室 移行完了');
+}
 function restoreRoom(r){
   const bk=backups[r]||ls('backup_'+r);
   if(!bk){flash(r,'バックアップなし');return;}
@@ -1828,28 +1917,150 @@ function flashRestore(r){
   el._ft=setTimeout(()=>{el.className='flash';el.innerHTML='';},12000);
 }
 
+// ── 退所確認モーダル ─────────────────────────────
+// ★ v1.0.8: 退所処理をボタン押下時に即実行（翌日まで名前が残るバグを修正）
+function showDischargeConfirmModal(roomNum, residentName){
+  return new Promise(resolve=>{
+    document.getElementById('modalContent').innerHTML=`
+      <button class="modal-close" onclick="closeModal();window._dischargeResolve('cancel')">×</button>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px">🚪 退所処理の確認</div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.7">
+        <strong style="color:#dc2626">${roomNum}号室　${residentName}</strong> さんを退所処理します。<br>
+        居室から氏名・ケア情報を削除します。この操作は取り消せません。
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="document.getElementById('modalBg').style.display='none';window._dischargeResolve('confirm')"
+          style="padding:11px;background:#dc2626;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ✅ 退所処理を実行する
+        </button>
+        <button onclick="document.getElementById('modalBg').style.display='none';window._dischargeResolve('cancel')"
+          style="padding:11px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ❌ キャンセル
+        </button>
+      </div>`;
+    window._dischargeResolve=resolve;
+    document.getElementById('modalBg').style.display='flex';
+  });
+}
+
+function showSubPromoteModal(roomNum, subName){
+  return new Promise(resolve=>{
+    document.getElementById('modalContent').innerHTML=`
+      <button class="modal-close" onclick="closeModal();window._subPromoteResolve(false)">×</button>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px">🔄 入替者の移行確認</div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.7">
+        入替欄に <strong style="color:#2563eb">${subName}</strong> さんが登録されています。<br>
+        <strong>${roomNum}号室</strong> の新しい利用者として移行しますか？
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="document.getElementById('modalBg').style.display='none';window._subPromoteResolve(true)"
+          style="padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ✅ 移行する
+        </button>
+        <button onclick="document.getElementById('modalBg').style.display='none';window._subPromoteResolve(false)"
+          style="padding:11px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif">
+          ⏩ あとで移行する（入替欄に残す）
+        </button>
+      </div>`;
+    window._subPromoteResolve=resolve;
+    document.getElementById('modalBg').style.display='flex';
+  });
+}
+
 // ── 退所トグル ─────────────────────────────────────
+// ★ v1.0.8: 退所確定時に即座に名前・情報をクリア（翌日まで待たない）
 async function toggleDischarge(r){
   const prev=discharged[r];
-  discharged[r]=!discharged[r];
-  // UI を先行更新
   const card=document.getElementById('card-'+r);
   const btn=document.getElementById('discharge-btn-'+r);
-  const applyUI=()=>{
-    if(card)card.className='card'+(discharged[r]?' discharged':'');
-    if(btn){btn.className='discharge-btn'+(discharged[r]?' on':'');btn.textContent=discharged[r]?'退所済':'退所';}
+  const applyUI=(state)=>{
+    discharged[r]=state;
+    if(card)card.className='card'+(state?' discharged':'');
+    if(btn){btn.className='discharge-btn'+(state?' on':'');btn.textContent=state?'退所済':'退所';}
   };
-  applyUI();
-  // ボタンを一時無効化（二重押し防止）
+
   if(btn)btn.disabled=true;
+
   try{
-    await saveDischarged(); // Firebase + localStorage 両方に保存
-    setSyncStatus('ok','退所フラグ保存');
+    if(!prev){
+      // ── 退所確定フロー ──
+      const dName=(S[r].name||'').trim();
+      if(!dName){
+        // 名前がない空室は単純にフラグ操作のみ
+        applyUI(true);
+        await saveDischarged();
+        setSyncStatus('ok','退所フラグ保存');
+        return;
+      }
+
+      // 確認モーダルを表示
+      const answer=await showDischargeConfirmModal(r, dName);
+      if(answer!=='confirm'){
+        // キャンセル → 何もしない
+        return;
+      }
+
+      // ── 退所実行 ──
+      // 1. 退所ログに記録（今日の日付）
+      await addDischargedLog(dName, r, currentDate);
+
+      // 2. Firebase から名前をクリア
+      if(listeners[r]){listeners[r].off();delete listeners[r];}
+      await fbSet('residents/'+encKey(dName)+'/room', null);
+      await fbSet('rooms/'+r+'/name', '');
+
+      // 3. ローカル状態をクリア
+      lss('rname_'+r, '');
+      S[r]={name:'', ...emptyDaily(), _tag:''};
+      careNotes[r]=emptyCareNotes();
+
+      // 4. 退所フラグを保存（視覚的に「退所済」状態を維持）
+      applyUI(true);
+      await saveDischarged();
+
+      // 5. 入替者がいれば移行確認
+      if(SUB[r].name&&SUB[r].name.trim()){
+        const subName=SUB[r].name.trim();
+        const doPromote=await showSubPromoteModal(r, subName);
+        if(doPromote){
+          // sub → main 移行
+          const subData=await readSubByName(subName);
+          S[r]={...subData, name:subName};
+          await loadCareNotesForRoom(r, subName);
+          await saveRoomName(r, subName);
+          await saveDaily(r);
+          // sub_room を先にクリア（residents に sub_room が残るバグを防ぐ）
+          await fbSet('residents/'+encKey(subName)+'/sub_room', null);
+          await fbSet('sub_rooms/'+r+'/name', '');
+          lss('sub_rname_'+r, '');
+          SUB[r]={name:'', ...emptyDaily(), _tag:''};
+          // 新しい利用者が入ったので退所フラグを解除
+          discharged[r]=false;
+          applyUI(false);
+          await saveDischarged();
+          listenResident(r, subName);
+          setSyncStatus('ok','退所処理・入替完了');
+        } else {
+          setSyncStatus('ok','退所処理完了（入替欄に保留）');
+        }
+      } else {
+        setSyncStatus('ok','退所処理完了');
+      }
+
+      renderAll();
+
+    } else {
+      // ── 退所フラグ解除 ──
+      // 名前がすでにない状態でフラグだけ解除（誤操作の取り消し想定）
+      applyUI(false);
+      await saveDischarged();
+      setSyncStatus('ok','退所フラグ解除');
+    }
   }catch(e){
-    // Firebase保存失敗 → ロールバック
+    // エラー発生 → ロールバック
     discharged[r]=prev;
-    applyUI();
-    setSyncStatus('warn','退所フラグの保存に失敗しました。再試行してください。');
+    applyUI(prev);
+    setSyncStatus('warn','退所処理に失敗しました。再試行してください。');
   }finally{
     if(btn)btn.disabled=false;
   }
@@ -1879,7 +2090,9 @@ async function onSubNameBlur(r){
       return;
     }
   }
-  const data=await readSubByName(name);SUB[r]={...SUB[r],...data,name};
+  const data=await readSubByName(name);
+  // ★ v1.1.0: 旧SUB[r]のケアデータを引き継がず新しい人のデータのみ適用（前の人のデータが残るバグを修正）
+  SUB[r]={name,...emptyDaily(),...data};
   refreshSubCard(r);
   listenSubResident(r,name);
   subFlash(r,data._tag==='today'?'✓今日':data._tag==='carried'?'↑引継':'✓新規');
@@ -2754,7 +2967,9 @@ function buildCard(r){
     <button class="extra-toggle-btn${extraSec[r].yaku?' active':''}" id="extra-btn-yaku-${r}" onclick="toggleExtraSec(${r},'yaku',false)">薬関連</button>
     <button class="extra-toggle-btn${extraSec[r].gaishu?' active':''}" id="extra-btn-gaishu-${r}" onclick="toggleExtraSec(${r},'gaishu',false)">外出</button>
   </div>
-  <button class="clear-btn" onclick="clearRoom(${r})">クリア</button>
+  <div style="display:flex;gap:5px;flex-wrap:wrap">
+    <button class="clear-btn" style="color:#991b1b;border-color:#fca5a5;background:#fff1f2" onclick="clearRoomFull(${r})">全クリア</button>
+  </div>
 </div>
 <div class="sub-section${vis?' visible':''}" id="sub-section-${r}">
   <div class="sub-header">
@@ -2778,7 +2993,10 @@ function buildCard(r){
       <button class="copy-btn" id="copy-btn-sub-${r}" onclick="copyResidentData(${r},true)" title="コピー" style="padding:4px 9px">📋</button>
       <button class="copy-btn" onclick="openPrintPage(${r},true)" title="印刷" style="padding:4px 9px">🖨️</button>
     </div>
-    <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="clear-btn" onclick="clearSubRoom(${r})">入替クリア</button>
+      <button class="clear-btn" style="color:#1d4ed8;border-color:#93c5fd;background:#eff6ff" onclick="promoteSubToMain(${r})">部屋へ移行</button>
+    </div>
   </div>
 </div>
 ${buildCareNotesSection(r)}
@@ -3224,7 +3442,6 @@ function doChangePIN(){
 }
 
 // ── 起動 ──────────────────────────────────────────
-// バージョン表示（APP_VERSION / APP_DATE を変更すれば自動で反映）
 (()=>{const el=document.getElementById('appVersion');if(el)el.textContent='v'+APP_VERSION+' / '+APP_DATE;})();
 document.getElementById('dateInput').value=getLocalDate();currentDate=getLocalDate();
 document.getElementById('whMonth').value=currentDate.slice(0,7);
